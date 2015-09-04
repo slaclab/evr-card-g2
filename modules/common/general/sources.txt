@@ -1,0 +1,3 @@
+ vhdl work rtl/EvrCardG2Core.vhd 
+ vhdl work rtl/EvrCardG2Gtx.vhd 
+ vhdl work rtl/EvrCardG2Pkg.vhd 
