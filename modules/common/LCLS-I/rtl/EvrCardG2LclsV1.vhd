@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-07-24
+-- Last update: 2015-09-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -59,7 +59,8 @@ entity EvrCardG2LclsV1 is
       evrRxN              : in    sl;
       evrTxP              : out   sl;
       evrTxN              : out   sl;
-      evrDebugClk         : out   slv(1 downto 0);
+      evrRefClk           : out   sl;
+      evrRecClk           : out   sl;
       -- Trigger and Sync Port
       syncL               : in    sl;
       trigOut             : out   slv(11 downto 0);
@@ -267,20 +268,21 @@ begin
          EVR_VERSION_G => false) 
       port map (
          -- EVR Ports
-         evrRefClkP  => evrRefClkP,
-         evrRefClkN  => evrRefClkN,
-         evrRxP      => evrRxP,
-         evrRxN      => evrRxN,
-         evrTxP      => evrTxP,
-         evrTxN      => evrTxN,
-         evrDebugClk => evrDebugClk,
+         evrRefClkP => evrRefClkP,
+         evrRefClkN => evrRefClkN,
+         evrRxP     => evrRxP,
+         evrRxN     => evrRxN,
+         evrTxP     => evrTxP,
+         evrTxN     => evrTxN,
+         evrRefClk  => evrRefClk,
+         evrRecClk  => evrRecClk,
          -- EVR Interface
-         evrClk      => evrClk,
-         evrRst      => evrRst,
-         rxLinkUp    => rxLinkUp,
-         rxError     => rxError,
-         rxData      => rxData,
-         rxDataK     => rxDataK);    
+         evrClk     => evrClk,
+         evrRst     => evrRst,
+         rxLinkUp   => rxLinkUp,
+         rxError    => rxError,
+         rxData     => rxData,
+         rxDataK    => rxDataK);    
 
    -----------
    -- EVR Core

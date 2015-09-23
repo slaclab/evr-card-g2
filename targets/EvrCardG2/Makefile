@@ -10,7 +10,7 @@ export MODULE_DIRS = $(PROJ_DIR)/../../modules/StdLib \
                      $(PROJ_DIR)/../../modules/SsiPcieCore \
                      $(PROJ_DIR)/../../modules/MgtLib/gtx7 \
                      $(PROJ_DIR)/../../modules/TimingCore/LCLS-I \
-                     $(PROJ_DIR)/../../modules/TimingCore/LCLS-II \
+                     $(PROJ_DIR)/../../modules/TimingCore/LCLS-II/core \
                      $(PROJ_DIR)/../../modules/common/general \
                      $(PROJ_DIR)/../../modules/common/LCLS-I \
                      $(PROJ_DIR)/../../modules/common/LCLS-II \

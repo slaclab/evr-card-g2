@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-07-24
+-- Last update: 2015-09-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -41,7 +41,9 @@ entity EvrCardG2LclsV2 is
       evrRxN              : in  sl;
       evrTxP              : out sl;
       evrTxN              : out sl;
-      evrDebugClk         : out slv(1 downto 0);
+      evrRefClk           : out sl;
+      evrRecClk           : out sl;
+      evrModeSel          : out sl;
       -- Trigger and Sync Port
       syncL               : in  sl;
       trigOut             : out slv(11 downto 0);
@@ -63,13 +65,16 @@ architecture mapping of EvrCardG2LclsV2 is
 
 begin
 
+
+
    -- Undefined signals
-   ledRedL   <= '1';
-   ledGreenL <= '1';
-   ledBlueL  <= '1';
-   trigOut   <= x"000";
-   irqEnable <= '0';
-   irqReq    <= '0';
+   ledRedL    <= '1';
+   ledGreenL  <= '1';
+   ledBlueL   <= '1';
+   trigOut    <= x"000";
+   irqEnable  <= '0';
+   irqReq     <= '0';
+   evrModeSel <= '0';
 
    AxiLiteEmpty_Inst : entity work.AxiLiteEmpty
       generic map (
@@ -89,19 +94,20 @@ begin
          EVR_VERSION_G => true) 
       port map (
          -- EVR Ports
-         evrRefClkP  => evrRefClkP,
-         evrRefClkN  => evrRefClkN,
-         evrRxP      => evrRxP,
-         evrRxN      => evrRxN,
-         evrTxP      => evrTxP,
-         evrTxN      => evrTxN,
-         evrDebugClk => evrDebugClk,
+         evrRefClkP => evrRefClkP,
+         evrRefClkN => evrRefClkN,
+         evrRxP     => evrRxP,
+         evrRxN     => evrRxN,
+         evrTxP     => evrTxP,
+         evrTxN     => evrTxN,
+         evrRefClk  => evrRefClk,
+         evrRecClk  => evrRecClk,
          -- EVR Interface
-         evrClk      => evrClk,
-         evrRst      => evrRst,
-         rxLinkUp    => rxLinkUp,
-         rxError     => rxError,
-         rxData      => rxData,
-         rxDataK     => rxDataK);       
+         evrClk     => evrClk,
+         evrRst     => evrRst,
+         rxLinkUp   => rxLinkUp,
+         rxError    => rxError,
+         rxData     => rxData,
+         rxDataK    => rxDataK);       
 
 end mapping;
