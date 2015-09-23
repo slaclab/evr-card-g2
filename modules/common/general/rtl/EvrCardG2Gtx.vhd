@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2015-07-24
+-- Last update: 2015-09-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -30,20 +30,21 @@ entity EvrCardG2Gtx is
       EVR_VERSION_G : boolean := false);  -- V1 = false, V2 = true      
    port (
       -- EVR Ports
-      evrRefClkP  : in  sl;
-      evrRefClkN  : in  sl;
-      evrRxP      : in  sl;
-      evrRxN      : in  sl;
-      evrTxP      : out sl;
-      evrTxN      : out sl;
-      evrDebugClk : out slv(1 downto 0);
+      evrRefClkP : in  sl;
+      evrRefClkN : in  sl;
+      evrRxP     : in  sl;
+      evrRxN     : in  sl;
+      evrTxP     : out sl;
+      evrTxN     : out sl;
+      evrRefClk  : out sl;
+      evrRecClk  : out sl;
       -- EVR Interface
-      evrClk      : out sl;
-      evrRst      : out sl;
-      rxLinkUp    : out sl;
-      rxError     : out sl;
-      rxData      : out slv(15 downto 0);
-      rxDataK     : out slv(1 downto 0));
+      evrClk     : out sl;
+      evrRst     : out sl;
+      rxLinkUp   : out sl;
+      rxError    : out sl;
+      rxData     : out slv(15 downto 0);
+      rxDataK    : out slv(1 downto 0));
 end EvrCardG2Gtx;
 
 architecture rtl of EvrCardG2Gtx is
@@ -73,12 +74,12 @@ architecture rtl of EvrCardG2Gtx is
    
 begin
 
-   rxError        <= not(dataValid) and linkUp;
-   rxLinkUp       <= linkUp;
-   evrClk         <= evrRxRecClk;
-   evrRst         <= not(gtRxResetDone);
-   evrDebugClk(0) <= stableClk;
-   evrDebugClk(1) <= evrRxRecClk;
+   rxError   <= not(dataValid) and linkUp;
+   rxLinkUp  <= linkUp;
+   evrClk    <= evrRxRecClk;
+   evrRst    <= not(gtRxResetDone);
+   evrRefClk <= stableClk;
+   evrRecClk <= evrRxRecClk;
 
    IBUFDS_GTE2_Inst : IBUFDS_GTE2
       port map (

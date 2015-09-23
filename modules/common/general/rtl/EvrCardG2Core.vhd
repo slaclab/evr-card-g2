@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-07-30
+-- Last update: 2015-09-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -100,16 +100,27 @@ architecture mapping of EvrCardG2Core is
    signal irqReq       : slv(BAR_SIZE_C-1 downto 0);
    signal trig         : Slv12Array(1 downto 0);
    signal serialNumber : slv(63 downto 0);
-   signal evrDebugClk  : slv(3 downto 0);
+   signal evrRefClk    : slv(1 downto 0);
+   signal evrRecClk    : slv(1 downto 0);
+   signal evrModeSel   : sl;
 
 begin
 
    testPoint <= pciLinkUp;
 
-   OR_TRIG :
-   for i in 11 downto 0 generate
-      trigOut(i) <= not(trig(0)(i)) or trig(1)(i);
-   end generate OR_TRIG;
+   -----------------  
+   -- Trigger Output
+   -----------------   
+   Trig_Inst : entity work.EvrCardG2Trig
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         evrModeSel => evrModeSel,
+         -- Clock
+         evrRecClk  => evrRecClk,
+         -- Trigger Inputs
+         trigIn     => trig,
+         trigout    => trigOut);
 
    ------------
    -- PCIe Core
@@ -194,7 +205,8 @@ begin
          evrRxN              => evrRxN(0),
          evrTxP              => evrTxP(0),
          evrTxN              => evrTxN(0),
-         evrDebugClk         => evrDebugClk(1 downto 0),
+         evrRefClk           => evrRefClk(0),
+         evrRecClk           => evrRecClk(0),
          -- Trigger and Sync Port
          syncL               => syncL,
          trigOut             => trig(0),
@@ -229,7 +241,8 @@ begin
          evrRxN              => evrRxN(1),
          evrTxP              => evrTxP(1),
          evrTxN              => evrTxN(1),
-         evrDebugClk         => evrDebugClk(3 downto 2),
+         evrRefClk           => evrRefClk(1),
+         evrModeSel          => evrModeSel,
          -- Trigger and Sync Port
          syncL               => syncL,
          trigOut             => trig(1),
