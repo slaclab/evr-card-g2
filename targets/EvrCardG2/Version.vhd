@@ -1,11 +1,11 @@
-LIBRARY ieee;
-USE ieee.std_logic_1164.ALL;
+library ieee;
+use ieee.std_logic_1164.all;
 
 package Version is
 
-constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20006"; -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20007";  -- MAKE_VERSION
 
-constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.2 (x86_64) Built Wed Sep 23 10:32:55 PDT 2015 by ruckman";
+   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.2 (x86_64) Built Thu Sep 24 15:57:46 PDT 2015 by ruckman";
 
 end Version;
 
@@ -20,6 +20,7 @@ end Version;
 -- 08/18/2015 (CED20005): In EvrV1TimeStampFIFO.vhd, change FWFT_EN_G from "false" to "true"
 -- 09/23/2015 (CED20006): Removed 4 shift registers in EvrV1EventReceiver for rxData & rxDataK
 --                        Registering the trigger outputs and set the SLEW = FAST
+-- 09/24/2015 (CED20007): Added 2 cycles address setup delay for BRAM's AXI-Lite read transactions
 --
 -------------------------------------------------------------------------------
 
