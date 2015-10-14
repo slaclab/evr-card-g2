@@ -42,8 +42,8 @@ set_property -dict { PACKAGE_PIN J20 IOSTANDARD LVCMOS25 } [get_ports { flashAdd
 set_property -dict { PACKAGE_PIN K20 IOSTANDARD LVCMOS25 } [get_ports { flashAddr[22] }]
 set_property -dict { PACKAGE_PIN G20 IOSTANDARD LVCMOS25 } [get_ports { flashAddr[23] }]
 
-set_property -dict { PACKAGE_PIN K18 IOSTANDARD LVCMOS25 } [get_ports { flashRs[0] }]
-set_property -dict { PACKAGE_PIN L17 IOSTANDARD LVCMOS25 } [get_ports { flashRs[1] }]
+# set_property -dict { PACKAGE_PIN K18 IOSTANDARD LVCMOS25 } [get_ports { flashRs[0] }]
+# set_property -dict { PACKAGE_PIN L17 IOSTANDARD LVCMOS25 } [get_ports { flashRs[1] }]
 
 set_property -dict { PACKAGE_PIN D19 IOSTANDARD LVCMOS25 } [get_ports { flashWait }]
 set_property -dict { PACKAGE_PIN D20 IOSTANDARD LVCMOS25 } [get_ports { flashAdv }]
