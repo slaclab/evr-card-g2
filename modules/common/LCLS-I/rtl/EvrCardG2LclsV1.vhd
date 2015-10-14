@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-09-23
+-- Last update: 2015-10-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -191,7 +191,7 @@ begin
    --------------------
    -- Boot Flash Module
    --------------------
-   flashRs <= "11";
+   -- flashRs <= "11";
    AxiMicronP30Core_Inst : entity work.AxiMicronP30Core
       generic map (
          TPD_G          => TPD_G,

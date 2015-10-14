@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-06-10
+-- Last update: 2015-10-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -29,7 +29,7 @@ entity EvrCardG2 is
       -- Boot Memory Ports
       flashData  : inout slv(15 downto 0);
       flashAddr  : out   slv(23 downto 0);
-      flashRs    : inout slv(1 downto 0);
+      -- flashRs    : inout slv(1 downto 0);
       flashCe    : out   sl;
       flashOe    : out   sl;
       flashWe    : out   sl;
@@ -80,7 +80,7 @@ begin
          -- FLASH Interface 
          flashData  => flashData,
          flashAddr  => flashAddr,
-         flashRs    => flashRs,
+         -- flashRs    => flashRs,
          flashAdv   => flashAdv,
          flashCe    => flashCe,
          flashOe    => flashOe,
