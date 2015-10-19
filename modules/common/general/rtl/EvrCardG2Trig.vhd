@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-09-23
+-- Last update: 2015-10-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -48,19 +48,21 @@ begin
    --       the LCLS-II trigger as well
    trig <= not(trigIn(0)) when(evrModeSel = '0') else trigIn(1);
 
-   BUFGMUX_inst : BUFGMUX
-      port map (
-         O  => clk,                     -- 1-bit output: Clock output
-         I0 => evrRecClk(0),            -- 1-bit input: Clock input (S=0)
-         I1 => evrRecClk(1),            -- 1-bit input: Clock input (S=1)
-         S  => evrModeSel);             -- 1-bit input: Clock select
+   -- BUFGMUX_inst : BUFGMUX
+   -- port map (
+   -- O  => clk,                     -- 1-bit output: Clock output
+   -- I0 => evrRecClk(0),            -- 1-bit input: Clock input (S=0)
+   -- I1 => evrRecClk(1),            -- 1-bit input: Clock input (S=1)
+   -- S  => evrModeSel);             -- 1-bit input: Clock select
+
+   clk <= evrRecClk(0);
 
    OR_TRIG :
    for i in 11 downto 0 generate
       
       U_ODDR : ODDR
          generic map(
-            DDR_CLK_EDGE => "OPPOSITE_EDGE")  -- "OPPOSITE_EDGE" = 1/2 pipeline cycle delay
+            DDR_CLK_EDGE => "SAME_EDGE")
          port map (
             C  => clk,
             Q  => trigger(i),
