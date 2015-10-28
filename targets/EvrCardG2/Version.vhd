@@ -3,9 +3,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000B";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000C";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Mon Oct 26 13:59:25 PDT 2015 by ruckman";
+   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Tue Oct 27 16:55:26 PDT 2015 by ruckman";
 
 end Version;
 
@@ -29,5 +29,10 @@ end Version;
 --    Revision Control:    Branching from CED2000A
 --    In EVR core,         If no heartbeat event is received the counter times out (approx. 1.6 s)
 --                         and a heartbeat flag is set.
+--
+-- 10/27/2015 (CED2000C): 
+--    Revision Control:    Branching from CED2000B
+--    In EVR core,         Synchronizing all status bits used to generate an interrupt on the axiClk
+--                         clock domain and no longer a mix of axiClk/evrClk domain.
 --
 -------------------------------------------------------------------------------
