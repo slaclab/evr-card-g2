@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2015-09-23
+-- Last update: 2015-10-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -71,7 +71,9 @@ architecture rtl of EvrCardG2Gtx is
    signal dispErr       : slv(1 downto 0);
    signal cnt           : slv(7 downto 0);
    signal gtRxData      : slv(19 downto 0);
-   
+   signal data          : slv(15 downto 0);
+   signal dataK         : slv(1 downto 0);
+
 begin
 
    rxError   <= not(dataValid) and linkUp;
@@ -110,11 +112,13 @@ begin
          clk      => evrRxRecClk,
          rst      => gtRxResetDone,
          dataIn   => gtRxData,
-         dataOut  => rxData,
-         dataKOut => rxDataK,
+         dataOut  => data,
+         dataKOut => dataK,
          codeErr  => decErr,
          dispErr  => dispErr);
 
+   rxData    <= data  when(linkUp = '1') else (others => '0');
+   rxDataK   <= dataK when(linkUp = '1') else (others => '0');
    dataValid <= not (uOr(decErr) or uOr(dispErr));
 
    process(evrRxRecClk)

@@ -46,7 +46,8 @@ begin
    -- Note: Legacy software requires inverting LCLS-I trigger
    --       and it's still TBD if we need to do the same for
    --       the LCLS-II trigger as well
-   trig <= not(trigIn(0)) when(evrModeSel = '0') else trigIn(1);
+   -- trig <= not(trigIn(0)) when(evrModeSel = '0') else trigIn(1);
+   trig <= not(trigIn(0));
 
    -- BUFGMUX_inst : BUFGMUX
    -- port map (
