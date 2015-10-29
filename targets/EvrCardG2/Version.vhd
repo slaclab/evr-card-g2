@@ -3,9 +3,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000C";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000D";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Tue Oct 27 16:55:26 PDT 2015 by ruckman";
+   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Wed Oct 28 17:26:57 PDT 2015 by ruckman";
 
 end Version;
 
@@ -34,5 +34,12 @@ end Version;
 --    Revision Control:    Branching from CED2000B
 --    In EVR core,         Synchronizing all status bits used to generate an interrupt on the axiClk
 --                         clock domain and no longer a mix of axiClk/evrClk domain.
+--
+-- 10/28/2015 (CED2000D): 
+--    Revision Control:    Branching from CED2000C
+--    In EVR core,         Changed the Output Trigger Crossbar from registered to combinatory 
+--                         to phase match with the MRF (removes 8.4 ns delay)
+--    In MGT core,         If linkDown then, forward rxData = 0x0 and rxDataK = 0x0 to EVR core
+--    In EvrCardG2Trig,    Bypass the trig MUX
 --
 -------------------------------------------------------------------------------
