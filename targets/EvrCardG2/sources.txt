@@ -1,2 +1,3 @@
 vhdl work Version.vhd
 vhdl work hdl/EvrCardG2.vhd
+vhdl work hdl/ila_0.dcp

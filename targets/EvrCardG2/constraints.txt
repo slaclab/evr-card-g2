@@ -1,1 +1,2 @@
 hdl/EvrCardG2.xdc
+hdl/EvrCardG2PciIpCore.xdc
