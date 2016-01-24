@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-10-14
+-- Last update: 2016-01-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -228,7 +228,8 @@ begin
    ------------------                  
    EvrCardG2LclsV2_Inst : entity work.EvrCardG2LclsV2
       generic map (
-         TPD_G => TPD_G) 
+         TPD_G      => TPD_G,
+         DMA_SIZE_G => 1) 
       port map (
          -- AXI-Lite and IRQ Interface
          axiClk              => axiClk,
@@ -249,6 +250,10 @@ begin
          evrTxN              => evrTxN(1),
          evrRefClk           => evrRefClk(1),
          evrModeSel          => evrModeSel,
+         -- DMA Interface
+         dmaRxIbMaster       => dmaRxIbMasters  (0),
+         dmaRxIbSlave        => dmaRxIbSlaves   (0),
+         dmaRxTranFromPci    => dmaRxTranFromPci(0),
          -- Trigger and Sync Port
          syncL               => syncL,
          trigOut             => trig(1),
