@@ -155,6 +155,7 @@ create_clock -name evrRefClk1 -period  2.692 [get_ports {evrRefClkP[1]}]
 create_clock -name pciRefClkP -period 10.000 [get_ports pciRefClkP]
 create_clock -name evrClk0    -period  8.402 [get_pins  {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrCardG2Gtx_Inst/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
 create_clock -name evrClk1    -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2LclsV2_Inst/EvrCardG2Gtx_Inst/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
+create_clock -name txClk1    -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2LclsV2_Inst/EvrCardG2Gtx_Inst/Gtx7Core_Inst/gtxe2_i/TXOUTCLK}]
 
 create_generated_clock  -name stableClk0 [get_pins {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrCardG2Gtx_Inst/IBUFDS_GTE2_Inst/ODIV2}]  
 create_generated_clock  -name stableClk1 [get_pins {EvrCardG2Core_Inst/EvrCardG2LclsV2_Inst/EvrCardG2Gtx_Inst/IBUFDS_GTE2_Inst/ODIV2}]  
@@ -168,10 +169,15 @@ create_generated_clock  -name pciClk     [get_pins {EvrCardG2Core_Inst/PciCore_I
 
 set_clock_groups -asynchronous -group [get_clocks evrClk0] -group [get_clocks stableClk0]
 set_clock_groups -asynchronous -group [get_clocks evrClk1] -group [get_clocks stableClk1]
+set_clock_groups -asynchronous -group [get_clocks evrClk0] -group [get_clocks evrClk1]
+set_clock_groups -asynchronous -group [get_clocks txClk1] -group [get_clocks stableClk1]
 
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks evrClk0]
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks evrClk1]
+set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks txClk1]
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dnaClk]
+set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks stableClk0]
+set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks stableClk1]
 
 ###############################
 # FPGA Hardware Configuration #

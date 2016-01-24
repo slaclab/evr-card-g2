@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000D";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000E";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Wed Oct 28 17:26:57 PDT 2015 by ruckman";
+   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Sun Jan 24 02:26:23 PST 2016 by weaver";
 
 end Version;
 
@@ -51,4 +51,7 @@ end Version;
 --    In MGT core,         If linkDown then, forward rxData = 0x0 and rxDataK = 0x0 to EVR core
 --    In EvrCardG2Trig,    Bypass the trig MUX
 --
+-- 01/23/2016 (CED2000E): 
+--    Added LCLS-II Timing core with BSA integration, DMA, and interrupt.
+--    Contains 12 readout channels, 12 trigger channels, no debug core.
 -------------------------------------------------------------------------------
