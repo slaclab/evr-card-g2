@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-01-15
+-- Last update: 2016-01-24
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -110,7 +110,6 @@ architecture mapping of EvrCardG2LclsV2 is
    signal timingPhy : TimingPhyType;
    signal txPhyClk : sl;
    signal txPhyRst : sl;
-   signal gtxDebug : slv(7 downto 0);
 begin
 
    -- Undefined signals
@@ -168,8 +167,7 @@ begin
          evrTxRst   => txPhyRst,
          txInhibit  => '0',
          txData     => timingPhy.data,
-         txDataK    => timingPhy.dataK,
-         gtxDebug   => gtxDebug);
+         txDataK    => timingPhy.dataK);
 
    --U_Axi_Evr : entity work.AxiLiteEmpty
    -- generic map ( TPD_G            => TPD_G )
@@ -205,7 +203,7 @@ begin
        evrBus              => appTimingBus,
        txPhyClk            => txPhyClk,
        txPhyRst            => txPhyRst,
-       gtxDebug            => gtxDebug,
+       gtxDebug            => (others=>'0'),
        -- Trigger and Sync Port
        syncL               => syncL,
        trigOut             => trigOut,
