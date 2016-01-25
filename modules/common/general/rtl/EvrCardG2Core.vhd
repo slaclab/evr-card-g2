@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-01-09
+-- Last update: 2016-01-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -249,6 +249,7 @@ begin
          evrTxP              => evrTxP(1),
          evrTxN              => evrTxN(1),
          evrRefClk           => evrRefClk(1),
+         evrRecClk           => evrRecClk(1),
          evrModeSel          => evrModeSel,
          -- DMA Interface
          dmaRxIbMaster       => dmaRxIbMasters  (0),
