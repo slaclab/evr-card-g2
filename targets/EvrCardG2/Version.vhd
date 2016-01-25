@@ -14,7 +14,7 @@ package Version is
 
    constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000E";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Sun Jan 24 02:26:23 PST 2016 by weaver";
+   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Mon Jan 25 09:12:09 PST 2016 by weaver";
 
 end Version;
 
