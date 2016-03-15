@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000E";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000F";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Mar 15 09:00:33 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Mar 15 16:28:09 PDT 2016 by ruckman";
 
 end Version;
 
@@ -53,6 +53,10 @@ end Version;
 --
 -- 03/15/2016 (CED2000E): 
 --    Revision Control:    Branching from CED2000D
---     In all,             Rebuilding the baseline 
+--    In Top Level ,       Rebuilding the baseline 
+--
+-- 03/15/2016 (CED2000F): 
+--    Revision Control:    Branching from CED2000E
+--    In Top Level ,       Changed BPI from ASYNC to SYNC mode (TYPE2) and config clock from 9 MHz to 50 MHz 
 --
 -------------------------------------------------------------------------------
