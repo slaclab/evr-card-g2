@@ -52,6 +52,9 @@ end Version;
 --    In EvrCardG2Trig,    Bypass the trig MUX
 --
 -- 01/23/2016 (CED2000E): 
+--    Revision Control:    Branching from CED2000D
 --    Added LCLS-II Timing core with BSA integration, DMA, and interrupt.
 --    Contains 12 readout channels, 12 trigger channels, no debug core.
+--    Note: PCIe Device ID changed from 0x2010 to 0x2011
+--
 -------------------------------------------------------------------------------
