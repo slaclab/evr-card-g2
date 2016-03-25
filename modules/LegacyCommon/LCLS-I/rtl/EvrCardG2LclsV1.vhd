@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-10-14
+-- Last update: 2016-03-25
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -191,7 +191,8 @@ begin
       port map (
          clk         => axiClk,
          rst         => axiRst,
-         start       => fpgaReload,
+         -- start       => fpgaReload,
+         start       => '0',            -- Disabling this feature
          bootAddress => X"00000000");   
 
    --------------------
