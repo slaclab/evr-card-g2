@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20012";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20013";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Mon Apr  4 13:14:47 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Mon Apr  4 13:50:59 PDT 2016 by ruckman";
 
 end Version;
 
@@ -70,5 +70,9 @@ end Version;
 -- 04/04/2016 (CED20012): 
 --    Revision Control:    Branching from CED20011
 --    In PCI core,         Debouncing the PCIe's reset for 1.5 us
+--
+-- 04/04/2016 (CED20013): 
+--    Revision Control:    Branching from CED20012
+--    In PCI core,         Debouncing the PCIe's reset for 10 ms
 --
 -------------------------------------------------------------------------------

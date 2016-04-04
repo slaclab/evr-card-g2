@@ -33,7 +33,7 @@ use unisim.vcomponents.all;
 entity EvrCardG2PciRst is
    generic (
       TPD_G     : time     := 1 ns;
-      MAX_CNT_G : positive := 150);
+      MAX_CNT_G : positive := 1000000);
    port (
       clk     : in  sl;
       rstInL  : in  sl;
