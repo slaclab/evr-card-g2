@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20010";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20012";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Fri Mar 25 08:29:01 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Mon Apr  4 13:14:47 PDT 2016 by ruckman";
 
 end Version;
 
@@ -62,5 +62,13 @@ end Version;
 -- 03/25/2016 (CED20010): 
 --    Revision Control:    Branching from CED2000F
 --    In Top Level ,       Disabled the ability for AxiVersion to cause a reboot of FPGA via PCIe register transaction
+--
+-- 04/04/2016 (CED20011): 
+--    Revision Control:    Branching from CED20010
+--    In PCI core,         Upgrade the Xilinx PCIe IP core from version 3.1 to version 3.2
+--
+-- 04/04/2016 (CED20012): 
+--    Revision Control:    Branching from CED20011
+--    In PCI core,         Debouncing the PCIe's reset for 1.5 us
 --
 -------------------------------------------------------------------------------

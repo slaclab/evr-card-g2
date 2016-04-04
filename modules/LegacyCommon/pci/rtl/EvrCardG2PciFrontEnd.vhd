@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-24
--- Last update: 2015-05-15
+-- Last update: 2016-04-04
 -- Platform   : Vivado 2015.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -58,6 +58,7 @@ end EvrCardG2PciFrontEnd;
 architecture mapping of EvrCardG2PciFrontEnd is
 
    signal pciRefClk : sl;
+   signal stableClk : sl;
    signal sysRstL   : sl;
    signal locClk    : sl;
    signal userRst   : sl;
@@ -93,10 +94,16 @@ begin
          O     => pciRefClk,
          ODIV2 => open);        
 
-   IBUF_Inst : IBUF
-      port map(
-         I => pciRstL,
-         O => sysRstL);          
+   U_Bufg : BUFG
+      port map (
+         I => pciRefClk,
+         O => stableClk);         
+
+   U_Rst : entity work.EvrCardG2PciRst
+      port map (
+         clk     => stableClk,
+         rstInL  => pciRstL,
+         rstOutL => sysRstL);      
 
    PcieCore_Inst : entity work.EvrCardG2PciIpCore
       port map(
