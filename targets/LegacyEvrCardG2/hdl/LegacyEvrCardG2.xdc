@@ -173,10 +173,6 @@ set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks evr
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks evrClk1]
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dnaClk]
 
-set_clock_groups -asynchronous -group [get_clocks pciRefClkP] -group [get_clocks clk_125mhz_mux_x0y0]
-set_clock_groups -asynchronous -group [get_clocks pciRefClkP] -group [get_clocks clk_250mhz_mux_x0y0]
-set_clock_groups -asynchronous -group [get_clocks pciRefClkP] -group [get_clocks pciClk]
-
 ###############################
 # FPGA Hardware Configuration #
 ###############################
