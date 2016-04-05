@@ -1,5 +1,4 @@
 vhdl work rtl/EvrCardG2PciCore.vhd 
 vhdl work rtl/EvrCardG2PciFrontEnd.vhd 
-vhdl work rtl/EvrCardG2PciRst.vhd
 
 vhdl work coregen/EvrCardG2PciIpCore.dcp 
