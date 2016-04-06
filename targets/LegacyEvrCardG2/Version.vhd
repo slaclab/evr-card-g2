@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20014";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20016";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Apr  5 10:23:44 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Wed Apr  6 09:35:49 PDT 2016 by ruckman";
 
 end Version;
 
@@ -75,7 +75,7 @@ end Version;
 --    Revision Control:    Branching from CED20012
 --    In PCI core,         Debouncing the PCIe's reset for 10 ms
 --
--- 04/04/2016 (CED20014): 
+-- 04/05/2016 (CED20014): 
 --    Revision Control:    Branching from CED20013
 --    In PCI core,         Removed the debouncer (it didn't help or make worse the enumeration issue)
 --    In PCI core,         Change the IP core to 
@@ -83,5 +83,13 @@ end Version;
 --                            2) c_ep_l0s_accpt_lat = 0
 --                            3) ep_l0s_accpt_lat = 111
 --                            4) Acceptable_L0s_Latency = Maximum_of_64_ns
+--
+-- 04/05/2016 (CED20015): 
+--    Revision Control:    Branching from CED20014
+--    In top level,        Terminating the unused PGP GT-CLK port
+--
+-- 04/06/2016 (CED20016): 
+--    Revision Control:    Branching from CED20011
+--    In top level,        Terminating the unused PGP GT-CLK port
 --
 -------------------------------------------------------------------------------
