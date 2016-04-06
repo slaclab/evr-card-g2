@@ -32,6 +32,10 @@ entity EvrCardG2Core is
    generic (
       TPD_G : time := 1 ns); 
    port (
+      -- PGP Reference
+      pgpRefClkP   : in  sl;
+      pgpRefClkN   : in  sl;
+      pgpHeartBeat : out sl;
       -- XADC Ports
       vPIn       : in    sl;
       vNIn       : in    sl;
@@ -114,6 +118,18 @@ begin
 
    testPoint <= pciLinkUp;
 
+   -------------------------------   
+   -- Terminate Unused GT_CLK port
+   -------------------------------   
+   U_PgpClkRef : entity work.PgpClkRef
+      generic map (
+         TPD_G => TPD_G) 
+      port map (
+         -- PGP Reference
+         pgpRefClkP   => pgpRefClkP,
+         pgpRefClkN   => pgpRefClkN,
+         pgpHeartBeat => pgpHeartBeat);  
+   
    -----------------  
    -- Trigger Output
    -----------------   
