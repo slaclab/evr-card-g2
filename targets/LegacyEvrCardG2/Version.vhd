@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20017";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20018";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Thu Apr  7 17:34:37 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Thu Apr  7 21:47:57 PDT 2016 by ruckman";
 
 end Version;
 
@@ -104,5 +104,9 @@ end Version;
 --    In EVR core,         r.controlReg(9) is used to latch the values for SecLatch & EvCntLatch
 --    In Top Level,        Enable the ability for AxiVersion to cause a reboot of FPGA via PCIe register transaction
 --                         Note: This ability is required for reloading the FPGA firmware without a cold reboot.
+--
+-- 04/07/2016 (CED20018): 
+--    Revision Control:    Branching from CED20017
+--    In EVR core,         Changed config.latchTs from r.controlReg(9) to r.controlReg(10)
 --
 -------------------------------------------------------------------------------
