@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-10-14
+-- Last update: 2016-04-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -32,10 +32,6 @@ entity EvrCardG2Core is
    generic (
       TPD_G : time := 1 ns); 
    port (
-      -- PGP Reference
-      pgpRefClkP   : in  sl;
-      pgpRefClkN   : in  sl;
-      pgpHeartBeat : out sl;
       -- XADC Ports
       vPIn       : in    sl;
       vNIn       : in    sl;
@@ -118,18 +114,6 @@ begin
 
    testPoint <= pciLinkUp;
 
-   -------------------------------   
-   -- Terminate Unused GT_CLK port
-   -------------------------------   
-   U_PgpClkRef : entity work.PgpClkRef
-      generic map (
-         TPD_G => TPD_G) 
-      port map (
-         -- PGP Reference
-         pgpRefClkP   => pgpRefClkP,
-         pgpRefClkN   => pgpRefClkN,
-         pgpHeartBeat => pgpHeartBeat);  
-   
    -----------------  
    -- Trigger Output
    -----------------   
