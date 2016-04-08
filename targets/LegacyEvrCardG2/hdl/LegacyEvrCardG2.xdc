@@ -146,16 +146,10 @@ set_property PACKAGE_PIN H5 [get_ports evrRefClkN[0]]
 set_property PACKAGE_PIN K6 [get_ports evrRefClkP[1]]
 set_property PACKAGE_PIN K5 [get_ports evrRefClkN[1]]
 
-set_property PACKAGE_PIN F6 [get_ports pgpRefClkP]
-set_property PACKAGE_PIN F5 [get_ports pgpRefClkN]
-
-set_property -dict { PACKAGE_PIN P19 IOSTANDARD LVCMOS18 } [get_ports { pgpHeartBeat }]
-
 #####################################
 # Timing Constraints: Define Clocks #
 #####################################
 
-create_clock -name pgpRefClkP -period  3.200 [get_ports {pgpRefClkP}]
 create_clock -name evrRefClk0 -period  4.201 [get_ports {evrRefClkP[0]}]
 create_clock -name evrRefClk1 -period  2.692 [get_ports {evrRefClkP[1]}]
 create_clock -name pciRefClkP -period 10.000 [get_ports pciRefClkP]

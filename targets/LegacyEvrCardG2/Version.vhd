@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20016";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20017";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Wed Apr  6 09:35:49 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Thu Apr  7 17:34:37 PDT 2016 by ruckman";
 
 end Version;
 
@@ -91,5 +91,18 @@ end Version;
 -- 04/06/2016 (CED20016): 
 --    Revision Control:    Branching from CED20011
 --    In top level,        Terminating the unused PGP GT-CLK port
+--
+-- 04/07/2016 (CED20017): 
+--    Revision Control:    Branching from CED20010
+--    In EVR core,         Added the following registers (based on Figure 1 of EVR-MRM-006.doc on page 7)
+--                            0x05C    SecSR          UINT32   Seconds Shift Register
+--                            0x060    SecCounter     UINT32   Timestamp Seconds Counter
+--                            0x064    EventCounter   UINT32   Timestamp Event Counter
+--                            0x068    SecLatch       UINT32   Timestamp Seconds Counter Latch
+--                            0x06C    EvCntLatch     UINT32   Timestamp Event Counter Latch
+--    In EVR core,         r.controlReg(9) is auto-clear in firmware
+--    In EVR core,         r.controlReg(9) is used to latch the values for SecLatch & EvCntLatch
+--    In Top Level,        Enable the ability for AxiVersion to cause a reboot of FPGA via PCIe register transaction
+--                         Note: This ability is required for reloading the FPGA firmware without a cold reboot.
 --
 -------------------------------------------------------------------------------
