@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20019";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001A";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Fri Apr  8 11:05:16 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Fri Apr  8 13:10:40 PDT 2016 by ruckman";
 
 end Version;
 
@@ -112,5 +112,12 @@ end Version;
 -- 04/08/2016 (CED20019): 
 --    Revision Control:    Branching from CED20018
 --    In EVR core,         Added EvrCardG2LclsV1LedRgb.vhd
+--
+-- 04/08/2016 (CED2001A): 
+--    Revision Control:    Branching from CED20019
+--    In Common core,      Increase stable link status wait time from 0xFF to 0xFFFF (EvrGtp7.vhd's cnt)
+--                         Changed gtRxResetDone from SYNC reset to ASYNC reset for stable link status
+--                         Using the PCIe clock as stable reference, which prevents an oscillating state of 
+--                         locked to not locked when establishing a new link.
 --
 -------------------------------------------------------------------------------

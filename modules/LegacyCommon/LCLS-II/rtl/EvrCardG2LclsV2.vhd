@@ -97,6 +97,8 @@ begin
          TPD_G         => TPD_G,
          EVR_VERSION_G => true) 
       port map (
+         -- Stable Clock Reference
+         stableClk  => axiClk,   
          -- EVR Ports
          evrRefClkP => evrRefClkP,
          evrRefClkN => evrRefClkN,

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2015-10-28
+-- Last update: 2016-04-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -35,6 +35,8 @@ entity EvrCardG2Gtx is
       TPD_G         : time    := 1 ns;
       EVR_VERSION_G : boolean := false);  -- V1 = false, V2 = true      
    port (
+      -- Stable Clock Reference
+      stableClk : in  sl;
       -- EVR Ports
       evrRefClkP : in  sl;
       evrRefClkN : in  sl;
@@ -67,15 +69,16 @@ architecture rtl of EvrCardG2Gtx is
 
    signal gtRefClk      : sl;
    signal gtRefClkDiv2  : sl;
-   signal stableClk     : sl;
+   signal gtRxRefClkBufg  : sl;
    signal stableRst     : sl;
    signal gtRxResetDone : sl;
    signal dataValid     : sl;
    signal evrRxRecClk   : sl;
    signal linkUp        : sl;
+   signal cPllLock      : sl;
    signal decErr        : slv(1 downto 0);
    signal dispErr       : slv(1 downto 0);
-   signal cnt           : slv(7 downto 0);
+   signal cnt           : slv(23 downto 0);
    signal gtRxData      : slv(19 downto 0);
    signal data          : slv(15 downto 0);
    signal dataK         : slv(1 downto 0);
@@ -86,7 +89,7 @@ begin
    rxLinkUp  <= linkUp;
    evrClk    <= evrRxRecClk;
    evrRst    <= not(gtRxResetDone);
-   evrRefClk <= stableClk;
+   evrRefClk <= gtRxRefClkBufg;
    evrRecClk <= evrRxRecClk;
 
    IBUFDS_GTE2_Inst : IBUFDS_GTE2
@@ -100,7 +103,7 @@ begin
    BUFG_Inst : BUFG
       port map (
          I => gtRefClkDiv2,
-         O => stableClk);   
+         O => gtRxRefClkBufg);   
 
    PwrUpRst_Inst : entity work.PwrUpRst
       generic map(
@@ -127,18 +130,16 @@ begin
    rxDataK   <= dataK when(linkUp = '1') else (others => '0');
    dataValid <= not (uOr(decErr) or uOr(dispErr));
 
-   process(evrRxRecClk)
+   process(cPllLock, evrRxRecClk, gtRxResetDone)
    begin
-      if rising_edge(evrRxRecClk) then
-         if gtRxResetDone = '0' then
-            cnt    <= (others => '0') after TPD_G;
-            linkUp <= '0'             after TPD_G;
+      if (gtRxResetDone = '0') or (cPllLock = '0') then
+         cnt    <= (others => '0') after TPD_G;
+         linkUp <= '0'             after TPD_G;
+      elsif rising_edge(evrRxRecClk) then
+         if cnt = x"FFFFFF" then
+            linkUp <= '1' after TPD_G;
          else
-            if cnt = x"FF" then
-               linkUp <= '1' after TPD_G;
-            else
-               cnt <= cnt + 1 after TPD_G;
-            end if;
+            cnt <= cnt + 1 after TPD_G;
          end if;
       end if;
    end process;
@@ -190,13 +191,13 @@ begin
       port map (
          stableClkIn      => stableClk,
          cPllRefClkIn     => gtRefClk,
-         cPllLockOut      => open,
+         cPllLockOut      => cPllLock,
          qPllRefClkIn     => '0',
          qPllClkIn        => '0',
          qPllLockIn       => '1',
          qPllRefClkLostIn => '0',
          qPllResetOut     => open,
-         gtRxRefClkBufg   => stableClk,
+         gtRxRefClkBufg   => gtRxRefClkBufg,
          -- Serial IO
          gtTxP            => evrTxP,
          gtTxN            => evrTxN,

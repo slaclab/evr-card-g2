@@ -171,6 +171,8 @@ set_clock_groups -asynchronous -group [get_clocks evrClk1] -group [get_clocks st
 
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks evrClk0]
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks evrClk1]
+set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks stableClk0]
+set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks stableClk1]
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dnaClk]
 
 ###############################
