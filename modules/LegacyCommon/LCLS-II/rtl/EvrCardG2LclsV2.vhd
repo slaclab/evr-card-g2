@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-09-23
+-- Last update: 2016-04-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -71,10 +71,8 @@ architecture mapping of EvrCardG2LclsV2 is
 
 begin
 
-
-
    -- Undefined signals
-   ledRedL    <= '1';
+   ledRedL    <= '0';
    ledGreenL  <= '1';
    ledBlueL   <= '1';
    trigOut    <= x"000";
