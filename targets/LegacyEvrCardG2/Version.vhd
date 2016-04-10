@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001A";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001B";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Fri Apr  8 13:10:40 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Sun Apr 10 16:00:10 PDT 2016 by ruckman";
 
 end Version;
 
@@ -119,5 +119,17 @@ end Version;
 --                         Changed gtRxResetDone from SYNC reset to ASYNC reset for stable link status
 --                         Using the PCIe clock as stable reference, which prevents an oscillating state of 
 --                         locked to not locked when establishing a new link.
+--
+-- 04/08/2016 (CED2001B): 
+--    Revision Control:    Branching from CED2001A
+--    In EVR core,         In EvrCardG2LclsV1LedRgb.vhd, registering the opCodeDet before going into a ASYNC reset port
+--    In PCI core,         Upgrade the Xilinx PCIe IP core from version 3.1 to version 3.2
+--    In PCI core,         Change the following PCIe PHY properties:
+--                            1) In Capabilities[48]: 
+--                               Changed from "64bit-" to "64bit+"
+--                            2) In Capabilities[60].DevCap: 
+--                               Changed from "Latency L0s unlimited, L1 unlimited" to "Latency L0s <64ns, L1 <1us"
+--                            3) In Capabilities[60].DevCap2: 
+--                               Changed from "Completion Timeout: Range B" to "Completion Timeout: Range A"
 --
 -------------------------------------------------------------------------------

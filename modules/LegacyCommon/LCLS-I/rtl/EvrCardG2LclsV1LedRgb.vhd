@@ -122,7 +122,17 @@ begin
          dataIn  => r.eventOpCode,
          dataOut => eventOpCode);          
 
-   opCodeDet <= '1' when(eventStream = eventOpCode) else '0';
+   -- Register the combinatorial path before going into a ASYNC reset
+   process (evrClk) is
+   begin
+      if rising_edge(evrClk) then
+         if eventStream = eventOpCode then
+            opCodeDet <= '1' after TPD_G;
+         else
+            opCodeDet <= '0' after TPD_G;
+         end if;
+      end if;
+   end process;
 
    Sync_3 : entity work.SynchronizerOneShot
       generic map (
@@ -247,7 +257,7 @@ begin
 
    seq : process (axilClk) is
    begin
-      if (rising_edge(axilClk)) then
+      if rising_edge(axilClk) then
          r <= rin after TPD_G;
       end if;
    end process seq;

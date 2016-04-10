@@ -10,10 +10,10 @@
 	Capabilities: [40] Power Management version 3
 		Flags: PMEClk- DSI- D1- D2- AuxCurrent=0mA PME(D0-,D1-,D2-,D3hot-,D3cold-)
 		Status: D0 NoSoftRst+ PME-Enable- DSel=0 DScale=0 PME-
-	Capabilities: [48] MSI: Enable- Count=1/1 Maskable- 64bit-
-		Address: 00000000  Data: 0000
+	Capabilities: [48] MSI: Enable- Count=1/1 Maskable- 64bit+
+		Address: 0000000000000000  Data: 0000
 	Capabilities: [60] Express (v2) Endpoint, MSI 00
-		DevCap:	MaxPayload 512 bytes, PhantFunc 0, Latency L0s unlimited, L1 unlimited
+		DevCap:	MaxPayload 512 bytes, PhantFunc 0, Latency L0s <64ns, L1 <1us
 			ExtTag- AttnBtn- AttnInd- PwrInd- RBE+ FLReset-
 		DevCtl:	Report errors: Correctable- Non-Fatal- Fatal- Unsupported-
 			RlxdOrd- ExtTag- PhantFunc- AuxPwr- NoSnoop+
@@ -24,7 +24,7 @@
 		LnkCtl:	ASPM Disabled; RCB 64 bytes Disabled- Retrain- CommClk+
 			ExtSynch- ClockPM- AutWidDis- BWInt- AutBWInt-
 		LnkSta:	Speed 5GT/s, Width x4, TrErr- Train- SlotClk+ DLActive- BWMgmt- ABWMgmt-
-		DevCap2: Completion Timeout: Range B, TimeoutDis-, LTR-, OBFF Not Supported
+		DevCap2: Completion Timeout: Range A, TimeoutDis-, LTR-, OBFF Not Supported
 		DevCtl2: Completion Timeout: 50us to 50ms, TimeoutDis-, LTR-, OBFF Disabled
 		LnkCtl2: Target Link Speed: 5GT/s, EnterCompliance- SpeedDis-
 			 Transmit Margin: Normal Operating Range, EnterModifiedCompliance- ComplianceSOS-
