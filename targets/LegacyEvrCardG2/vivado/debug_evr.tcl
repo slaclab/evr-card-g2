@@ -8,17 +8,19 @@ set ilaName    u_ila_0
 CreateDebugCore ${ilaName}
 
 ## Set the record depth
-set_property C_DATA_DEPTH 32768 [get_debug_cores ${ilaName}]
+set_property C_DATA_DEPTH 16384 [get_debug_cores ${ilaName}]
 
 ## Set the clock for the Core
 SetDebugCoreClk ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/evrClk}
 
 ## Set the Probes
-ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/rxDataKDly[*]}
-ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/rxDataDly[*]}
+
+# ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/rxDataKDly[*]}
+# ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/rxDataDly[*]}
 ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/intFlag[*]}
 ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/irqClr[*]}
 ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/latchTs}
+ConfigProbe ${ilaName} {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrV1Core_Inst/EvrV1EventReceiver_Inst/timeStampDly[*]}
 
 ## Delete the last unused port
 delete_debug_port [get_debug_ports [GetCurrentProbe ${ilaName}]]

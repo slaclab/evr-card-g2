@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001C";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001D";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Apr 12 07:19:54 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Apr 12 15:49:24 PDT 2016 by ruckman";
 
 end Version;
 
@@ -135,5 +135,14 @@ end Version;
 -- 04/12/2016 (CED2001C): 
 --    Revision Control:    Branching from CED2001B
 --    In EVR core,         Auto-reset the irqClear bus to 0x0 after register write
+--
+-- 04/12/2016 (CED2001D): 
+--    Revision Control:    Branching from CED2001C
+--    In EVR core,         In software (based on EVR-MRM-006.doc), the order of event FIFO readouts is:
+--                            1) 0x78 event code (first read)
+--                            2) 0x70 second register
+--                            3) 0x74 timestamp register (last read)
+--                         which is why the read FIFO strobe that's automatically generated from a read register 
+--                         transaction was moved from ReadAddress@0x78 to ReadAddress@0x74
 --
 -------------------------------------------------------------------------------
