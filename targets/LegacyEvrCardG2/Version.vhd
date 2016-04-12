@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001B";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001C";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Sun Apr 10 16:00:10 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Apr 12 07:19:54 PDT 2016 by ruckman";
 
 end Version;
 
@@ -131,5 +131,9 @@ end Version;
 --                               Changed from "Latency L0s unlimited, L1 unlimited" to "Latency L0s <64ns, L1 <1us"
 --                            3) In Capabilities[60].DevCap2: 
 --                               Changed from "Completion Timeout: Range B" to "Completion Timeout: Range A"
+--
+-- 04/12/2016 (CED2001C): 
+--    Revision Control:    Branching from CED2001B
+--    In EVR core,         Auto-reset the irqClear bus to 0x0 after register write
 --
 -------------------------------------------------------------------------------
