@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-04-12
+-- Last update: 2016-04-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -133,7 +133,6 @@ architecture mapping of EvrCardG2LclsV1 is
    signal mAxiReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
-   signal fpgaReload  : sl;
    signal evrClk      : sl;
    signal evrRst      : sl;
    signal rxLinkUp    : sl;
@@ -171,10 +170,11 @@ begin
    AxiVersion_Inst : entity work.AxiVersion
       generic map (
          TPD_G           => TPD_G,
+         BUFR_CLK_DIV_G  => "2",
          EN_DEVICE_DNA_G => true)   
       port map (
+         -- Serial Number outputs
          dnaValueOut    => serialNumber,
-         fpgaReload     => fpgaReload,
          -- AXI-Lite Register Interface
          axiReadMaster  => mAxiReadMasters(VERSION_INDEX_C),
          axiReadSlave   => mAxiReadSlaves(VERSION_INDEX_C),
@@ -182,20 +182,7 @@ begin
          axiWriteSlave  => mAxiWriteSlaves(VERSION_INDEX_C),
          -- Clocks and Resets
          axiClk         => axiClk,
-         axiRst         => axiRst);           
-
-   ---------------------
-   -- FPGA Reboot Module
-   ---------------------
-   Iprog7Series_Inst : entity work.Iprog7Series
-      generic map (
-         TPD_G => TPD_G)   
-      port map (
-         clk         => axiClk,
-         rst         => axiRst,
-         -- start       => fpgaReload,
-         start       => '0',            -- Disabling this feature
-         bootAddress => X"00000000");  
+         axiRst         => axiRst);   
 
    --------------------
    -- Boot Flash Module

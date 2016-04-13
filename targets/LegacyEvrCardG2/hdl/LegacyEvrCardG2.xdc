@@ -152,14 +152,13 @@ set_property PACKAGE_PIN K5 [get_ports evrRefClkN[1]]
 
 create_clock -name evrRefClk0 -period  4.201 [get_ports {evrRefClkP[0]}]
 create_clock -name evrRefClk1 -period  2.692 [get_ports {evrRefClkP[1]}]
-create_clock -name pciRefClkP -period 10.000 [get_ports pciRefClkP]
+create_clock -name pciRefClkP -period 10.000 [get_ports {pciRefClkP}]
 create_clock -name evrClk0    -period  8.402 [get_pins  {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrCardG2Gtx_Inst/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
 create_clock -name evrClk1    -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2LclsV2_Inst/EvrCardG2Gtx_Inst/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
 
 create_generated_clock  -name stableClk0 [get_pins {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/EvrCardG2Gtx_Inst/IBUFDS_GTE2_Inst/ODIV2}]  
 create_generated_clock  -name stableClk1 [get_pins {EvrCardG2Core_Inst/EvrCardG2LclsV2_Inst/EvrCardG2Gtx_Inst/IBUFDS_GTE2_Inst/ODIV2}]  
 create_generated_clock  -name dnaClk     [get_pins {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/AxiVersion_Inst/GEN_DEVICE_DNA.DeviceDna_1/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
-create_generated_clock  -name progClk    [get_pins {EvrCardG2Core_Inst/EvrCardG2LclsV1_Inst/Iprog7Series_Inst/BUFR_ICPAPE2/O}]  
 create_generated_clock  -name pciClk     [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3}]  
 
 ##############################################
