@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-04-08
+-- Last update: 2016-04-12
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -193,8 +193,9 @@ begin
       port map (
          clk         => axiClk,
          rst         => axiRst,
-         start       => fpgaReload,
-         bootAddress => X"00000000");   
+         -- start       => fpgaReload,
+         start       => '0',            -- Disabling this feature
+         bootAddress => X"00000000");  
 
    --------------------
    -- Boot Flash Module
@@ -275,7 +276,7 @@ begin
          EVR_VERSION_G => false) 
       port map (
          -- Stable Clock Reference
-         stableClk  => axiClk,   
+         stableClk  => axiClk,
          -- EVR Ports
          evrRefClkP => evrRefClkP,
          evrRefClkN => evrRefClkN,

@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001D";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001E";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Apr 12 15:49:24 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Apr 12 17:30:49 PDT 2016 by ruckman";
 
 end Version;
 
@@ -144,5 +144,12 @@ end Version;
 --                            3) 0x74 timestamp register (last read)
 --                         which is why the read FIFO strobe that's automatically generated from a read register 
 --                         transaction was moved from ReadAddress@0x78 to ReadAddress@0x74
+--
+-- 04/12/2016 (CED2001E): 
+--    Revision Control:    Branching from CED2001D
+--    In Top Level ,       Disabled the ability for AxiVersion to cause a reboot of FPGA via PCIe register transaction
+--    In EVR core,         Block all read transactions for 512 ns after set to r.controlReg(10) = 0x1 to 
+--                         compensate for the latency of latching the time stamp bus
+--                         Note: 512 ns is not an optimized value
 --
 -------------------------------------------------------------------------------
