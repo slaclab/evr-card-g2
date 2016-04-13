@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001E";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001F";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Tue Apr 12 17:30:49 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Wed Apr 13 09:42:12 PDT 2016 by ruckman";
 
 end Version;
 
@@ -151,5 +151,9 @@ end Version;
 --    In EVR core,         Block all read transactions for 512 ns after set to r.controlReg(10) = 0x1 to 
 --                         compensate for the latency of latching the time stamp bus
 --                         Note: 512 ns is not an optimized value
+--
+-- 04/13/2016 (CED2001F): 
+--    Revision Control:    Branching from CED2001E
+--    In EVR core,         Optimized the block of all read transactions after r.controlReg(10) = 0x1 to 128 ns
 --
 -------------------------------------------------------------------------------
