@@ -170,7 +170,7 @@ begin
    AxiVersion_Inst : entity work.AxiVersion
       generic map (
          TPD_G           => TPD_G,
-         BUFR_CLK_DIV_G  => "2",
+         BUFR_CLK_DIV_G  => 2,
          EN_DEVICE_DNA_G => true)   
       port map (
          -- Serial Number outputs
