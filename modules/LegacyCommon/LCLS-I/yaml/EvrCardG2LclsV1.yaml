@@ -1,0 +1,43 @@
+##############################################################################
+## This file is part of 'SLAC EVR Gen2'.
+## It is subject to the license terms in the LICENSE.txt file found in the 
+## top-level directory of this distribution and at: 
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+## No part of 'SLAC EVR Gen2', including this file, 
+## may be copied, modified, propagated, or distributed except according to 
+## the terms contained in the LICENSE.txt file.
+##############################################################################
+
+include: EvrV1Reg.yaml
+include: AxiVersion.yaml
+include: AxiMicronP30.yaml
+include: AxiXadc.yaml
+include: AxiSy56040.yaml
+include: EvrCardG2LclsV1LedRgb.yaml
+
+EvrCardG2LclsV1: &EvrCardG2LclsV1 
+  name: EvrCardG2LclsV1
+  description: Mapping of BAR0 regisers
+  size: 0x100000 # 1MB address space 
+  ############
+  peripherals:
+  ############
+    - <<: *EvrV1Reg
+      address: 0x00000000
+    ##################################################
+    - <<: *AxiVersion
+      address: 0x00010000
+    ##################################################
+    - <<: *AxiMicronP30
+      address: 0x00020000  
+    ##################################################
+    - <<: *AxiXadc
+      address: 0x00030000   
+    ##################################################
+    - <<: *AxiSy56040
+      address: 0x00040000       
+    ##################################################
+    - <<: *EvrCardG2LclsV1LedRgb
+      address: 0x00050000                 
+    ##################################################     
+    

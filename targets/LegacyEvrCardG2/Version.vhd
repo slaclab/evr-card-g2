@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2001F";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20020";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Wed Apr 13 09:42:12 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2015.4 (x86_64) Built Fri Apr 15 16:10:24 PDT 2016 by ruckman";
 
 end Version;
 
@@ -155,5 +155,9 @@ end Version;
 -- 04/13/2016 (CED2001F): 
 --    Revision Control:    Branching from CED2001E
 --    In EVR core,         Optimized the block of all read transactions after r.controlReg(10) = 0x1 to 128 ns
+--
+-- 04/15/2016 (CED20020): 
+--    Revision Control:    Branching from CED2001F
+--    In TOP core,         Adding YAML support for firmware register definition (work in progress)
 --
 -------------------------------------------------------------------------------

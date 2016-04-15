@@ -1,0 +1,109 @@
+##############################################################################
+## This file is part of 'SLAC EVR Gen2'.
+## It is subject to the license terms in the LICENSE.txt file found in the 
+## top-level directory of this distribution and at: 
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+## No part of 'SLAC EVR Gen2', including this file, 
+## may be copied, modified, propagated, or distributed except according to 
+## the terms contained in the LICENSE.txt file.
+##############################################################################
+
+EvrCardG2LclsV1LedRgb: &EvrCardG2LclsV1LedRgb 
+  name: EvrCardG2LclsV1LedRgb
+  description: LCLS-I RGB LED control module
+  size: 0x100
+  registers:
+    #########################################################
+    - address: 0x00
+      name: EnableRed
+      size: 1
+      mode: RW
+      description: Enable Red LED
+    #########################################################
+    - address: 0x04
+      name: EnableGreen
+      size: 1
+      mode: RW
+      description: Enable Green LED  
+    #########################################################
+    - address: 0x08
+      name: EnableBlue
+      size: 1
+      mode: RW
+      description: Enable Blue LED   
+    #########################################################
+    - address: 0x0C
+      name: ForceRed
+      size: 1
+      mode: RW
+      description: Force Red LED to be active
+    #########################################################
+    - address: 0x10
+      name: ForceGreen
+      size: 1
+      mode: RW
+      description: Force Green LED to be active  
+    #########################################################
+    - address: 0x14
+      name: ForceBlue
+      size: 1
+      mode: RW
+      description: Force Blue LED to be active   
+    #########################################################
+    - address: 0x18
+      name: ModeRed
+      size: 1
+      mode: RW
+      description: Mode for Red LED: flash = 0x1, toggle = 0x2, pass through = (0x0 or 0x3)
+    #########################################################
+    - address: 0x1C
+      name: ModeGreen
+      size: 1
+      mode: RW
+      description: Mode for Green LED: flash = 0x1, toggle = 0x2, pass through = (0x0 or 0x3)  
+    #########################################################
+    - address: 0x20
+      name: ModeBlue
+      size: 1
+      mode: RW
+      description: Mode for Blue LED: flash = 0x1, toggle = 0x2, pass through = (0x0 or 0x3)        
+    #########################################################
+    - address: 0x24
+      name: FlashDurationRed
+      mode: RW
+      description: Flash Duration for Red LED (units of 8 ns)  
+    #########################################################
+    - address: 0x28
+      name: FlashDurationGreen
+      mode: RW
+      description: Flash Duration for Green LED (units of 8 ns)  
+    #########################################################
+    - address: 0x2C
+      name: FlashDurationBlue
+      mode: RW
+      description: Flash Duration for Blue LED (units of 8 ns)         
+    #########################################################
+    - address: 0x30
+      name: EventCodeDetBlue
+      size: 8
+      mode: RW
+      description: Event code for Blue LED to detect              
+    #########################################################
+    - address: 0x34
+      name: Red
+      size: 1
+      mode: RO
+      description: Current state of Red LED
+    #########################################################
+    - address: 0x38
+      name: Green
+      size: 1
+      mode: RO
+      description: Current state of Green LED  
+    #########################################################
+    - address: 0x3C
+      name: Blue
+      size: 1
+      mode: RO
+      description: Current state of Blue LED  
+    #########################################################
