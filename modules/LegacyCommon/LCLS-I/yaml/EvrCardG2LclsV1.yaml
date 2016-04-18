@@ -22,22 +22,28 @@ EvrCardG2LclsV1: &EvrCardG2LclsV1
   ############
   peripherals:
   ############
-    - <<: *EvrV1Reg
+    - <<: *EvrV1Reg  
       address: 0x00000000
+      ByteOrder: BE # Big endianness
     ##################################################
-    - <<: *AxiVersion
+    - <<: *AxiVersion 
       address: 0x00010000
+      ByteOrder: LE # Little endianness
     ##################################################
-    - <<: *AxiMicronP30
+    - <<: *AxiMicronP30 
       address: 0x00020000  
+      ByteOrder: LE # Little endianness
     ##################################################
-    - <<: *AxiXadc
+    - <<: *AxiXadc 
       address: 0x00030000   
+      ByteOrder: LE # Little endianness
     ##################################################
-    - <<: *AxiSy56040
+    - <<: *AxiSy56040 
       address: 0x00040000       
+      ByteOrder: LE # Little endianness
     ##################################################
     - <<: *EvrCardG2LclsV1LedRgb
       address: 0x00050000                 
+      ByteOrder: LE # Little endianness
     ##################################################     
     
