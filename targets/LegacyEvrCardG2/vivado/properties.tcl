@@ -8,8 +8,8 @@
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
 
-## Check for version 2015.4 of Vivado
-if { [VersionCheck 2015.4] < 0 } {
+## Check for version 2016.1 of Vivado
+if { [VersionCheck 2016.1] < 0 } {
    close_project
    exit -1
 }
