@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-24
--- Last update: 2015-05-15
+-- Last update: 2016-05-20
 -- Platform   : Vivado 2015.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -25,6 +25,7 @@ use ieee.std_logic_1164.all;
 
 use work.StdRtlPkg.all;
 use work.AxiStreamPkg.all;
+use work.SsiPkg.all;
 use work.SsiPciePkg.all;
 
 library unisim;
@@ -64,9 +65,13 @@ architecture mapping of EvrCardG2PciFrontEnd is
    signal locRst    : sl;
    signal userLink  : sl;
 
-   signal pciTxInUser  : slv(3 downto 0);
    signal rxBarHit     : slv(7 downto 0);
    signal pciRxOutUser : slv(21 downto 0);
+
+   signal ibMaster : AxiStreamMasterType;
+   signal ibSlave  : AxiStreamSlaveType;
+   signal obMaster : AxiStreamMasterType;
+   signal obSlave  : AxiStreamSlaveType;
    
 begin
 
@@ -118,18 +123,18 @@ begin
          user_lnk_up      => userLink,
          user_app_rdy     => open,
          -- TX
-         s_axis_tx_tready => pciIbSlave.tReady,
-         s_axis_tx_tdata  => pciIbMaster.tData,
-         s_axis_tx_tkeep  => pciIbMaster.tKeep,
-         s_axis_tx_tlast  => pciIbMaster.tLast,
-         s_axis_tx_tvalid => pciIbMaster.tValid,
-         s_axis_tx_tuser  => pciTxInUser,
+         s_axis_tx_tready => ibSlave.tReady,
+         s_axis_tx_tdata  => ibMaster.tData(63 downto 0),
+         s_axis_tx_tkeep  => ibMaster.tKeep(7 downto 0),
+         s_axis_tx_tlast  => ibMaster.tLast,
+         s_axis_tx_tvalid => ibMaster.tValid,
+         s_axis_tx_tuser  => "0000",
          -- RX
-         m_axis_rx_tdata  => pciObMaster.tData,
-         m_axis_rx_tkeep  => open,      -- pciObMaster.tKeep port not valid in 128 bit mode
-         m_axis_rx_tlast  => open,      -- rx.tLast gets sent via pciRxOutUser when in 128 bit mode
-         m_axis_rx_tvalid => pciObMaster.tValid,
-         m_axis_rx_tready => pciObSlave.tReady,
+         m_axis_rx_tdata  => obMaster.tData(63 downto 0),
+         m_axis_rx_tkeep  => obMaster.tKeep(7 downto 0),
+         m_axis_rx_tlast  => obMaster.tLast,
+         m_axis_rx_tvalid => obMaster.tValid,
+         m_axis_rx_tready => obSlave.tReady,
          m_axis_rx_tuser  => pciRxOutUser,
 
          tx_cfg_gnt             => '1',  -- Always allow transmission of Config traffic within block
@@ -199,60 +204,6 @@ begin
          sys_clk                                    => pciRefClk,
          sys_rst_n                                  => sysRstL);       
 
-   -- Receive ECRC Error: Indicates the current packet has an 
-   -- ECRC error. Asserted at the packet EOF.
-   pciTxInUser(0) <= '0';
-
-   -- Receive Error Forward: When asserted, marks the packet in 
-   -- progress as error-poisoned. Asserted by the core for the 
-   -- entire length of the packet.
-   pciTxInUser(1) <= '0';
-
-   -- Transmit Streamed: Indicates a packet is presented on consecutive
-   -- clock cycles and transmission on the link can begin before the entire 
-   -- packet has been written to the core. Commonly referred as transmit cut-through mode
-   pciTxInUser(2) <= '0';
-
-   -- Transmit SourceDiscontinue: Can be asserted any time starting 
-   -- on the first cycle after SOF. Assert s_axis_tx_tlast simultaneously 
-   -- with (tx_src_dsc)s_axis_tx_tuser[3].
-   pciTxInUser(3) <= '0';
-
-   -- pciRxOut_user[21:17] (rx_is_eof[4:0]) only used in 128 bit interface
-   -- Bit 4: Asserted when a packet is ending
-   -- Bit 0-3: Indicates byte location of end of the packet, binary encoded  
-   pciObMaster.tLast <= pciRxOutUser(21);
-   process(pciRxOutUser)
-   begin
-      if pciRxOutUser(21) = '0' then
-         pciObMaster.tKeep <= x"FFFF";
-      elsif pciRxOutUser(20 downto 17) = x"B" then
-         pciObMaster.tKeep <= x"0FFF";
-      elsif pciRxOutUser(20 downto 17) = x"7" then
-         pciObMaster.tKeep <= x"00FF";
-      elsif pciRxOutUser(20 downto 17) = x"3" then
-         pciObMaster.tKeep <= x"000F";
-      else
-         pciObMaster.tKeep <= x"FFFF";
-      end if;
-   end process;
-
-   -- pciRxOut_user[16:15] -- IP Core Reserved
-
-   -- pciRxOut_user[14:10] (rx_is_sof[4:0]) only used in 128 bit interface
-   -- Bit 4: Asserted when a new packet is present
-   -- Bit 0-3: Indicates byte location of start of new packet, binary encoded
-   pciObMaster.tUser(0)          <= '0';
-   pciObMaster.tUser(1)          <= pciRxOutUser(14);
-   pciObMaster.tUser(3 downto 2) <= (others => '0');
-
-   -- Pass the EOF and SOF buses to the receiver
-   pciObMaster.tUser(7 downto 4)  <= pciRxOutUser(13 downto 10);  -- SOF[3:0]
-   pciObMaster.tUser(11 downto 8) <= pciRxOutUser(20 downto 17);  -- EOF[3:0]
-
-   -- Unused tUser bits
-   pciObMaster.tUser(127 downto 12) <= (others => '0');
-
    -- Receive BAR Hit: Indicates BAR(s) targeted by the current 
    -- receive transaction. Asserted from the beginning of the 
    -- packet to m_axis_rx_tlast.
@@ -261,34 +212,71 @@ begin
    begin
       -- Encode bar hit value
       if rxBarHit(0) = '1' then
-         pciObMaster.tDest <= x"00";
+         obMaster.tDest <= x"00";
       elsif rxBarHit(1) = '1' then
-         pciObMaster.tDest <= x"01";
+         obMaster.tDest <= x"01";
       elsif rxBarHit(2) = '1' then
-         pciObMaster.tDest <= x"02";
+         obMaster.tDest <= x"02";
       elsif rxBarHit(3) = '1' then
-         pciObMaster.tDest <= x"03";
+         obMaster.tDest <= x"03";
       elsif rxBarHit(4) = '1' then
-         pciObMaster.tDest <= x"04";
+         obMaster.tDest <= x"04";
       elsif rxBarHit(5) = '1' then
-         pciObMaster.tDest <= x"05";
+         obMaster.tDest <= x"05";
       elsif rxBarHit(6) = '1' then
-         pciObMaster.tDest <= x"06";
+         obMaster.tDest <= x"06";
       else
-         pciObMaster.tDest <= x"07";
+         obMaster.tDest <= x"07";
       end if;
    end process;
 
-   -- Receive Error Forward: When asserted, marks the packet in progress as
-   -- error-poisoned. Asserted by the core for the entire length of the packet.
-   -- pciRxOutUser(1);-- Unused
+   FIFO_TX : entity work.SsiInsertSof
+      generic map (
+         TPD_G               => TPD_G,
+         COMMON_CLK_G        => true,
+         INSERT_USER_HDR_G   => false,
+         SLAVE_FIFO_G        => true,
+         MASTER_FIFO_G       => false,
+         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(8),
+         MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(16))       
+      port map (
+         -- Slave Port
+         sAxisClk    => locClk,
+         sAxisRst    => locRst,
+         sAxisMaster => obMaster,
+         sAxisSlave  => obSlave,
+         -- Master Port
+         mAxisClk    => locClk,
+         mAxisRst    => locRst,
+         mAxisMaster => pciObMaster,
+         mAxisSlave  => pciObSlave);
 
-   -- Receive ECRC Error: Indicates the current packet has an ECRC error. 
-   -- Asserted at the packet EOF
-   -- pciRxOutUser(0);-- Unused
-
-   -- Terminate unused pciObMaster signals
-   pciObMaster.tStrb <= (others => '0');
-   pciObMaster.tId   <= (others => '0');
+   FIFO_RX : entity work.AxiStreamFifo
+      generic map (
+         -- General Configurations
+         TPD_G               => TPD_G,
+         PIPE_STAGES_G       => 0,
+         SLAVE_READY_EN_G    => true,
+         VALID_THOLD_G       => 1,
+         -- FIFO configurations
+         BRAM_EN_G           => false,
+         USE_BUILT_IN_G      => false,
+         GEN_SYNC_FIFO_G     => true,
+         CASCADE_SIZE_G      => 1,
+         FIFO_ADDR_WIDTH_G   => 4,
+         -- AXI Stream Port Configurations
+         SLAVE_AXI_CONFIG_G  => ssiAxiStreamConfig(16),
+         MASTER_AXI_CONFIG_G => ssiAxiStreamConfig(8))            
+      port map (
+         -- Slave Port
+         sAxisClk    => locClk,
+         sAxisRst    => locRst,
+         sAxisMaster => pciIbMaster,
+         sAxisSlave  => pciIbSlave,
+         -- Master Port
+         mAxisClk    => locClk,
+         mAxisRst    => locRst,
+         mAxisMaster => ibMaster,
+         mAxisSlave  => ibSlave);   
 
 end mapping;
