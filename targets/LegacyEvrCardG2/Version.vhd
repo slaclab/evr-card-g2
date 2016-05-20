@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20022";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20023";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2016.1 (x86_64) Built Thu May 19 09:48:25 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2016.1 (x86_64) Built Thu May 19 20:56:43 PDT 2016 by ruckman";
 
 end Version;
 
@@ -170,5 +170,9 @@ end Version;
 --                         Changed "Upconfigure capable" from true to false
 --                         Changed "Disabled Tx ASPM L0s" from false to true
 --                         Changed "Hardware Autonomous Speed Disable" from false to true
+--
+-- 05/19/2016 (CED20023): 
+--    Revision Control:    Branching from CED20021
+--    In PCIe core,        Changed targeted link speed from GEN2 to GEN1
 --
 -------------------------------------------------------------------------------
