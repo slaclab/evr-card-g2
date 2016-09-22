@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20024";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20025";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2016.1 (x86_64) Built Fri May 20 15:13:00 PDT 2016 by ruckman";
+   constant BUILD_STAMP_C : string := "LegacyEvrCardG2: Vivado v2016.2 (x86_64) Built Wed Sep 21 17:18:44 PDT 2016 by ruckman";
 
 end Version;
 
@@ -178,5 +178,9 @@ end Version;
 -- 05/20/2016 (CED20024): 
 --    Revision Control:    Branching from CED20023
 --    In PCIe core,        Forcing GEN1 link speed only
+--
+-- 09/21/2016 (CED20025): 
+--    Revision Control:    Branching from CED20024
+--    In EVR core,         Removed a pipeline stage between the 64-bit timestamp and AXI-Lite slave end point
 --
 -------------------------------------------------------------------------------
