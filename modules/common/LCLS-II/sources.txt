@@ -1,1 +1,2 @@
 vhdl work rtl/EvrCardG2LclsV2.vhd 
+vhdl work rtl/DaqControlTx.vhd
