@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-10-27
+-- Last update: 2016-11-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -254,7 +254,6 @@ begin
        TPD_G             => TPD_G,
        TPGEN_G           => false,
        USE_TPGMINI_G     => false,
-       ENABLE_CLKSEL_G   => false,
        AXIL_RINGB_G      => false,
        ASYNC_G           => false,
        AXIL_BASE_ADDR_G  => AXI_CROSSBAR_MASTERS_CONFIG_C(CORE_INDEX_C).baseAddr,
