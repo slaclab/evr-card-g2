@@ -76,13 +76,13 @@
 #
 
 # PCIe Lane 0
-set_property LOC GTXE2_CHANNEL_X0Y7 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
+set_property LOC GTXE2_CHANNEL_X0Y7 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
 # PCIe Lane 1
-set_property LOC GTXE2_CHANNEL_X0Y6 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_lane[1].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
+set_property LOC GTXE2_CHANNEL_X0Y6 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_lane[1].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
 # PCIe Lane 2
-set_property LOC GTXE2_CHANNEL_X0Y5 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
+set_property LOC GTXE2_CHANNEL_X0Y5 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_lane[2].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
 # PCIe Lane 3
-set_property LOC GTXE2_CHANNEL_X0Y4 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
+set_property LOC GTXE2_CHANNEL_X0Y4 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_lane[3].gt_wrapper_i/gtx_channel.gtxe2_channel_i}]
 
 
 #
@@ -90,42 +90,42 @@ set_property LOC GTXE2_CHANNEL_X0Y4 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/
 # Block to be used.
 #
 
-set_property LOC PCIE_X0Y0 [get_cells inst/pcie_top_i/pcie_7x_i/pcie_block_i]
+set_property LOC PCIE_X0Y0 [get_cells EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_block_i]
 
 #
 # BlockRAM placement
 #
-set_property LOC RAMB36_X2Y25 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[3].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
-set_property LOC RAMB36_X1Y26 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[2].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
-set_property LOC RAMB36_X1Y25 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[1].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
-set_property LOC RAMB36_X1Y24 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
-set_property LOC RAMB36_X1Y23 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[0].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
-set_property LOC RAMB36_X1Y22 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[1].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
-set_property LOC RAMB36_X1Y21 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[2].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
-set_property LOC RAMB36_X1Y20 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X2Y25 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[3].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X1Y26 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[2].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X1Y25 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[1].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X1Y24 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_rx/brams[0].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X1Y23 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[0].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X1Y22 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[1].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X1Y21 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[2].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
+set_property LOC RAMB36_X1Y20 [get_cells {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_bram_top/pcie_brams_tx/brams[3].ram/use_tdp.ramb36/ramb_bl.ramb36_dp_bl.ram36_bl}]
 
 ###############################################################################
 # Timing Constraints
 ###############################################################################
 #
-create_clock -period 10 [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK}]
+create_clock -period 10 [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_lane[0].gt_wrapper_i/gtx_channel.gtxe2_channel_i/TXOUTCLK}]
 #
 #
-set_false_path -to [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/S0}]
-set_false_path -to [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/S1}]
+set_false_path -to [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/S0}]
+set_false_path -to [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/S1}]
 #
 #
-create_generated_clock -name clk_125mhz_x0y0 [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0]
-create_generated_clock -name clk_250mhz_x0y0 [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1]
+create_generated_clock -name clk_125mhz_x0y0 [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0]
+create_generated_clock -name clk_250mhz_x0y0 [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT1]
 create_generated_clock -name clk_125mhz_mux_x0y0 \
-                        -source [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/I0] \
+                        -source [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/I0] \
                         -divide_by 1 \
-                        [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O]
+                        [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O]
 #
 create_generated_clock -name clk_250mhz_mux_x0y0 \
-                        -source [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/I1] \
-                        -divide_by 1 -add -master_clock [get_clocks -of [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/I1]] \
-                        [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O]
+                        -source [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/I1] \
+                        -divide_by 1 -add -master_clock [get_clocks -of [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/I1]] \
+                        [get_pins EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/pclk_i1_bufgctrl.pclk_i1/O]
 #
 set_clock_groups -name pcieclkmux -physically_exclusive -group clk_125mhz_mux_x0y0 -group clk_250mhz_mux_x0y0
 #
@@ -133,8 +133,8 @@ set_clock_groups -name pcieclkmux -physically_exclusive -group clk_125mhz_mux_x0
 # Timing ignoring the below pins to avoid CDC analysis, but care has been taken in RTL to sync properly to other clock domain.
 #
 #
-set_false_path -through [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_block_i/PLPHYLNKUPN}]
-set_false_path -through [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/pcie_top_i/pcie_7x_i/pcie_block_i/PLRECEIVEDHOTRST}]
+set_false_path -through [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PLPHYLNKUPN}]
+set_false_path -through [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/pcie_top_i/pcie_7x_i/pcie_block_i/PLRECEIVEDHOTRST}]
 
 #------------------------------------------------------------------------------
 # Asynchronous Paths

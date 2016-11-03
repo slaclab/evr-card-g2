@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-10-14
+-- Last update: 2016-04-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -65,7 +65,7 @@ entity EvrCardG2 is
       syncL      : in    sl;
       trigOut    : out   slv(11 downto 0);
       -- Misc.
-      debugIn    : out   slv(11 downto 0);
+      debugIn    : in    slv(11 downto 0);
       ledRedL    : out   slv(1 downto 0);
       ledGreenL  : out   slv(1 downto 0);
       ledBlueL   : out   slv(1 downto 0);
