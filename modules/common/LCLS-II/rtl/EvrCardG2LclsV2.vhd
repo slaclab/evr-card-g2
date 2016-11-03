@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-01-24
+-- Last update: 2016-10-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -55,6 +55,9 @@ entity EvrCardG2LclsV2 is
       evrRefClk           : out sl;
       evrRecClk           : out sl;
       evrModeSel          : out sl;
+      delay_ld            : out slv      (11 downto 0);
+      delay_wr            : out Slv6Array(11 downto 0);
+      delay_rd            : in  Slv6Array(11 downto 0);
       -- DMA Interface
       dmaRxIbMaster       : out AxiStreamMasterType;
       dmaRxIbSlave        : in  AxiStreamSlaveType;
@@ -63,6 +66,7 @@ entity EvrCardG2LclsV2 is
       syncL               : in  sl;
       trigOut             : out slv(11 downto 0);
       -- Misc.
+      debugIn             : in  slv(11 downto 0);
       cardRst             : in  sl;
       ledRedL             : out sl;
       ledGreenL           : out sl;
@@ -71,17 +75,13 @@ end EvrCardG2LclsV2;
 
 architecture mapping of EvrCardG2LclsV2 is
 
-   constant NUM_AXI_MASTERS_C : natural := 3;
+   constant USE_PLL           : boolean := false;
+   constant NUM_AXI_MASTERS_C : natural := 2;
    constant EVR_INDEX_C       : natural := 0;
-   constant XBAR_INDEX_C      : natural := 1;
-   constant CORE_INDEX_C      : natural := 2;
+   constant CORE_INDEX_C      : natural := 1;
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       EVR_INDEX_C      => (
          baseAddr      => x"00000000",
-         addrBits      => 18,
-         connectivity  => X"0001"),
-      XBAR_INDEX_C => (
-         baseAddr      => x"00010000",
          addrBits      => 18,
          connectivity  => X"0001"),
       CORE_INDEX_C  => (
@@ -95,6 +95,7 @@ architecture mapping of EvrCardG2LclsV2 is
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray  (NUM_AXI_MASTERS_C-1 downto 0);
 
    signal appTimingBus : TimingBusType;
+   signal exptBus      : ExptBusType;
    
    signal recClk   : sl;
    signal evrClk   : sl;
@@ -104,18 +105,43 @@ architecture mapping of EvrCardG2LclsV2 is
    signal rxDecErr : slv(1 downto 0);
    signal rxData   : slv(15 downto 0);
    signal rxDataK  : slv(1 downto 0);
-   signal rxReset  : sl;
-   signal rxResetDone : sl;
-   signal rxPolarity  : sl;
+   signal rxControl : TimingPhyControlType;
+   signal rxStatus  : TimingPhyStatusType := TIMING_PHY_STATUS_INIT_C;
    signal timingPhy : TimingPhyType;
    signal txPhyClk : sl;
    signal txPhyRst : sl;
+   signal txData   : slv(15 downto 0);
+   signal txDataK  : slv( 1 downto 0);
+   signal dmaReady : sl;
+   signal pllClk   : sl;
+   signal intTrig  : slv(11 downto 0);
+   
 begin
 
-   -- Undefined signals
-   evrRecClk  <= recClk;
+   rxStatus.resetDone <= not evrRst;
+   
+   GEN_PLL: if (USE_PLL) generate
+     U_PLL: entity work.ClockManager7
+       generic map ( TYPE_G          => "PLL",
+                     INPUT_BUFG_G    => false,
+                     NUM_CLOCKS_G    => 1,
+                     BANDWIDTH_G     => "LOW",
+                     CLKIN_PERIOD_G  => 5.4,
+                     CLKOUT0_PHASE_G => 0.0 )
+       port map ( clkIn     => recClk,
+                  clkOut(0) => pllClk );
+     U_TRIGSYNC: entity work.SynchronizerVector
+       generic map ( WIDTH_G => intTrig'length )
+       port map ( clk     => pllClk,
+                  dataIn  => intTrig,
+                  dataOut => trigOut );
+     evrRecClk <= pllClk;
+   end generate GEN_PLL;
 
-   rxResetDone <= not evrRst;
+   NOGEN_PLL: if (not USE_PLL) generate
+     evrRecClk <= recClk;
+     trigOut   <= intTrig;
+   end generate NOGEN_PLL;
    
    -------------------------
    -- AXI-Lite Crossbar Core
@@ -153,8 +179,8 @@ begin
          evrRefClk  => evrRefClk,
          evrRecClk  => recClk,
          -- EVR Interface
-         rxReset    => rxReset,
-         rxPolarity => rxPolarity,
+         rxReset    => rxControl.reset,
+         rxPolarity => rxControl.polarity,
          evrClk     => evrClk,
          evrRst     => evrRst,
          rxLinkUp   => rxLinkUp,
@@ -166,8 +192,8 @@ begin
          evrTxClk   => txPhyClk,
          evrTxRst   => txPhyRst,
          txInhibit  => '0',
-         txData     => timingPhy.data,
-         txDataK    => timingPhy.dataK);
+         txData     => txData,
+         txDataK    => txDataK);
 
    --U_Axi_Evr : entity work.AxiLiteEmpty
    -- generic map ( TPD_G            => TPD_G )
@@ -197,34 +223,28 @@ begin
        dmaRxIbMaster       => dmaRxIbMaster,
        dmaRxIbSlave        => dmaRxIbSlave,
        dmaRxTranFromPci    => dmaRxTranFromPci,
+       dmaReady            => dmaReady,
        -- EVR Ports
        evrClk              => recClk,
        evrRst              => evrRst,
        evrBus              => appTimingBus,
+       exptBus             => exptBus,
        txPhyClk            => txPhyClk,
        txPhyRst            => txPhyRst,
        gtxDebug            => (others=>'0'),
        -- Trigger and Sync Port
        syncL               => syncL,
-       trigOut             => trigOut,
+       trigOut             => intTrig,
        evrModeSel          => evrModeSel,
+       delay_ld            => delay_ld,
+       delay_wr            => delay_wr,
+       delay_rd            => delay_rd,
        -- Misc.
        cardRst             => cardRst,
        ledRedL             => ledRedL,
        ledGreenL           => ledGreenL,
        ledBlueL            => ledBlueL );  
      
-   U_Axi_Xbar : entity work.AxiLiteEmpty
-    generic map ( TPD_G            => TPD_G )
-    port map (
-      -- AXI-Lite Bus
-      axiClk         => axiClk,
-      axiClkRst      => axiRst,
-      axiReadMaster  => mAxiReadMasters (XBAR_INDEX_C),
-      axiReadSlave   => mAxiReadSlaves  (XBAR_INDEX_C),
-      axiWriteMaster => mAxiWriteMasters(XBAR_INDEX_C),
-      axiWriteSlave  => mAxiWriteSlaves (XBAR_INDEX_C));
-  
    ------------------------------------------------------------------------------------------------
    -- Timing Core
    -- Decode timing message from GTX and distribute to system
@@ -233,6 +253,10 @@ begin
      generic map (
        TPD_G             => TPD_G,
        TPGEN_G           => false,
+       USE_TPGMINI_G     => false,
+       ENABLE_CLKSEL_G   => false,
+       AXIL_RINGB_G      => false,
+       ASYNC_G           => false,
        AXIL_BASE_ADDR_G  => AXI_CROSSBAR_MASTERS_CONFIG_C(CORE_INDEX_C).baseAddr,
        AXIL_ERROR_RESP_G => AXI_RESP_DECERR_C)
      port map (
@@ -243,12 +267,12 @@ begin
        gtRxDataK       => rxDataK,
        gtRxDispErr     => rxDspErr,
        gtRxDecErr      => rxDecErr,
-       gtRxReset       => rxReset,
-       gtRxResetDone   => rxResetDone,
-       gtRxPolarity    => rxPolarity,
+       gtRxControl     => rxControl,
+       gtRxStatus      => rxStatus,
        appTimingClk    => evrClk,
        appTimingRst    => evrRst,
        appTimingBus    => appTimingBus,
+       exptBus         => exptBus,
        timingPhy       => timingPhy,
        axilClk         => axiClk,
        axilRst         => axiRst,
@@ -257,4 +281,15 @@ begin
        axilWriteMaster => mAxiWriteMasters(CORE_INDEX_C),
        axilWriteSlave  => mAxiWriteSlaves (CORE_INDEX_C));
 
+   DaqControlTx_1 : entity work.DaqControlTx
+     port map (
+       txclk           => txPhyClk,
+       txrst           => txPhyRst,
+       rxrst           => evrRst,
+       ready           => dmaReady,
+       -- status          => debugIn, + register bus for programmable control
+       --                             + input timing for tag caching
+       data            => txData,
+       dataK           => txDataK );
+       
 end mapping;

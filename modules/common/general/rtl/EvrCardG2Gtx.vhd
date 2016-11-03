@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2016-01-24
+-- Last update: 2016-04-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -72,7 +72,9 @@ architecture rtl of EvrCardG2Gtx is
    constant TXOUT_DIV_C       : integer    := ite(EVR_VERSION_G, 1, 2);
    constant RX_CLK25_DIV_C    : integer    := ite(EVR_VERSION_G, 15, 10);
    constant TX_CLK25_DIV_C    : integer    := ite(EVR_VERSION_G, 15, 10);
-   constant RXCDR_CFG_C       : bit_vector := ite(EVR_VERSION_G, x"03000023ff20400020", x"03000023ff40200020");
+--   constant RXCDR_CFG_C       : bit_vector := ite(EVR_VERSION_G, x"03000023ff20400020", x"03000023ff40200020");
+   --  compensate for sync clock jitter
+   constant RXCDR_CFG_C       : bit_vector := ite(EVR_VERSION_G, x"03800023ff10200020", x"03000023ff40200020");
    constant STABLE_CLK_PERIOD_C : real := 4.0E-9;
 
    signal gtRefClk      : sl;

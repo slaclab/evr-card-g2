@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-01-25
+-- Last update: 2016-08-04
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -68,7 +68,7 @@ entity EvrCardG2Core is
       syncL      : in    sl;
       trigOut    : out   slv(11 downto 0);
       -- Misc.
-      debugIn    : out   slv(11 downto 0);
+      debugIn    : in    slv(11 downto 0);
       ledRedL    : out   slv(1 downto 0);
       ledGreenL  : out   slv(1 downto 0);
       ledBlueL   : out   slv(1 downto 0);
@@ -105,6 +105,9 @@ architecture mapping of EvrCardG2Core is
    signal irqEnable    : slv(BAR_SIZE_C-1 downto 0);
    signal irqReq       : slv(BAR_SIZE_C-1 downto 0);
    signal trig         : Slv12Array(1 downto 0);
+   signal delay_wr     : Slv6Array(11 downto 0);
+   signal delay_rd     : Slv6Array(11 downto 0);
+   signal delay_ld     : slv      (11 downto 0);
    signal serialNumber : slv(63 downto 0);
    signal evrRefClk    : slv(1 downto 0);
    signal evrRecClk    : slv(1 downto 0);
@@ -119,14 +122,21 @@ begin
    -----------------   
    Trig_Inst : entity work.EvrCardG2Trig
       generic map (
-         TPD_G => TPD_G)
+         TPD_G   => TPD_G )
       port map (
+         refclk     => axiClk,
+         delay_ld   => delay_ld,
+         delay_wr   => delay_wr,
+         delay_rd   => delay_rd,
+         --
          evrModeSel => evrModeSel,
          -- Clock
          evrRecClk  => evrRecClk,
          -- Trigger Inputs
          trigIn     => trig,
-         trigout    => trigOut);
+         trigout    => trigOut,
+         sGoodL     => ledGreenL(0),
+         sBadL      => ledRedL(1) );
 
    ------------
    -- PCIe Core
@@ -220,7 +230,7 @@ begin
          cardRst             => cardRst,
          serialNumber        => serialNumber,
          ledRedL             => ledRedL(0),
-         ledGreenL           => ledGreenL(0),
+         ledGreenL           => open,
          ledBlueL            => ledBlueL(0));   
 
    ------------------         
@@ -251,6 +261,9 @@ begin
          evrRefClk           => evrRefClk(1),
          evrRecClk           => evrRecClk(1),
          evrModeSel          => evrModeSel,
+         delay_ld            => delay_ld,
+         delay_wr            => delay_wr,
+         delay_rd            => delay_rd,
          -- DMA Interface
          dmaRxIbMaster       => dmaRxIbMasters  (0),
          dmaRxIbSlave        => dmaRxIbSlaves   (0),
@@ -259,8 +272,9 @@ begin
          syncL               => syncL,
          trigOut             => trig(1),
          -- Misc.
+         debugIn             => debugIn,
          cardRst             => cardRst,
-         ledRedL             => ledRedL(1),
+         ledRedL             => open,
          ledGreenL           => ledGreenL(1),
          ledBlueL            => ledBlueL(1));            
 

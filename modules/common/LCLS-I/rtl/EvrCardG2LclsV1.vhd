@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-10-14
+-- Last update: 2016-10-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -80,19 +80,21 @@ end EvrCardG2LclsV1;
 
 architecture mapping of EvrCardG2LclsV1 is
 
-   constant NUM_AXI_MASTERS_C : natural := 5;
+   constant NUM_AXI_MASTERS_C : natural := 6;
 
    constant EVR_INDEX_C      : natural := 0;
    constant VERSION_INDEX_C  : natural := 1;
    constant BOOT_MEM_INDEX_C : natural := 2;
    constant XADC_INDEX_C     : natural := 3;
    constant XBAR_INDEX_C     : natural := 4;
+   constant LED_INDEX_C      : natural := 5;
 
    constant EVR_ADDR_C      : slv(31 downto 0) := X"00000000";
    constant VERSION_ADDR_C  : slv(31 downto 0) := X"00010000";
    constant BOOT_MEM_ADDR_C : slv(31 downto 0) := X"00020000";
    constant XADC_ADDR_C     : slv(31 downto 0) := X"00030000";
    constant XBAR_ADDR_C     : slv(31 downto 0) := X"00040000";
+   constant LED_ADDR_C      : slv(31 downto 0) := X"00050000";
    
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       EVR_INDEX_C      => (
@@ -114,6 +116,10 @@ architecture mapping of EvrCardG2LclsV1 is
       XBAR_INDEX_C     => (
          baseAddr      => XBAR_ADDR_C,
          addrBits      => 16,
+         connectivity  => X"0001"),
+      LED_INDEX_C      => (
+         baseAddr      => LED_ADDR_C,
+         addrBits      => 16,
          connectivity  => X"0001"));  
 
    constant XBAR_DEFAULT_C : Slv2Array(3 downto 0) := (
@@ -127,20 +133,15 @@ architecture mapping of EvrCardG2LclsV1 is
    signal mAxiReadMasters  : AxiLiteReadMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
    signal mAxiReadSlaves   : AxiLiteReadSlaveArray(NUM_AXI_MASTERS_C-1 downto 0);
 
-   signal fpgaReload : sl;
-   signal evrClk     : sl;
-   signal evrRst     : sl;
-   signal rxLinkUp   : sl;
-   signal rxError    : sl;
-   signal rxData     : slv(15 downto 0);
-   signal rxDataK    : slv(1 downto 0);
+   signal evrClk      : sl;
+   signal evrRst      : sl;
+   signal rxLinkUp    : sl;
+   signal rxError     : sl;
+   signal rxData      : slv(15 downto 0);
+   signal rxDataK     : slv(1 downto 0);
+   signal eventStream : slv(7 downto 0);
 
 begin
-
-   -- Undefined signals
-   ledRedL   <= '1';
-   ledGreenL <= '1';
-   ledBlueL  <= '1';
 
    -------------------------
    -- AXI-Lite Crossbar Core
@@ -169,10 +170,11 @@ begin
    AxiVersion_Inst : entity work.AxiVersion
       generic map (
          TPD_G           => TPD_G,
+         BUFR_CLK_DIV_G  => 2,
          EN_DEVICE_DNA_G => true)   
       port map (
+         -- Serial Number outputs
          dnaValueOut    => serialNumber,
-         fpgaReload     => fpgaReload,
          -- AXI-Lite Register Interface
          axiReadMaster  => mAxiReadMasters(VERSION_INDEX_C),
          axiReadSlave   => mAxiReadSlaves(VERSION_INDEX_C),
@@ -180,24 +182,11 @@ begin
          axiWriteSlave  => mAxiWriteSlaves(VERSION_INDEX_C),
          -- Clocks and Resets
          axiClk         => axiClk,
-         axiRst         => axiRst);           
-
-   ---------------------
-   -- FPGA Reboot Module
-   ---------------------
-   Iprog7Series_Inst : entity work.Iprog7Series
-      generic map (
-         TPD_G => TPD_G)   
-      port map (
-         clk         => axiClk,
-         rst         => axiRst,
-         start       => fpgaReload,
-         bootAddress => X"00000000");   
+         axiRst         => axiRst);   
 
    --------------------
    -- Boot Flash Module
    --------------------
-   -- flashRs <= "11";
    AxiMicronP30Core_Inst : entity work.AxiMicronP30Core
       generic map (
          TPD_G          => TPD_G,
@@ -242,9 +231,9 @@ begin
          axiClk         => axiClk,
          axiRst         => axiRst);         
 
-   ---------------------------------
-   -- AXI-Lite Clock Crossbar Module
-   ---------------------------------
+   ---------------------------------------------------------
+   -- AXI-Lite LCLS-I & LCLS-II Timing Clock Crossbar Module
+   ---------------------------------------------------------
    AxiSy56040Reg_Inst : entity work.AxiSy56040Reg
       generic map (
          TPD_G          => TPD_G,
@@ -313,6 +302,7 @@ begin
          -- Trigger and Sync Port
          sync           => syncL,
          trigOut        => trigOut,
+         eventStream    => eventStream,
          -- EVR Interface
          evrClk         => evrClk,
          evrRst         => evrRst,
@@ -320,5 +310,30 @@ begin
          rxError        => rxError,
          rxData         => rxData,
          rxDataK        => rxDataK);    
+
+   -----------------         
+   -- EVR LED Status
+   -----------------         
+   U_LEDs : entity work.EvrCardG2LclsV1LedRgb
+      generic map (
+         TPD_G => TPD_G)
+      port map (
+         -- EVR Interface
+         evrClk          => evrClk,
+         evrRst          => evrRst,
+         rxLinkUp        => rxLinkUp,
+         rxError         => rxError,
+         eventStream     => eventStream,
+         -- AXI-Lite and IRQ Interface
+         axilClk         => axiClk,
+         axilRst         => axiRst,
+         axilReadMaster  => mAxiReadMasters(LED_INDEX_C),
+         axilReadSlave   => mAxiReadSlaves(LED_INDEX_C),
+         axilWriteMaster => mAxiWriteMasters(LED_INDEX_C),
+         axilWriteSlave  => mAxiWriteSlaves(LED_INDEX_C),
+         -- LEDs
+         ledRedL         => ledRedL,
+         ledGreenL       => ledGreenL,
+         ledBlueL        => ledBlueL);           
 
 end mapping;
