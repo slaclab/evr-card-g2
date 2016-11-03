@@ -12,9 +12,9 @@ use ieee.std_logic_1164.all;
 
 package Version is
 
-   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED2000E";  -- MAKE_VERSION
+   constant FPGA_VERSION_C : std_logic_vector(31 downto 0) := x"CED20012";  -- MAKE_VERSION
 
-   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2015.3 (x86_64) Built Mon Jan 25 09:12:09 PST 2016 by weaver";
+   constant BUILD_STAMP_C : string := "EvrCardG2: Vivado v2016.1 (x86_64) Built Wed Nov  2 15:50:18 PDT 2016 by weaver";
 
 end Version;
 
@@ -56,5 +56,10 @@ end Version;
 --    Added LCLS-II Timing core with BSA integration, DMA, and interrupt.
 --    Contains 12 readout channels, 12 trigger channels, no debug core.
 --    Note: PCIe Device ID changed from 0x2010 to 0x2011
+--
+-- 04/11/2016 (CED2000F): 
+--    Added LCLS-II DAQ feedback timing.
+-- 10/26/2016 (CED20012): 
+--    Build against Vivado 2016.2.
 --
 -------------------------------------------------------------------------------
