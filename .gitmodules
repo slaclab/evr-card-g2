@@ -1,9 +1,0 @@
-[submodule "submodules/surf"]
-	path = firmware/submodules/surf
-	url = git@github.com:slaclab/surf.git
-[submodule "submodules/ruckus"]
-	path = firmware/submodules/ruckus
-	url = git@github.com:slaclab/ruckus.git
-[submodule "submodules/lcls-timing-core"]
-	path = firmware/submodules/lcls-timing-core
-	url = git@github.com:slaclab/lcls-timing-core.git
