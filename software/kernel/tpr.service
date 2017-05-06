@@ -1,0 +1,17 @@
+[Unit]
+Description=Tpr Device Manager
+Requires=multi-user.target
+After=multi-user.target
+
+[Service]
+Type=simple
+ExecStart=/etc/systemd/system/tpr.d/tpr.init.d start
+ExecStartPost=
+ExecStop=
+KillMode=process
+IgnoreSIGPIPE=no
+StandardOutput=syslog
+StandardError=inherit
+
+[Install]
+WantedBy=multi-user.target
