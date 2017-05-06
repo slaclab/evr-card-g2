@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-04-11
+-- Last update: 2017-03-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,7 +27,8 @@ use work.StdRtlPkg.all;
 
 entity EvrCardG2 is
    generic (
-      TPD_G : time := 1 ns); 
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G : BuildInfoType ); 
    port (
       -- XADC Ports
       vPIn       : in    sl;
@@ -78,7 +79,8 @@ begin
 
    EvrCardG2Core_Inst : entity work.EvrCardG2Core
       generic map (
-         TPD_G => TPD_G) 
+         TPD_G        => TPD_G,
+         BUILD_INFO_G => BUILD_INFO_G ) 
       port map (
          -- XADC Ports
          vPIn       => vPIn,

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-24
--- Last update: 2016-05-20
+-- Last update: 2017-03-04
 -- Platform   : Vivado 2015.1
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -114,6 +114,9 @@ begin
          -- RX
          pci_exp_rxp      => pciRxP,
          pci_exp_rxn      => pciRxN,
+
+--         int_pclk_sel_slave => (others=>'0'),  -- Added for PCI core v3.3
+--         fc_sel             => (others=>'0'),
          ---------------------
          -- AXI-S Interface --
          ---------------------
