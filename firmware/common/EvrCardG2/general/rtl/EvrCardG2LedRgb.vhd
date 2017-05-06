@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-04-08
+-- Last update: 2017-03-03
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,7 +28,7 @@ use ieee.std_logic_arith.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 
-entity EvrCardG2LclsV1LedRgb is
+entity EvrCardG2LedRgb is
    generic (
       TPD_G            : time            := 1 ns;
       AXI_ERROR_RESP_G : slv(1 downto 0) := AXI_RESP_DECERR_C);
@@ -38,7 +38,7 @@ entity EvrCardG2LclsV1LedRgb is
       evrRst          : in  sl;
       rxLinkUp        : in  sl;
       rxError         : in  sl;
-      eventStream     : in  slv(7 downto 0);
+      strobe          : in  sl;
       -- AXI-Lite Interface
       axilClk         : in  sl;
       axilRst         : in  sl;
@@ -50,9 +50,9 @@ entity EvrCardG2LclsV1LedRgb is
       ledRedL         : out sl;
       ledGreenL       : out sl;
       ledBlueL        : out sl);  
-end EvrCardG2LclsV1LedRgb;
+end EvrCardG2LedRgb;
 
-architecture rtl of EvrCardG2LclsV1LedRgb is
+architecture rtl of EvrCardG2LedRgb is
 
    constant FLASH_100_MS_C   : slv(31 downto 0) := toSlv((getTimeRatio(0.1, 8.0E-9) -1), 32);
    constant MODE_PASS_THUR_C : slv(1 downto 0)  := "00";
@@ -65,7 +65,6 @@ architecture rtl of EvrCardG2LclsV1LedRgb is
       mode           : Slv2Array(2 downto 0);
       flashSize      : Slv32Array(2 downto 0);
       flashCnt       : Slv32Array(2 downto 0);
-      eventOpCode    : slv(7 downto 0);
       led            : slv(2 downto 0);
       state          : slv(2 downto 0);
       axilReadSlave  : AxiLiteReadSlaveType;
@@ -81,7 +80,6 @@ architecture rtl of EvrCardG2LclsV1LedRgb is
          2           => MODE_FLASH_C),     -- BLUE
       flashSize      => (others => FLASH_100_MS_C),
       flashCnt       => (others => FLASH_100_MS_C),
-      eventOpCode    => x"2D",
       led            => "000",
       state          => "000",
       axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
@@ -91,8 +89,6 @@ architecture rtl of EvrCardG2LclsV1LedRgb is
    signal rin : RegType;
 
    signal state       : slv(2 downto 0);
-   signal eventOpCode : slv(7 downto 0);
-   signal opCodeDet   : sl;
    signal linkError   : sl;
 
    -- attribute dont_touch               : string;
@@ -113,33 +109,12 @@ begin
          dataOut(0) => state(0),
          dataOut(1) => state(1)); 
 
-   Sync_2 : entity work.SynchronizerVector
-      generic map (
-         TPD_G   => TPD_G,
-         WIDTH_G => 8)          
-      port map (
-         clk     => evrClk,
-         dataIn  => r.eventOpCode,
-         dataOut => eventOpCode);          
-
-   -- Register the combinatorial path before going into a ASYNC reset
-   process (evrClk) is
-   begin
-      if rising_edge(evrClk) then
-         if eventStream = eventOpCode then
-            opCodeDet <= '1' after TPD_G;
-         else
-            opCodeDet <= '0' after TPD_G;
-         end if;
-      end if;
-   end process;
-
    Sync_3 : entity work.SynchronizerOneShot
       generic map (
          TPD_G => TPD_G)          
       port map (
          clk     => evrClk,
-         dataIn  => opCodeDet,
+         dataIn  => strobe,
          dataOut => state(2));       
 
    comb : process (axilReadMaster, axilRst, axilWriteMaster, r, state) is
@@ -174,7 +149,6 @@ begin
       axiSlaveRegister(regCon, x"24", 0, v.flashSize(0));  -- RED
       axiSlaveRegister(regCon, x"28", 0, v.flashSize(1));  -- GREEN
       axiSlaveRegister(regCon, x"2C", 0, v.flashSize(2));  -- BLUE  
-      axiSlaveRegister(regCon, x"30", 0, v.eventOpCode);   -- BLUE  
       axiSlaveRegisterR(regCon, x"34", 0, r.led(0));       -- RED
       axiSlaveRegisterR(regCon, x"38", 0, r.led(1));       -- GREEN
       axiSlaveRegisterR(regCon, x"3C", 0, r.led(2));       -- BLUE      

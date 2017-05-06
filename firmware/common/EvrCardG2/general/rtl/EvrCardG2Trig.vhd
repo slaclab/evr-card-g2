@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-08-05
+-- Last update: 2017-04-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -38,24 +38,17 @@ entity EvrCardG2Trig is
       delay_ld   : in  slv      (11 downto 0);
       delay_wr   : in  Slv6Array(11 downto 0);
       delay_rd   : out Slv6Array(11 downto 0);
-      --
-      evrModeSel : in  sl;
       -- Clock
-      evrRecClk  : in  slv(1 downto 0);
+      evrRecClk  : in  sl;
       -- Trigger Inputs
-      trigIn     : in  Slv12Array(1 downto 0);
-      trigout    : out slv(11 downto 0);
-      -- Status
-      sGoodL     : out sl;
-      sBadL      : out sl );
+      trigIn     : in  slv(11 downto 0);
+      trigout    : out slv(11 downto 0) );
 end EvrCardG2Trig;
 
 architecture mapping of EvrCardG2Trig is
 
-   signal clk190  : sl;
-   signal clk, clkOut0, clkFbO, clkFbI : sl;
+   signal clk190 : sl;
    signal trigMux, trigI, trigO : slv(11 downto 0);
-   signal crst, crst0, crst1 : sl;
    signal locked : sl;
    signal clkinsel : sl;
    signal delay_wr0 : Slv5Array(11 downto 0);
@@ -63,55 +56,20 @@ architecture mapping of EvrCardG2Trig is
 
 begin
 
-   sGoodL <= not locked;
-   clkinsel <= not evrModeSel;
-   
-   -- Select the trigger path
-   -- Note: Legacy software requires inverting LCLS-I trigger
-   --       and it's still TBD if we need to do the same for
-   --       the LCLS-II trigger as well
-   trigMux <= not(trigIn(0)) when(evrModeSel = '0') else trigIn(1);
+   U_CLK190 : entity work.ClockManager7
+     generic map ( INPUT_BUFG_G     => false,
+                   NUM_CLOCKS_G     => 1,
+                   CLKIN_PERIOD_G   => 8.0,
+                   CLKFBOUT_MULT_G  => 38,
+                   DIVCLK_DIVIDE_G  => 5,
+                   CLKOUT0_DIVIDE_G => 5 )
+     port map ( clkIn  => refclk,
+                clkOut(0) => clk190 );
 
-   U_CLKBUFG : BUFG
-   port map (
-     O  => clk,
-     I  => clkOut0 );
-
-   U_CLKFBBUFG : BUFG
-   port map (
-     O  => clkFbI,
-     I  => clkFbO );
-
-   -- This is now essentially just a BUFG_MUX
-   -- Should try and use as a PLL (BANDWIDTH => "LOW")
-   U_MMCM : MMCME2_ADV
-     generic map ( CLKFBOUT_MULT_F      => 6.0,
-                   CLKFBOUT_USE_FINE_PS => true,
-                   CLKIN1_PERIOD        => 8.4,
-                   CLKIN2_PERIOD        => 5.6,
-                   CLKOUT0_DIVIDE_F     => 6.0 )
-     port map ( CLKFBOUT   => clkFbO,
-                CLKOUT0    => clkOut0,
-                LOCKED     => locked,
-                CLKFBIN    => clkFbI,
-                CLKIN1     => evrRecClk(0),
-                CLKIN2     => evrRecClk(1),
-                CLKINSEL   => clkinsel,
-                DADDR      => (others=>'0'),
-                DCLK       => '0',
-                DEN        => '0',
-                DI         => (others=>'0'),
-                DWE        => '0',
-                PSCLK      => '0',
-                PSEN       => '0',
-                PSINCDEC   => '0',
-                PWRDWN     => '0',
-                RST        => crst );
-                   
    U_IDELAYCTRL : IDELAYCTRL
      port map ( RDY    => open,
                 REFCLK => clk190,
-                RST    => crst );
+                RST    => '0' );
 
    OR_TRIG :
    for i in 11 downto 0 generate
@@ -137,7 +95,7 @@ begin
                   LD          => delay_ld(i), -- load delay
                   LDPIPEEN    => '0',
                   IDATAIN     => '0',
-                  DATAIN      => trigMux(i),
+                  DATAIN      => trigIn(i),
                   REGRST      => '0' );
 
      U_IDELAY2 : IDELAYE2
@@ -164,47 +122,4 @@ begin
 
    end generate OR_TRIG;
 
-   U_CLK190 : entity work.ClockManager7
-     generic map ( INPUT_BUFG_G     => false,
-                   NUM_CLOCKS_G     => 1,
-                   CLKFBOUT_MULT_G  => 38,
-                   DIVCLK_DIVIDE_G  => 5,
-                   CLKOUT0_DIVIDE_G => 5 )
-     port map ( clkIn  => refclk,
-                clkOut(0) => clk190 );
-
-   U_CRST : entity work.SynchronizerEdge
-     port map ( clk         => clk190,
-                dataIn      => evrModeSel,
-                risingEdge  => crst0,
-                fallingEdge => crst1 );
-
-   seqR: process (clk) is
-     variable v : slv(26 downto 0) := (others=>'0');
-   begin
-     if rising_edge(clk) then
-       sBadL   <= '0';
-       if locked='0' then
-         v := (others=>'1');
-       elsif (uOr(v)='1') then
-         v := v-1;
-       else
-         sBadL <= '1';
-       end if;
-     end if;
-   end process seqR;
-       
-   seq: process (clk190) is
-     variable v : slv(10 downto 0) := (others=>'1');
-   begin
-     crst <= v(0);
-     if rising_edge(clk190) then
-       if (crst0='1' or crst1='1') then
-         v := (others=>'1');
-       else
-         v := '0' & v(10 downto 1);
-       end if;
-     end if;
-   end process seq;
-   
 end mapping;
