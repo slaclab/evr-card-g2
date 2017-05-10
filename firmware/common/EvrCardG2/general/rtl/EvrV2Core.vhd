@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-05-05
+-- Last update: 2017-05-09
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -281,7 +281,7 @@ begin  -- rtl
       port map    ( clk           => evrClk,
                     rst           => evrRst,
                     config        => channelConfigS(i),
-                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+5),
+                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+11),
                     dataIn        => timingMsg,
                     exptIn        => exptBus,
                     selectOut     => eventSel(i),
@@ -294,7 +294,7 @@ begin  -- rtl
                     evrRst        => evrRst,
                     channelConfig => channelConfigS(i),
                     evtSelect     => dmaSel(i),
-                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+6),
+                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+12),
                     dataIn        => timingMsg,
                     dmaData       => dmaData(i) );
   end generate;  -- i
@@ -304,7 +304,7 @@ begin  -- rtl
                   CHANNELS_C => ReadoutChannels )
     port map (    clk        => evrClk,
                   rst        => evrBus.strobe,
-                  strobe     => rStrobe(ReadoutChannels*STROBE_INTERVAL_C+10),
+                  strobe     => rStrobe(ReadoutChannels*STROBE_INTERVAL_C+16),
                   eventSel   => dmaSel,
                   eventData  => timingMsg,
                   dmaData    => dmaData   (ReadoutChannels+1) );
