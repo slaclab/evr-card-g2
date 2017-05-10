@@ -13,7 +13,7 @@ import os, sys
 from subprocess import check_call
 
 ## Define the GIT submodule path and TAG-ing
-tagConfig = [ ['/submodules/lcls-timing-core', 'v1.7.0'],
+tagConfig = [ ['/submodules/lcls-timing-core', 'v1.7.1'],
               ['/submodules/ruckus',           'v1.1.0'],
               ['/submodules/surf',             'v1.2.8'] ]
 
