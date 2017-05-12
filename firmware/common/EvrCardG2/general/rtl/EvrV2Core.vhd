@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-05-09
+-- Last update: 2017-05-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -171,8 +171,8 @@ begin  -- rtl
                  probe0(13) => dmaMaster.tLast,
                  probe0(45 downto 14) => dmaMaster.tData(31 downto 0),
                  probe0(46) => dmaSlave.tReady,
-                 probe0(56 downto 47) => eventSel,
-                 probe0(66 downto 57) => dmaSel,
+                 probe0(56 downto 47) => eventSel(9 downto 0),
+                 probe0(66 downto 57) => dmaSel  (9 downto 0),
                  probe0(67)           => triggerStrobe,
                  probe0(79 downto 68) => dbTrigOut,
                  probe0(83 downto 80) => dmaMaster.tUser(3 downto 0),
@@ -281,12 +281,12 @@ begin  -- rtl
       port map    ( clk           => evrClk,
                     rst           => evrRst,
                     config        => channelConfigS(i),
-                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+11),
+                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+5),
                     dataIn        => timingMsg,
                     exptIn        => exptBus,
                     selectOut     => eventSel(i),
                     dmaOut        => dmaSel(i) );
-    U_BsaChannel : entity work.EvrV2BsaChannel
+    U_BsaChannel : entity work.EvrV2BsaChannelDSP
       generic map ( TPD_G         => TPD_G,
                     CHAN_C        => i,
                     DEBUG_C       => ite(i>0,false,DEBUG_C) )
@@ -294,7 +294,7 @@ begin  -- rtl
                     evrRst        => evrRst,
                     channelConfig => channelConfigS(i),
                     evtSelect     => dmaSel(i),
-                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+12),
+                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+6),
                     dataIn        => timingMsg,
                     dmaData       => dmaData(i) );
   end generate;  -- i
