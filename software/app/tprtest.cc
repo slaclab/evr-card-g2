@@ -25,7 +25,7 @@ static const double CLK_FREQ = 1300e6/7.;
 extern int optind;
 
 static void link_test          (TprReg&, bool lcls2);
-static void lcls2_frame_rates  (TprReg&);
+static void frame_rates        (TprReg&, bool lcls2);
 static void frame_capture      (TprReg&, char, bool lcls2);
 static void dump_frame         (const uint32_t*);
 static bool parse_frame        (const uint32_t*, uint64_t&, uint64_t&);
@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
     //
     //  Capture series of timing frames (show table)
     //
-    lcls2_frame_rates  (reg);
+    frame_rates  (reg, true);
     frame_capture(reg,tprid, true);
 
     //
@@ -114,6 +114,7 @@ int main(int argc, char** argv) {
     //
     //  Capture series of timing frames (show table)
     //
+    frame_rates  (reg, false);
     frame_capture(reg,tprid, false);
 
     //
@@ -171,15 +172,19 @@ void link_test(TprReg& reg, bool lcls2)
          dspErrs == 0 ? "PASS":"FAIL");
 }
 
-void lcls2_frame_rates(TprReg& reg)
+void frame_rates(TprReg& reg, bool lcls2)
 {
   const unsigned nrates=7;
+  unsigned ilcls = lcls2 ? nrates : 0;
   unsigned begin[nrates], end[nrates];
-  static const unsigned rateMin[] = { 928000, 71000, 10000, 1000, 100,  9, 0 };
-  static const unsigned rateMax[] = { 930000, 73000, 10400, 1040, 104, 12, 2 };
+  static const unsigned rateMin[] = { 356, 116, 56, 27,  8, 3, 0, 928000, 71000, 10000, 1000, 100,  9, 0 };
+  static const unsigned rateMax[] = { 364, 124, 64, 33, 12, 7, 2, 930000, 73000, 10400, 1040, 104, 12, 2 };
 
   for(unsigned i=0; i<nrates; i++) {
-    reg.base.channel[i].evtSel  = (1<<30) | i;
+    if (lcls2)
+      reg.base.channel[i].evtSel  = (1<<30) | i;
+    else
+      reg.base.channel[i].evtSel  = (1<<30) | (1<<11) | (i<<0) | ((i==0 ? 0x11:0x1)<<3);
     reg.base.channel[i].control = 1;
   }
   for(unsigned i=0; i<nrates; i++)
@@ -194,8 +199,8 @@ void lcls2_frame_rates(TprReg& reg)
     unsigned rate = end[i]-begin[i];
     printf("FixedRate[%i]: %7u  %s\n",
            i, rate, 
-           (rate > rateMin[i] && 
-            rate < rateMax[i]) ? "PASS":"FAIL");
+           (rate > rateMin[i+ilcls] && 
+            rate < rateMax[i+ilcls]) ? "PASS":"FAIL");
     reg.base.channel[i].control = 0;
   }
 }
@@ -226,7 +231,7 @@ void frame_capture(TprReg& reg, char tprid, bool lcls2)
   unsigned ucontrol = reg.base.channel[_channel].control;
   reg.base.channel[_channel].control = 0;
 
-  unsigned urate   = 0;     // 1MHz fixed rate
+  unsigned urate   = lcls2 ? 0 : (1<<11) | (0x3f<<3); // max rate
   unsigned destsel = 1<<17; // BEAM - DONT CARE
   reg.base.channel[_channel].evtSel = (destsel<<13) | (urate<<0);
   reg.base.channel[_channel].bsaDelay = 0;
@@ -262,8 +267,8 @@ void frame_capture(TprReg& reg, char tprid, bool lcls2)
            q.gwp);
     */
     while(chnrp < q.chnwp[idx]) {
-      const uint32_t* p = reinterpret_cast<const uint32_t*>
-        (&q.chnq[idx].entry[chnrp&(MAX_TPR_CHNQ-1)].word[0]);
+      //      const uint32_t* p = reinterpret_cast<const uint32_t*>
+      //        (&q.chnq[idx].entry[chnrp&(MAX_TPR_CHNQ-1)].word[0]);
       //      dump_frame(p);
       chnrp++;
     }
