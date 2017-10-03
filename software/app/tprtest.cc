@@ -183,8 +183,19 @@ void frame_rates(TprReg& reg, bool lcls2)
   for(unsigned i=0; i<nrates; i++) {
     if (lcls2)
       reg.base.channel[i].evtSel  = (1<<30) | i;
-    else
-      reg.base.channel[i].evtSel  = (1<<30) | (1<<11) | (i<<0) | ((i==0 ? 0x11:0x1)<<3);
+    else {
+      switch(i) {
+      case 0:
+        reg.base.channel[i].evtSel  = (1<<30) | (1<<11) | (0x3f<<3);
+        break;
+      case 1:
+        reg.base.channel[i].evtSel  = (1<<30) | (1<<11) | (0x11<<3);
+        break;
+      default:
+        reg.base.channel[i].evtSel  = (1<<30) | (1<<11) | ((i-2)<<0) | (0x1<<3);
+        break;
+      }
+    }
     reg.base.channel[i].control = 1;
   }
   for(unsigned i=0; i<nrates; i++)
