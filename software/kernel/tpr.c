@@ -30,6 +30,13 @@
 #include <linux/cdev.h>
 #include "tpr.h"
 
+#undef TPRDEBUG
+
+#ifdef TPRDEBUG
+#undef KERN_WARNING
+#define KERN_WARNING KERN_ALERT
+#endif
+
 #ifndef SA_SHIRQ
 /* No idea which version this changed in! */
 #define SA_SHIRQ IRQF_SHARED
@@ -109,6 +116,16 @@ static struct vm_operations_struct tpr_vmops = {
 
 static int allocBar(struct bar_dev* minor, int major, struct pci_dev* dev, int bar);
 
+#ifdef TPRDEBUG
+static void printMinors(struct tpr_dev *dev, int minor)
+{
+    struct shared_tpr *shared;
+    printk(KERN_WARNING "%s: Opens on minor %d:\n", MOD_NAME, minor);
+    for (shared = dev->shared[minor]; shared; shared=shared->next)
+        printk(KERN_WARNING "%s         %d\n", MOD_NAME, shared->idx);
+}
+#endif
+
 // Open Returns 0 on success, error code on failure
 int tpr_open(struct inode *inode, struct file *filp) {
   struct tpr_dev *   dev;
@@ -119,30 +136,64 @@ int tpr_open(struct inode *inode, struct file *filp) {
   dev = container_of(inode->i_cdev, struct tpr_dev, cdev);
   minor = iminor(inode);
 
-  printk(KERN_WARNING"%s: Open: Minor %i.  Maj %i\n",
+  printk(KERN_WARNING "%s: Open: Minor %i.  Maj %i\n",
 	 MOD_NAME, minor, dev->major);
 
-  if (minor < MOD_SHARED) {
-    if (dev->shared[minor].parent) {
-      printk(KERN_WARNING"%s: Open: module open failed.  Device already open. Maj=%i, Min=%i.\n",
+  if (minor < MOD_SHARED || minor == (MOD_SHARED+1)) { // A single channel or BSA
+    struct shared_tpr *shared;
+    spin_lock(&dev->lock);
+    shared = dev->freelist;
+    if (shared)
+        dev->freelist = shared->next;
+    spin_unlock(&dev->lock);
+    if (!shared) {
+      printk(KERN_WARNING "%s: Open: module open failed.  Too many opens. Maj=%i, Min=%i.\n",
              MOD_NAME, dev->major, (unsigned)minor);
       return (ERROR);
     }
+    filp->private_data = shared;
+    shared->parent = dev;
+#ifdef TPRDEBUG
+    printk(KERN_WARNING "%s: Open: minor %d opened as index %d.\n",
+           MOD_NAME, minor, shared->idx);
+#endif
 
-    dev->minors = dev->minors | (1<<minor);
-    dev->shared[minor].parent = dev;
-    filp->private_data = &dev->shared[minor];
-
-    //
-    //  Enable the dma for this channel
-    //
-    reg = (struct TprReg*)(dev->bar[0].reg);
-    reg->channel[minor].control = reg->channel[minor].control | (1<<2);
-    reg->irqControl = 1;
+    if (minor < MOD_SHARED) {
+        if (!dev->shared[minor]) {  // The first open for this minor device.
+            dev->minors = dev->minors | (1<<minor);
+            //
+            //  Enable the dma for this channel
+            //
+            reg = (struct TprReg*)(dev->bar[0].reg);
+            reg->channel[minor].control = reg->channel[minor].control | (1<<2);
+            reg->irqControl = 1;
+        }
+        shared->minor = minor;
+        spin_lock(&dev->lock);
+        shared->next = dev->shared[minor];
+        if (shared->next)
+            shared->next->prev = shared;
+        shared->prev = NULL;
+        dev->shared[minor] = shared;
+        spin_unlock(&dev->lock);
+#ifdef TPRDEBUG
+        printMinors(dev, minor);
+#endif
+    }
+    else if (minor == MOD_SHARED+1) {
+        shared->minor = -1;
+        spin_lock(&dev->lock);
+        shared->next = dev->bsa;
+        if (shared->next)
+            shared->next->prev = shared;
+        shared->prev = NULL;
+        dev->bsa = shared;
+        spin_unlock(&dev->lock);
+    }
   }
-  else if (minor == MOD_SHARED) {
+  else if (minor == MOD_SHARED) {      // Control
     if (dev->master.parent) {
-      printk(KERN_WARNING"%s: Open: module open failed.  Device already open. Maj=%i, Min=%i.\n",
+      printk(KERN_WARNING "%s: Open: module open failed.  Device already open. Maj=%i, Min=%i.\n",
              MOD_NAME, dev->major, (unsigned)minor);
       return (ERROR);
     }
@@ -151,7 +202,7 @@ int tpr_open(struct inode *inode, struct file *filp) {
     filp->private_data = &dev->master;
   }
   else {
-    printk(KERN_WARNING"%s: Open: module open failed.  Minor number out of range. Maj=%i, Min=%i.\n",
+    printk(KERN_WARNING "%s: Open: module open failed.  Minor number out of range. Maj=%i, Min=%i.\n",
            MOD_NAME, dev->major, (unsigned)minor);
     return (ERROR);
   }
@@ -174,19 +225,41 @@ int tpr_release(struct inode *inode, struct file *filp) {
     return ERROR;
   }
 
-  if (shared->idx < 0) {
-    dev = (struct tpr_dev*)shared->parent;
+  dev = (struct tpr_dev*)shared->parent;
+  if (shared->idx < 0) {                      // Master
+      // Nothing to do!
   }
-  else {
+  else if (shared->minor < 0) {               // BSA
+    spin_lock(&dev->lock);
+    if (shared->prev)
+        shared->prev->next = shared->next;
+    else
+        dev->bsa = shared->next;
+    if (shared->next)
+        shared->next->prev = shared->prev;
+    spin_unlock(&dev->lock);
+  }
+  else {                                      // Single channel
+    spin_lock(&dev->lock);
+    if (shared->prev)
+        shared->prev->next = shared->next;
+    else
+        dev->shared[shared->minor] = shared->next;
+    if (shared->next)
+        shared->next->prev = shared->prev;
     //
     //  Disable the dma for this channel
     //
-    i = shared->idx;
-    reg = (struct TprReg*)shared->parent->bar[0].reg;
-    reg->channel[i].control = reg->channel[0].control & ~(1<<2);
-
-    dev = (struct tpr_dev*)shared->parent;
-    dev->minors = dev->minors & ~(1<<shared->idx);
+    if (!dev->shared[shared->minor]) {       // Last one leaving, shut out the lights...
+        i = shared->minor;
+        reg = (struct TprReg*)shared->parent->bar[0].reg;
+        reg->channel[i].control = reg->channel[0].control & ~(1<<2);
+        dev->minors = dev->minors & ~(1<<i);
+    }
+    spin_unlock(&dev->lock);
+#ifdef TPRDEBUG
+    printMinors(dev, shared->minor);
+#endif
   }
 
   printk("%s: Release: Major %u: irqEnable %u, irqDisable %u, irqCount %u, irqNoReq %u\n",
@@ -205,7 +278,6 @@ int tpr_release(struct inode *inode, struct file *filp) {
 
   //  Unlink
   shared->parent = NULL;
-
 
   return SUCCESS;
 }
@@ -232,10 +304,16 @@ ssize_t tpr_read(struct file *filp, char *buffer, size_t count, loff_t *f_pos)
     while (!shared->pendingirq) {
       if (filp->f_flags & O_NONBLOCK)
         return -EAGAIN;
+#ifdef TPRDEBUG
+      printk(KERN_WARNING "%s: sleeping %d for %d\n", MOD_NAME, shared->idx, shared->minor);
+#endif
       if (wait_event_interruptible(shared->waitq, shared->pendingirq))
         return -ERESTARTSYS;
     }
-    pendingirq = test_and_clear_bit(0, (volatile unsigned long*)&shared->pendingirq);
+    pendingirq = (__u32) test_and_clear_bit(0, (volatile unsigned long*)&shared->pendingirq);
+#ifdef TPRDEBUG
+    printk(KERN_WARNING "%s: woke up %d for %d, pendingirq=%d\n", MOD_NAME, shared->idx, shared->minor, pendingirq);
+#endif
     if (copy_to_user(buffer, &pendingirq, sizeof(pendingirq))) {
       retval = -EFAULT;
       break;
@@ -301,7 +379,7 @@ static void tpr_handle_dma(unsigned long arg)
       //  Check the message type
       mtyp = (dptr[0]>>16)&0xf;
       if ( mtyp>2 ) {  //  Unknown message
-        printk(KERN_WARNING "%s: handle unknown msg %08x:%08x\n", MOD_NAME, dptr[0], dptr[1]);
+        printk(KERN_WARNING  "%s: handle unknown msg %08x:%08x\n", MOD_NAME, dptr[0], dptr[1]);
         break;
       }
       else if ( mtyp==BSAEVNT_TAG ) {  
@@ -321,7 +399,7 @@ static void tpr_handle_dma(unsigned long arg)
           dev->dmaEvent++;
           mch = (dptr[0]>>0)&((1<<MOD_SHARED)-1);
           if (((dptr[1]<<2)+8)!=EVENT_MSGSZ) {
-            printk(KERN_WARNING "%s: unexpected event dma size %08x(%08x)...truncating.\n", MOD_NAME, EVENT_MSGSZ,(dptr[1]<<2)+8);
+            printk(KERN_WARNING  "%s: unexpected event dma size %08x(%08x)...truncating.\n", MOD_NAME, EVENT_MSGSZ,(dptr[1]<<2)+8);
             break;
           }
           memcpy(&tprq->allq[tprq->gwp & (MAX_TPR_ALLQ-1)], dptr, EVENT_MSGSZ);
@@ -356,9 +434,15 @@ static void tpr_handle_dma(unsigned long arg)
 
   //  Wake the apps
   for( ich=0; ich<MOD_SHARED; ich++) {
-    if ((wmask&(1<<ich)) && dev->shared[ich].parent) {
-      set_bit(0, (volatile unsigned long*)&dev->shared[ich].pendingirq);
-      wake_up(&dev->shared[ich].waitq);
+    if ((wmask&(1<<ich)) && dev->shared[ich]) {
+      struct shared_tpr *shared;
+      for (shared = dev->shared[ich]; shared; shared = shared->next) {
+        set_bit(0, (volatile unsigned long*)&shared->pendingirq);
+#ifdef TPRDEBUG
+        printk(KERN_WARNING "%s: set pendingirq for %d == %ld\n", MOD_NAME, ich, shared->pendingirq);
+#endif
+        wake_up(&shared->waitq);
+      }
     }
   }
 
@@ -430,28 +514,28 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
 
    // Overflow
    if (id->driver_data < 0) {
-     printk(KERN_WARNING "%s: Probe: Too Many Devices.\n", MOD_NAME);
+     printk(KERN_WARNING  "%s: Probe: Too Many Devices.\n", MOD_NAME);
      return -EMFILE;
    }
    dev = &gDevices[id->driver_data];
 
    dev->qmem = (void *)vmalloc(sizeof(struct TprQueues) + PAGE_SIZE); // , GFP_KERNEL);
    if (!dev->qmem) {
-     printk(KERN_WARNING MOD_NAME ": could not allocate %lu.\n", sizeof(struct TprQueues) + PAGE_SIZE);
+     printk(KERN_WARNING  MOD_NAME ": could not allocate %lu.\n", sizeof(struct TprQueues) + PAGE_SIZE);
      return -ENOMEM;
    }
 
-   printk(KERN_WARNING MOD_NAME ": Allocated %lu at %p.\n", sizeof(struct TprQueues) + PAGE_SIZE, dev->qmem);
+   printk(KERN_WARNING  MOD_NAME ": Allocated %lu at %p.\n", sizeof(struct TprQueues) + PAGE_SIZE, dev->qmem);
    memset(dev->qmem, 0, sizeof(struct TprQueues) + PAGE_SIZE);
    dev->amem = (void *)((long)(dev->qmem + PAGE_SIZE - 1) & PAGE_MASK);
    ((struct TprQueues*) dev->amem)->fifofull = 0xabadcafe;
 
-   printk(KERN_WARNING MOD_NAME ": amem = %p.\n", dev->amem);
+   printk(KERN_WARNING  MOD_NAME ": amem = %p.\n", dev->amem);
 
    // Allocate device numbers for character device.
    res = alloc_chrdev_region(&chrdev, 0, MOD_MINORS, MOD_NAME);
    if (res < 0) {
-     printk(KERN_WARNING "%s: Probe: Cannot register char device\n", MOD_NAME);
+     printk(KERN_WARNING  "%s: Probe: Cannot register char device\n", MOD_NAME);
      return res;
    }
 
@@ -476,11 +560,11 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
 
    // Add device
    if ( cdev_add(&dev->cdev, chrdev, MOD_MINORS) ) 
-     printk(KERN_WARNING "%s: Probe: Error adding device Maj=%i\n", MOD_NAME, dev->major);
+     printk(KERN_WARNING  "%s: Probe: Error adding device Maj=%i\n", MOD_NAME, dev->major);
 
    // Enable devices
    if (pci_enable_device(pcidev)) {
-     printk(KERN_WARNING "%s: Could not enable device \n", MOD_NAME);
+     printk(KERN_WARNING  "%s: Could not enable device \n", MOD_NAME);
      return (ERROR);
    } 
    
@@ -489,14 +573,25 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
 
    // Get IRQ from pci_dev structure. 
    dev->irq = pcidev->irq;
-   printk(KERN_WARNING "%s: Init: IRQ %d Maj=%i\n", MOD_NAME, dev->irq, dev->major);
+   printk(KERN_WARNING  "%s: Init: IRQ %d Maj=%i\n", MOD_NAME, dev->irq, dev->major);
 
-   for( i = 0; i < MOD_SHARED; i++) {
-     dev->shared[i].parent = NULL;
-     dev->shared[i].idx = i;
-     init_waitqueue_head(&dev->shared[i].waitq);
-     spin_lock_init     (&dev->shared[i].lock);
+   for( i = 0; i < OPEN_SHARES; i++) {
+     if (i)
+         dev->all_shares[i].next = &dev->all_shares[i-1];
+     else
+         dev->all_shares[i].next = NULL;
+     dev->all_shares[i].prev = NULL;   // The freelist is singly linked!
+     dev->all_shares[i].parent = NULL;
+     dev->all_shares[i].idx = i;
+     init_waitqueue_head(&dev->all_shares[i].waitq);
+     spin_lock_init(&dev->all_shares[i].lock);
    }
+   for( i = 0; i < MOD_SHARED; i++) {
+     dev->shared[i] = NULL;
+   }
+   dev->bsa = NULL;
+   spin_lock_init(&dev->lock);
+   dev->freelist = &dev->all_shares[OPEN_SHARES-1];
 
    dev->master.parent = NULL;
    dev->master.idx    = -1;
@@ -506,7 +601,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
    // Device initialization
    tprreg = (struct TprReg* )(dev->bar[0].reg);
 
-   printk(KERN_WARNING "%s: Init: FpgaVersion %08x Maj=%i\n", 
+   printk(KERN_WARNING  "%s: Init: FpgaVersion %08x Maj=%i\n", 
           MOD_NAME, tprreg->FpgaVersion, dev->major);
 
    tprreg->xbarOut[2] = 1;  // Set LCLS-II timing input
@@ -528,7 +623,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
    for ( idx=0; idx < NUMBER_OF_RX_BUFFERS; idx++ ) {
      dev->rxBuffer[idx] = (struct RxBuffer *) vmalloc(sizeof(struct RxBuffer ));
      if ((dev->rxBuffer[idx]->buffer = pci_alloc_consistent(pcidev, BUF_SIZE, &(dev->rxBuffer[idx]->dma))) == NULL ) {
-       printk(KERN_WARNING"%s: Init: unable to allocate rx buffer [%d/%d]. Maj=%i\n",
+       printk(KERN_WARNING "%s: Init: unable to allocate rx buffer [%d/%d]. Maj=%i\n",
               MOD_NAME, idx, NUMBER_OF_RX_BUFFERS, dev->major);
        break;
      }
@@ -550,11 +645,11 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
 
    // Request IRQ from OS.
    if (request_irq(dev->irq, (irq_handler_t) tpr_intr, SA_SHIRQ, MOD_NAME, dev) < 0 ) {
-     printk(KERN_WARNING"%s: Open: Unable to allocate IRQ. Maj=%i", MOD_NAME, dev->major);
+     printk(KERN_WARNING  "%s: Open: Unable to allocate IRQ. Maj=%i", MOD_NAME, dev->major);
      return (ERROR);
    }
 
-   printk("%s: Init: Driver is loaded. Maj=%i\n", MOD_NAME,dev->major);
+   printk(KERN_ALERT "%s: Init: Driver is loaded. Maj=%i\n", MOD_NAME,dev->major);
    return SUCCESS;
 }
 
@@ -574,17 +669,42 @@ void tpr_remove(struct pci_dev *pcidev) {
 
    // Device not found
    if (dev == NULL) {
-     printk(KERN_WARNING "%s: Remove: Device Not Found.\n", MOD_NAME);
+     printk(KERN_WARNING  "%s: Remove: Device Not Found.\n", MOD_NAME);
    }
    else {
+     unsigned long flags;
+
+     spin_lock_irqsave(&dev->lock, flags);
+     // At this point, there might be an IRQ/tasklet running.  We're blocking
+     // another IRQ from coming though.
+
+     // Release IRQ first, so we don't call tpr_intr any more!
+     free_irq(dev->irq, dev);
+
+     // At this point, we might have had an IRQ, so the tasklet might be scheduled.
+     // We won't get another one past this though.
+     tasklet_kill(&dev->dma_task);
+
+     // No more tasklet operations now.  And if we get an IRQ, it won't be routed
+     // correctly anyway.
+
+     // Turn off the interrupts!
      tprreg = (struct TprReg*)dev->bar[0].reg;
+     tprreg->irqControl = 0;
+
+     // We should be finished now.
+     spin_unlock_irqrestore(&dev->lock, flags);
+
      //  Clear the registers
      for( i=0; i<12; i++) {
        tprreg->channel[i].control=0;  // Disable event selection, DMA
        tprreg->trigger[i].control=0;  // Disable TTL
      }
 
-     //  Free all rx buffers awaiting read (TBD)
+     //  Free all rx buffers awaiting read.
+     tprreg->rxMaxFrame = 0;
+
+     //  Free the rx buffer memory.
      for ( idx=0; idx < NUMBER_OF_RX_BUFFERS; idx++ ) {
        if (dev->rxBuffer[idx]->dma != 0) {
          pci_free_consistent( pcidev, BUF_SIZE, dev->rxBuffer[idx]->buffer, dev->rxBuffer[idx]->dma);
@@ -602,9 +722,6 @@ void tpr_remove(struct pci_dev *pcidev) {
      // Release memory region
      release_mem_region(dev->bar[0].baseHdwr, dev->bar[0].baseLen);
 
-     // Release IRQ
-     free_irq(dev->irq, dev);
-
      // Unregister Device Driver
      cdev_del(&dev->cdev);
      unregister_chrdev_region(MKDEV(dev->major,0), MOD_MINORS);
@@ -612,7 +729,7 @@ void tpr_remove(struct pci_dev *pcidev) {
      // Disable device
      pci_disable_device(pcidev);
      dev->bar[0].baseHdwr = 0;
-     printk(KERN_ALERT"%s: Remove: Driver is unloaded. Maj=%i\n", MOD_NAME, dev->major);
+     printk(KERN_ALERT "%s: Remove: Driver is unloaded. Maj=%i\n", MOD_NAME, dev->major);
    }
  }
 
@@ -630,7 +747,7 @@ int tpr_mmap(struct file *filp, struct vm_area_struct *vma)
 
    if (shared->idx < 0) {
      if (vsize > shared->parent->bar[0].baseLen) {
-       printk(KERN_WARNING"%s: Mmap: mmap vsize %08x, baseLen %08x. Maj=%i\n", MOD_NAME,
+       printk(KERN_WARNING "%s: Mmap: mmap vsize %08x, baseLen %08x. Maj=%i\n", MOD_NAME,
               (unsigned int) vsize, (unsigned int) shared->parent->bar[0].baseLen, shared->parent->major);
        return -EINVAL;
      }
@@ -641,7 +758,7 @@ int tpr_mmap(struct file *filp, struct vm_area_struct *vma)
    }
    else {
      if (vsize > TPR_SH_MEM_WINDOW) {
-       printk(KERN_WARNING"%s: Mmap: mmap vsize %08x, baseLen %08x. Maj=%i\n", MOD_NAME,
+       printk(KERN_WARNING "%s: Mmap: mmap vsize %08x, baseLen %08x. Maj=%i\n", MOD_NAME,
               (unsigned int) vsize, (unsigned int) shared->parent->bar[0].baseLen, shared->parent->major);
        return -EINVAL;
      }
@@ -694,17 +811,17 @@ int allocBar(struct bar_dev* minor, int major, struct pci_dev* pcidev, int bar)
    // Get Base Address of registers from pci structure.
    minor->baseHdwr = pci_resource_start (pcidev, bar);
    minor->baseLen  = pci_resource_len   (pcidev, bar);
-   printk(KERN_WARNING"%s: Init: Alloc bar %i [%lu/%lu].\n", MOD_NAME, bar,
+   printk(KERN_WARNING "%s: Init: Alloc bar %i [%lu/%lu].\n", MOD_NAME, bar,
 	  minor->baseHdwr, minor->baseLen);
 
    request_mem_region(minor->baseHdwr, minor->baseLen, MOD_NAME);
-   printk(KERN_WARNING "%s: Probe: Found card. Bar%d. Maj=%i\n", 
+   printk(KERN_WARNING  "%s: Probe: Found card. Bar%d. Maj=%i\n", 
 	  MOD_NAME, bar, major);
 
    // Remap the I/O register block so that it can be safely accessed.
    minor->reg = ioremap_nocache(minor->baseHdwr, minor->baseLen);
    if (! minor->reg ) {
-     printk(KERN_WARNING"%s: Init: Could not remap memory Maj=%i.\n", MOD_NAME,major);
+     printk(KERN_WARNING "%s: Init: Could not remap memory Maj=%i.\n", MOD_NAME,major);
      return (ERROR);
    }
 
@@ -717,7 +834,7 @@ int tpr_init(void) {
    /* Allocate and clear memory for all devices. */
    memset(gDevices, 0, sizeof(struct tpr_dev)*MAX_PCI_DEVICES);
 
-   printk(KERN_WARNING"%s: Init: tpr init.\n", MOD_NAME);
+   printk(KERN_WARNING "%s: Init: tpr init.\n", MOD_NAME);
 
    // Register driver
    return(pci_register_driver(&tprDriver));
@@ -726,7 +843,7 @@ int tpr_init(void) {
 
  // Exit Kernel Module
 void tpr_exit(void) {
-   printk(KERN_WARNING"%s: Exit: tpr exit.\n", MOD_NAME);
+   printk(KERN_WARNING "%s: Exit: tpr exit.\n", MOD_NAME);
    pci_unregister_driver(&tprDriver);
 }
 

@@ -31,13 +31,16 @@
  */
 struct shared_tpr {
   struct tpr_dev* parent;      /* Set if in use, otherwise NULL */
-  int             idx;         /* The index of this structure in parent->shared */
+  int             idx;         /* The index of this structure in parent->all_shares */
+  int             minor;       /* The index of list containing this structure in parent->shared */
   u32             irqmask;     /* The IRQs this client wants to see. */
-  u32             pendingirq;  /* IRQs still to be delivered. */
+  unsigned long   pendingirq;  /* IRQs still to be delivered. */
   //  u16             evttab[256]; /* The events this client wants to see. */
   //  u32             tmp[EVR_MAX_READ/sizeof(u32)];
   wait_queue_head_t waitq;
   spinlock_t      lock;
+  struct shared_tpr *next;
+  struct shared_tpr *prev;
 };
   
 struct bar_dev {
@@ -47,6 +50,7 @@ struct bar_dev {
 };
 
 #define MOD_SHARED 12
+#define OPEN_SHARES 256
 
 struct tpr_dev {
   int               major;
@@ -58,8 +62,12 @@ struct tpr_dev {
   void*             amem;           /* Page-aligned memory for the queues. */
   struct bar_dev    bar[1];
   struct shared_tpr master;
-  struct shared_tpr shared[MOD_SHARED];
+  struct shared_tpr all_shares[OPEN_SHARES];
+  struct shared_tpr *shared[MOD_SHARED];
+  struct shared_tpr *bsa;
   struct tasklet_struct dma_task;
+  spinlock_t        lock;
+  struct shared_tpr *freelist;
   uint              minors;
   uint              irqEnable;      /* Interrupt handling counters */
   uint              irqDisable;
