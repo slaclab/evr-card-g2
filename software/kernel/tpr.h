@@ -23,8 +23,10 @@
 #define END_TAG     15
 
 #define EVENT_MSGSZ    92
-#define BSACNTL_MSGSZ  20
-#define BSAEVNT_MSGSZ  36
+//#define BSACNTL_MSGSZ  20
+//#define BSAEVNT_MSGSZ  36
+#define BSACNTL_MSGSZ  36
+#define BSAEVNT_MSGSZ  44
 
 /*
  * The data for a particular application on a shared device.
