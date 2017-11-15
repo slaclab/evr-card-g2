@@ -89,9 +89,10 @@ int main(int argc, char** argv) {
     }
 
     TprReg& reg = *reinterpret_cast<TprReg*>(ptr);
+    printf("BuildStamp: %s\n", reg.version.buildStamp().c_str());
+
     reg.xbar.setEvr( XBar::StraightIn );
     reg.xbar.setTpr( XBar::StraightIn );
-
     //
     //  Validate LCLS-II link
     //
