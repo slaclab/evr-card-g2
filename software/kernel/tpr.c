@@ -378,24 +378,31 @@ static void tpr_handle_dma(unsigned long arg)
 
       //  Check the message type
       mtyp = (dptr[0]>>16)&0xf;
-      if ( mtyp>2 ) {  //  Unknown message
-        printk(KERN_WARNING  "%s: handle unknown msg %08x:%08x\n", MOD_NAME, dptr[0], dptr[1]);
-        break;
-      }
-      else if ( mtyp==BSAEVNT_TAG ) {  
-        dev->dmaBsaChan++;
-        //  BSA channel frames are targeted to one readout channel.
-        //  Append the frame and bump the write pointer
-        ich = (dptr[0]>>0)&0xf;
-        memcpy(&tprq->chnq[ich].entry[tprq->chnwp[ich]++ & (MAX_TPR_CHNQ-1)], dptr, BSAEVNT_MSGSZ);
-        wmask = wmask | (1<<ich);
-        dptr += BSAEVNT_MSGSZ>>2;
-      }
-      else {
-        //  Append the frame and bump the write pointer
-        //  Timing frames and BSA control frames are targeted to multiple readout channel.
-        //  Update the indices for each targeted channel
-        if (mtyp==EVENT_TAG) {
+      switch (mtyp) {
+      case BSACNTL_TAG:
+#ifdef TPRDEBUG
+          printk(KERN_WARNING "%s: BSA_CTRL %lld\n", MOD_NAME, tprq->bsawp);
+#endif
+          dev->dmaBsaCtrl++;
+          wmask = wmask | (1 << (MOD_SHARED+1));
+          memcpy(&tprq->bsaq[tprq->bsawp & (MAX_TPR_BSAQ-1)], dptr, BSACNTL_MSGSZ);
+          tprq->bsawp++;
+          dptr += BSACNTL_MSGSZ>>2;
+          break;
+      case BSAEVNT_TAG:
+#ifdef TPRDEBUG
+          printk(KERN_WARNING "%s: BSA_EVNT %lld\n", MOD_NAME, tprq->bsawp);
+#endif
+          dev->dmaBsaChan++;
+          wmask = wmask | (1 << (MOD_SHARED+1));
+          memcpy(&tprq->bsaq[tprq->bsawp & (MAX_TPR_BSAQ-1)], dptr, BSAEVNT_MSGSZ);
+          tprq->bsawp++;
+          dptr += BSAEVNT_MSGSZ>>2;
+          break;
+      case EVENT_TAG:
+#ifdef TPRDEBUG
+          printk(KERN_WARNING "%s: EVENT\n", MOD_NAME);
+#endif
           dev->dmaEvent++;
           mch = (dptr[0]>>0)&((1<<MOD_SHARED)-1);
           if (((dptr[1]<<2)+8)!=EVENT_MSGSZ) {
@@ -404,23 +411,19 @@ static void tpr_handle_dma(unsigned long arg)
           }
           memcpy(&tprq->allq[tprq->gwp & (MAX_TPR_ALLQ-1)], dptr, EVENT_MSGSZ);
           dptr += EVENT_MSGSZ>>2;
-        }
-        else {
-          dev->dmaBsaCtrl++;
-          mch = (1<<MOD_SHARED)-1;  // BSA control
-          memcpy(&tprq->allq[tprq->gwp & (MAX_TPR_ALLQ-1)], dptr, BSACNTL_MSGSZ);
-          dptr += BSACNTL_MSGSZ>>2;
-        }
-        wmask = wmask | mch;
-        for( ich=0; mch; ich++) {
-          if (mch & (1<<ich)) {
-            mch = mch & ~(1<<ich);
-            tprq->allrp[ich].idx[ tprq->allwp[ich] & (MAX_TPR_ALLQ-1) ] = tprq->gwp;
-            tprq->allwp[ich]++;
+          wmask = wmask | mch;
+          for( ich=0; mch; ich++) {
+              if (mch & (1<<ich)) {
+                  mch = mch & ~(1<<ich);
+                  tprq->allrp[ich].idx[tprq->allwp[ich] & (MAX_TPR_ALLQ-1)] = tprq->gwp;
+                  tprq->allwp[ich]++;
+              }
           }
-        }
-
-        tprq->gwp++;
+          tprq->gwp++;
+          break;
+      default:
+          printk(KERN_WARNING  "%s: handle unknown msg %08x:%08x\n", MOD_NAME, dptr[0], dptr[1]);
+          break;
       }
     }
     
@@ -444,6 +447,17 @@ static void tpr_handle_dma(unsigned long arg)
         wake_up(&shared->waitq);
       }
     }
+  }
+
+  if (wmask & (1 << (MOD_SHARED+1))) {
+      struct shared_tpr *shared;
+      for (shared = dev->bsa; shared; shared = shared->next) {
+        set_bit(0, (volatile unsigned long*)&shared->pendingirq);
+#ifdef TPRDEBUG
+        printk(KERN_WARNING "%s: set pendingirq for %d == %ld\n", MOD_NAME, ich, shared->pendingirq);
+#endif
+        wake_up(&shared->waitq);
+      }
   }
 
   //  Enable the interrupt

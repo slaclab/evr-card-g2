@@ -23,8 +23,8 @@
 #define END_TAG     15
 
 #define EVENT_MSGSZ    92
-#define BSACNTL_MSGSZ  20
-#define BSAEVNT_MSGSZ  36
+#define BSACNTL_MSGSZ  36
+#define BSAEVNT_MSGSZ  44
 
 /*
  * The data for a particular application on a shared device.
@@ -35,8 +35,6 @@ struct shared_tpr {
   int             minor;       /* The index of list containing this structure in parent->shared */
   u32             irqmask;     /* The IRQs this client wants to see. */
   unsigned long   pendingirq;  /* IRQs still to be delivered. */
-  //  u16             evttab[256]; /* The events this client wants to see. */
-  //  u32             tmp[EVR_MAX_READ/sizeof(u32)];
   wait_queue_head_t waitq;
   spinlock_t      lock;
   struct shared_tpr *next;
@@ -91,11 +89,11 @@ struct tpr_dev {
 // Global Variable
 struct tpr_dev gDevices[MAX_PCI_DEVICES];
 
-#define MOD_MINORS (MOD_SHARED+1)
+#define MOD_MINORS (MOD_SHARED+2)
 
 /* These must be powers of two!!! */
 #define MAX_TPR_ALLQ (32*1024)
-#define MAX_TPR_CHNQ  1024
+#define MAX_TPR_BSAQ  1024
 #define MSG_SIZE      32
 
 // DMA Buffer Size, Bytes (could be as small as 512B)
@@ -104,10 +102,6 @@ struct tpr_dev gDevices[MAX_PCI_DEVICES];
 
 struct TprEntry {
   u32 word[MSG_SIZE];
-};
-
-struct ChnQueue {
-  struct TprEntry entry[MAX_TPR_CHNQ];
 };
 
 struct TprQIndex {
@@ -121,10 +115,10 @@ struct TprQIndex {
 //
 struct TprQueues {
   struct TprEntry  allq  [MAX_TPR_ALLQ]; // master queue of shared messages
-  struct ChnQueue  chnq  [MOD_SHARED];   // queue of single channel messages
-  struct TprQIndex allrp [MOD_SHARED]; // indices into allq
-  long long        allwp [MOD_SHARED]; // write pointer into allrp
-  long long        chnwp [MOD_SHARED]; // write pointer into chnq's
+  struct TprEntry  bsaq  [MAX_TPR_BSAQ]; // queue of BSA messages
+  struct TprQIndex allrp [MOD_SHARED];   // indices into allq
+  long long        allwp [MOD_SHARED];   // write pointer into allrp
+  long long        bsawp;                // write pointer into bsaq
   long long        gwp;
   int              fifofull;
 };
