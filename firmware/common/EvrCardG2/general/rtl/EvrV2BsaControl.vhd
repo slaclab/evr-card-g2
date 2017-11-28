@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-05-10
+-- Last update: 2017-11-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -45,6 +45,7 @@ end EvrV2BsaControl;
 architecture mapping of EvrV2BsaControl is
 
   type BsaReadState is ( IDLR_S, TAG_S,
+                         PIDL_S, PIDU_S,
                          TIML_S, TIMU_S,
                          INIL_S, INIU_S,
                          ACTL_S, ACTU_S,
@@ -83,6 +84,10 @@ begin  -- mapping
                        v.state := TAG_S;
                      end if;
       when TAG_S  => v.dmaData.tData := EVRV2_BSA_CONTROL_TAG & x"0000";
+                     v.state := PIDL_S;
+      when PIDL_S => v.dmaData.tData := dataIn.pulseId(31 downto 0);
+                     v.state := PIDU_S;
+      when PIDU_S => v.dmaData.tData := dataIn.pulseId(63 downto 32);
                      v.state := TIML_S;
       when TIML_S => v.dmaData.tData := dataIn.timeStamp(31 downto 0);
                      v.state := TIMU_S;

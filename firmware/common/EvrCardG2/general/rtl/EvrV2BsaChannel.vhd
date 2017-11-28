@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-05-10
+-- Last update: 2017-11-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -282,8 +282,8 @@ begin  -- mapping
     
     case r.rstate is
       when TAG_S =>
-        v.dmaData.tData  := EVRV2_BSA_CHANNEL_TAG &
-                            slv(conv_unsigned(CHAN_C,16));
+        v.dmaData.tData         := EVRV2_BSA_CHANNEL_TAG & toSlv(0,16);
+        v.dmaData.tData(CHAN_C) := '1';
         v.rstate := PIDL_S;
       when PIDL_S =>
         v.dmaData.tData  := r.pulseId(31 downto 0);

@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-05-11
+-- Last update: 2017-11-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -72,25 +72,43 @@ end EvrV2Core;
 
 architecture mapping of EvrV2Core is
 
-  constant NUM_AXI_MASTERS_C : natural := 3;
+  constant NTRIGGERS_C       : natural := TriggerOutputs;
+  constant NHARDCHANS_C      : natural := ReadoutChannels;
+--  constant NSOFTCHANS    _C  : natural := 0;
+  constant NSOFTCHANS_C      : natural := 2;
+  constant NCHANNELS_C       : natural := NHARDCHANS_C+NSOFTCHANS_C;
+  constant NUM_AXI_MASTERS_C : natural := 2+NCHANNELS_C+NTRIGGERS_C;
   constant CSR_INDEX_C       : natural := 0;
-  constant TRG_INDEX_C       : natural := 1;
-  constant DMA_INDEX_C       : natural := 2;
-
-  constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
-    CSR_INDEX_C      => (
-      baseAddr      => x"00000000" + AXIL_BASEADDR,
-      addrBits      => 9,
-      connectivity  => X"0001"),
-    TRG_INDEX_C => (
-      baseAddr      => x"00000200" + AXIL_BASEADDR,
-      addrBits      => 9,
-      connectivity  => X"0001"),
-    DMA_INDEX_C => (
-      baseAddr      => x"00000400" + AXIL_BASEADDR,
-      addrBits      => 10,
-      connectivity  => X"0001") );
+  constant DMA_INDEX_C       : natural := 1;
+  constant CHAN_INDEX_C      : natural := 2;
+  constant TRIG_INDEX_C      : natural := 2+NCHANNELS_C;
   
+  function crossBarConfig return AxiLiteCrossbarMasterConfigArray is
+    variable ret : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0);
+    variable i   : integer;
+    variable a   : slv(31 downto 0);
+  begin
+    ret(0).baseAddr := AXIL_BASEADDR;
+    ret(0).addrBits := 8;
+    ret(0).connectivity := x"FFFF";
+    ret(1).baseAddr := AXIL_BASEADDR + toSlv(256,32);
+    ret(1).addrBits := 8;
+    ret(1).connectivity := x"FFFF";
+    for i in 0 to NCHANNELS_C-1 loop
+      ret(i+CHAN_INDEX_C).baseAddr := AXIL_BASEADDR + toSlv((i+1)*4096,32);
+      ret(i+CHAN_INDEX_C).addrBits := 6;
+      ret(i+CHAN_INDEX_C).connectivity := x"FFFF";
+    end loop;
+    for i in 0 to NTRIGGERS_C-1 loop
+      ret(i+TRIG_INDEX_C).baseAddr := AXIL_BASEADDR + toSlv((i+1+NCHANNELS_C)*4096,32);
+      ret(i+TRIG_INDEX_C).addrBits := 6;
+      ret(i+TRIG_INDEX_C).connectivity := x"FFFF";
+    end loop;
+    return ret;
+  end function;
+  
+  constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := crossBarConfig;
+
   signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
   signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray (NUM_AXI_MASTERS_C-1 downto 0);
   signal mAxiReadMasters  : AxiLiteReadMasterArray (NUM_AXI_MASTERS_C-1 downto 0);
@@ -98,25 +116,29 @@ architecture mapping of EvrV2Core is
   
   constant STROBE_INTERVAL_C : integer := 12;
   
-  signal bsaControl       : EvrV2BsaControlType;
-  signal bsaChannel       : EvrV2BsaChannelArray   (ReadoutChannels-1 downto 0);
-  signal channelConfig    : EvrV2ChannelConfigArray(ReadoutChannels-1 downto 0);
-  signal channelConfigS   : EvrV2ChannelConfigArray(ReadoutChannels-1 downto 0) := (others=>EVRV2_CHANNEL_CONFIG_INIT_C);
-  signal triggerConfig    : EvrV2TriggerConfigArray(TriggerOutputs-1 downto 0);
-  signal triggerConfigS   : EvrV2TriggerConfigArray(TriggerOutputs-1 downto 0) := (others=>EVRV2_TRIGGER_CONFIG_INIT_C);
-  
+  signal channelConfig    : EvrV2ChannelConfigArray(NCHANNELS_C-1 downto 0);
+  signal channelConfigS   : EvrV2ChannelConfigArray(NCHANNELS_C-1 downto 0) := (others=>EVRV2_CHANNEL_CONFIG_INIT_C);
+  signal channelConfigAV  : slv(NCHANNELS_C*EVRV2_CHANNEL_CONFIG_BITS_C-1 downto 0);
+  signal channelConfigSV  : slv(NCHANNELS_C*EVRV2_CHANNEL_CONFIG_BITS_C-1 downto 0);
+  signal triggerConfig    : EvrV2TriggerConfigArray(NTRIGGERS_C-1 downto 0);
+  signal triggerConfigS   : EvrV2TriggerConfigArray(NTRIGGERS_C-1 downto 0) := (others=>EVRV2_TRIGGER_CONFIG_INIT_C);
+  signal triggerConfigAV  : slv(NTRIGGERS_C*EVRV2_TRIGGER_CONFIG_BITS_C-1 downto 0);
+  signal triggerConfigSV  : slv(NTRIGGERS_C*EVRV2_TRIGGER_CONFIG_BITS_C-1 downto 0);
+
   signal gtxDebugS   : slv(7 downto 0);
 
   signal rStrobe        : slv(198 downto 0) := (others=>'0');
   
   signal timingMsg      : TimingMessageType := TIMING_MESSAGE_INIT_C;
-  signal dmaSel         : slv(ReadoutChannels-1 downto 0) := (others=>'0');
-  signal eventSel       : slv(ReadoutChannels-1 downto 0) := (others=>'0');
-  signal eventCount     : SlVectorArray(ReadoutChannels downto 0,31 downto 0);
+  signal dmaSel         : slv(NCHANNELS_C-1 downto 0) := (others=>'0');
+  signal eventSel       : slv(15 downto 0) := (others=>'0');
+  signal summarySel     : slv(15 downto 0) := (others=>'0');
+  signal eventCount     : SlVectorArray(NCHANNELS_C downto 0,31 downto 0);
+  signal eventCountV    : Slv32Array(NCHANNELS_C downto 0);
   signal rstCount : sl;
   
   signal dmaCtrl    : AxiStreamCtrlType;
-  signal dmaData    : EvrV2DmaDataArray(ReadoutChannels+1 downto 0);
+  signal dmaData    : EvrV2DmaDataArray(NHARDCHANS_C+2 downto 0);
 
   constant SAXIS_MASTER_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);
   
@@ -129,8 +151,8 @@ architecture mapping of EvrV2Core is
   signal rxDescToPci   : DescToPcieType;
   signal rxDescFromPci : DescFromPcieType;
 
-  signal bsaEnabled : slv(ReadoutChannels-1 downto 0);
-  signal anyBsaEnabled : sl;
+  signal dmaEnabled    : slv(NCHANNELS_C-1 downto 0);
+  signal anyDmaEnabled : sl;
   
   signal irqRequest : sl;
 
@@ -185,9 +207,12 @@ begin  -- rtl
                  probe0(133 downto 6) => dbDmaRxIbMaster.tData(127 downto 0),
                  probe0(255 downto 134) => (others=>'0') );
   end generate;
-                 
+
+  --  Each BSA Channel occupies 11 clocks
+  --  BSA Control occupies 10 clocks
+  --  EventDMA occupies 22 clocks
 --  assert (rStrobe'length <= 200)
-  assert (ReadoutChannels*STROBE_INTERVAL_C+34 < 200)
+  assert (NHARDCHANS_C*STROBE_INTERVAL_C+34 < 200)
     report "rStrobe'length exceeds clocks per cycle"
     severity failure;
   
@@ -222,7 +247,29 @@ begin  -- rtl
       mAxiWriteSlaves     => mAxiWriteSlaves,
       mAxiReadMasters     => mAxiReadMasters,
       mAxiReadSlaves      => mAxiReadSlaves);   
+
+  eventCountV(NCHANNELS_C) <= muxSlVectorArray(eventCount,NCHANNELS_C);
   
+  U_Reg : entity work.EvrV2Reg
+    generic map ( TPD_G        => TPD_G,
+                  DMA_ENABLE_G => true )
+    port map (    axiClk              => axiClk,
+                  axiRst              => axiRst,
+                  axilWriteMaster     => mAxiWriteMasters (CSR_INDEX_C),
+                  axilWriteSlave      => mAxiWriteSlaves  (CSR_INDEX_C),
+                  axilReadMaster      => mAxiReadMasters  (CSR_INDEX_C),
+                  axilReadSlave       => mAxiReadSlaves   (CSR_INDEX_C),
+                  -- configuration
+                  irqEnable           => irqEnable,
+                  trigSel             => open,
+                  dmaFullThr          => dmaFullThr(0),
+                  -- status
+                  irqReq              => irqRequest,
+                  partitionAddr       => partitionAddr,
+                  rstCount            => rstCount,
+                  eventCount          => eventCountV(NCHANNELS_C),
+                  gtxDebug            => gtxDebugS );
+    
   U_PciRxDesc : entity work.EvrV2PcieRxDesc
     generic map ( DMA_SIZE_G       => 1 )
     port map (    dmaDescToPci  (0)=> rxDescToPci,
@@ -256,7 +303,7 @@ begin  -- rtl
                   dmaChannel     => x"0" );
 
   U_Dma : entity work.EvrV2Dma
-    generic map ( CHANNELS_C    => ReadoutChannels+2,
+    generic map ( CHANNELS_C    => ReadoutChannels+3,
                   AXIS_CONFIG_C => SAXIS_MASTER_CONFIG_C )
     port map (    clk        => evrClk,
                   strobe     => rStrobe(rStrobe'left),
@@ -270,22 +317,26 @@ begin  -- rtl
     generic map ( TPD_G      => TPD_G )
     port map (    evrClk     => evrClk,
                   evrRst     => evrRst,
-                  enable     => anyBsaEnabled,
+                  enable     => anyDmaEnabled,
                   strobeIn   => rStrobe(0),
                   dataIn     => timingMsg,
                   dmaData    => dmaData        (ReadoutChannels) );
 
-  Loop_BsaCh: for i in 0 to ReadoutChannels-1 generate
+  Loop_EventSel: for i in 0 to NCHANNELS_C-1 generate
     U_EventSel : entity work.EvrV2EventSelect
       generic map ( TPD_G         => TPD_G )
       port map    ( clk           => evrClk,
                     rst           => evrRst,
                     config        => channelConfigS(i),
-                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+5),
+                    strobeIn      => rStrobe(0),
                     dataIn        => timingMsg,
                     exptIn        => exptBus,
                     selectOut     => eventSel(i),
                     dmaOut        => dmaSel(i) );
+    summarySel(i) <= dmaSel(i) and not channelConfigS(i).bsaEnabled;
+  end generate;  -- i
+
+  Loop_BsaCh: for i in 0 to NHARDCHANS_C-1 generate
     U_BsaChannel : entity work.EvrV2BsaChannelDSP
       generic map ( TPD_G         => TPD_G,
                     CHAN_C        => i,
@@ -294,20 +345,30 @@ begin  -- rtl
                     evrRst        => evrRst,
                     channelConfig => channelConfigS(i),
                     evtSelect     => dmaSel(i),
-                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+6),
+                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+8),
                     dataIn        => timingMsg,
                     dmaData       => dmaData(i) );
   end generate;  -- i
 
+  U_BsaSummary : entity work.EvrV2BsaChannelSummary
+    generic map ( TPD_G         => TPD_G )
+    port map    ( evrClk        => evrClk,
+                  evrRst        => evrRst,
+                  enable        => '1',
+                  evtSelect     => summarySel,
+                  strobeIn      => rStrobe(NHARDCHANS_C*STROBE_INTERVAL_C+15),
+                  dataIn        => timingMsg,
+                  dmaData       => dmaData(NHARDCHANS_C+2) );
+  
   U_EventDma : entity work.EvrV2EventDma
     generic map ( TPD_G      => TPD_G,
-                  CHANNELS_C => ReadoutChannels )
+                  CHANNELS_C => dmaSel'length )
     port map (    clk        => evrClk,
                   rst        => evrBus.strobe,
-                  strobe     => rStrobe(ReadoutChannels*STROBE_INTERVAL_C+16),
+                  strobe     => rStrobe(NHARDCHANS_C*STROBE_INTERVAL_C+30),
                   eventSel   => dmaSel,
                   eventData  => timingMsg,
-                  dmaData    => dmaData   (ReadoutChannels+1) );
+                  dmaData    => dmaData   (NHARDCHANS_C+1) );
 
   U_V2FromV1 : entity work.EvrV2FromV1
     port map ( clk       => evrClk,
@@ -333,9 +394,9 @@ begin  -- rtl
 
   Sync_EvtCount : entity work.SyncStatusVector
     generic map ( TPD_G   => TPD_G,
-                  WIDTH_G => ReadoutChannels+1 )
-    port map    ( statusIn(ReadoutChannels) => evrBus.strobe,
-                  statusIn(ReadoutChannels-1 downto 0) => eventSel,
+                  WIDTH_G => NCHANNELS_C+1 )
+    port map    ( statusIn(NCHANNELS_C) => evrBus.strobe,
+                  statusIn(NCHANNELS_C-1 downto 0) => eventSel(NCHANNELS_C-1 downto 0),
                   cntRstIn     => rstCount,
                   rollOverEnIn => (others=>'1'),
                   cntOut       => eventCount,
@@ -347,11 +408,25 @@ begin  -- rtl
   triggerStrobe <= rStrobe(rStrobe'left) when modeSel='0' else
                    evrBus.strobe;
   
-  Out_Trigger: for i in 0 to TriggerOutputs-1 generate
+  Out_Trigger: for i in 0 to NTRIGGERS_C-1 generate
+     U_Reg  : entity work.EvrV2TriggerReg
+       generic map ( TPD_G      => TPD_G,
+                     USE_TAP_C  => true )
+       port map (    axiClk              => axiClk,
+                     axiRst              => axiRst,
+                     axilWriteMaster     => mAxiWriteMasters (TRIG_INDEX_C+i),
+                     axilWriteSlave      => mAxiWriteSlaves  (TRIG_INDEX_C+i),
+                     axilReadMaster      => mAxiReadMasters  (TRIG_INDEX_C+i),
+                     axilReadSlave       => mAxiReadSlaves   (TRIG_INDEX_C+i),
+                     -- configuration
+                     triggerConfig       => triggerConfig(i),
+                     -- status
+                     delay_rd            => delay_rd(i) );
+
      U_Trig : entity work.EvrV2Trigger
         generic map ( TPD_G        => TPD_G,
-                      CHANNELS_C   => ReadoutChannels,
                       TRIG_DEPTH_C => 256,
+                      USE_MASK_G   => true,
                       --DEBUG_C    => (i<1) )
                       DEBUG_C      => false )
         port map (    clk      => evrClk,
@@ -362,167 +437,51 @@ begin  -- rtl
                       trigstate=> dbTrigOut(i) );
   end generate Out_Trigger;
   
-  U_EvrAxi : entity work.EvrV2Axi
-    generic map ( TPD_G        => TPD_G,
-                  DMA_ENABLE_G => true,
-                  CHANNELS_C   => ReadoutChannels )
-    port map (    axiClk              => axiClk,
-                  axiRst              => axiRst,
-                  axilWriteMaster     => mAxiWriteMasters (CSR_INDEX_C),
-                  axilWriteSlave      => mAxiWriteSlaves  (CSR_INDEX_C),
-                  axilReadMaster      => mAxiReadMasters  (CSR_INDEX_C),
-                  axilReadSlave       => mAxiReadSlaves   (CSR_INDEX_C),
-                  -- configuration
-                  irqEnable           => irqEnable,
-                  channelConfig       => channelConfig,
-                  trigSel             => open,
-                  dmaFullThr          => dmaFullThr(0),
-                  -- status
-                  irqReq              => irqRequest,
-                  partitionAddr       => partitionAddr,
-                  rstCount            => rstCount,
-                  eventCount          => eventCount,
-                  gtxDebug            => gtxDebugS );
-
-  U_EvrTrigReg : entity work.EvrV2TrigReg
-    generic map ( TPD_G      => TPD_G,
-                  TRIGGERS_C => TriggerOutputs,
-                  USE_TAP_C  => true )
-    port map (    axiClk              => axiClk,
-                  axiRst              => axiRst,
-                  axilWriteMaster     => mAxiWriteMasters (TRG_INDEX_C),
-                  axilWriteSlave      => mAxiWriteSlaves  (TRG_INDEX_C),
-                  axilReadMaster      => mAxiReadMasters  (TRG_INDEX_C),
-                  axilReadSlave       => mAxiReadSlaves   (TRG_INDEX_C),
-                  -- configuration
-                  triggerConfig       => triggerConfig,
-                  -- status
-                  delay_rd            => delay_rd(TriggerOutputs-1 downto 0) );
-
-  anyBsaEnabled <= uOr(bsaEnabled);
+  GEN_CHANREG: for i in 0 to NCHANNELS_C-1 generate
+    eventCountV(i) <= muxSlVectorArray(eventCount,i);
+    U_EvrChanReg : entity work.EvrV2ChannelReg
+      generic map ( TPD_G        => TPD_G,
+                    DMA_ENABLE_G => true )
+      port map (    axiClk              => axiClk,
+                    axiRst              => axiRst,
+                    axilWriteMaster     => mAxiWriteMasters (CHAN_INDEX_C+i),
+                    axilWriteSlave      => mAxiWriteSlaves  (CHAN_INDEX_C+i),
+                    axilReadMaster      => mAxiReadMasters  (CHAN_INDEX_C+i),
+                    axilReadSlave       => mAxiReadSlaves   (CHAN_INDEX_C+i),
+                    -- configuration
+                    channelConfig       => channelConfig(i),
+                    -- status
+                    eventCount          => eventCountV(i));
+  end generate;
+  
+  anyDmaEnabled <= uOr(dmaEnabled);
 
   -- Synchronize configurations to evrClk
-  Sync_Channel: for i in 0 to ReadoutChannels-1 generate
-    
-    U_SyncRate : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => channelConfig (i).rateSel'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).rateSel,
-                    dataOut => channelConfigS(i).rateSel );
-    
-    U_SyncDest : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => channelConfig (i).destSel'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).destSel,
-                    dataOut => channelConfigS(i).destSel );
-     
-    Sync_Enable : entity work.Synchronizer
-      generic map ( TPD_G   => TPD_G )
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).enabled,
-                    dataOut => channelConfigS(i).enabled );
+  U_SyncChannelConfig : entity work.SynchronizerVector
+    generic map ( WIDTH_G => NCHANNELS_C*EVRV2_CHANNEL_CONFIG_BITS_C )
+    port map ( clk     => evrClk,
+               dataIn  => channelConfigAV,
+               dataOut => channelConfigSV );
 
-    Sync_dmaEnable : entity work.Synchronizer
-      generic map ( TPD_G   => TPD_G )
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).dmaEnabled,
-                    dataOut => channelConfigS(i).dmaEnabled );
+  Sync_Channel: for i in 0 to NCHANNELS_C-1 generate
+    channelConfigAV((i+1)*EVRV2_CHANNEL_CONFIG_BITS_C-1 downto i*EVRV2_CHANNEL_CONFIG_BITS_C)
+        <= toSlv(channelConfig(i));
+    channelConfigS(i) <= toChannelConfig(channelConfigSV((i+1)*EVRV2_CHANNEL_CONFIG_BITS_C-1 downto i*EVRV2_CHANNEL_CONFIG_BITS_C));
 
-    Sync_bsaEnable : entity work.Synchronizer
-      generic map ( TPD_G   => TPD_G )
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).bsaEnabled,
-                    dataOut => bsaEnabled(i) );
-
-    channelConfigS(i).bsaEnabled <= bsaEnabled(i);
-    
-    Sync_Setup : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => channelConfig (i).bsaActiveSetup'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).bsaActiveSetup,
-                    dataOut => channelConfigS(i).bsaActiveSetup );
-    
-    Sync_Delay : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => channelConfig (i).bsaActiveDelay'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).bsaActiveDelay,
-                    dataOut => channelConfigS(i).bsaActiveDelay );
-    
-    Sync_Width : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => channelConfig (i).bsaActiveWidth'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => channelConfig (i).bsaActiveWidth,
-                    dataOut => channelConfigS(i).bsaActiveWidth );
-  
+    dmaEnabled(i) <= channelConfigS(i).dmaEnabled;
   end generate Sync_Channel;
 
-  Sync_Trigger: for i in 0 to TriggerOutputs-1 generate
+  U_SyncTriggerConfig : entity work.SynchronizerVector
+    generic map ( WIDTH_G => NTRIGGERS_C*EVRV2_TRIGGER_CONFIG_BITS_C )
+    port map ( clk     => evrClk,
+               dataIn  => triggerConfigAV,
+               dataOut => triggerConfigSV );
+ 
+  Sync_Trigger: for i in 0 to NTRIGGERS_C-1 generate
     
-    Sync_Enable : entity work.Synchronizer
-      generic map ( TPD_G   => TPD_G )
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => triggerConfig (i).enabled,
-                    dataOut => triggerConfigS(i).enabled );
-
-    Sync_Polarity : entity work.Synchronizer
-      generic map ( TPD_G   => TPD_G )
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => triggerConfig (i).polarity,
-                    dataOut => triggerConfigS(i).polarity );
-
-    Sync_Channel : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => triggerConfig (i).channel'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => triggerConfig (i).channel,
-                    dataOut => triggerConfigS(i).channel );
-    
-    U_SyncDelay : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => triggerConfig (i).delay'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => triggerConfig (i).delay,
-                    dataOut => triggerConfigS(i).delay );
-    
-    U_SyncWidth : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => triggerConfig (i).width'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => triggerConfig (i).width,
-                    dataOut => triggerConfigS(i).width );
-
-    U_SyncTap : entity work.SynchronizerVector
-      generic map ( TPD_G   => TPD_G,
-                    WIDTH_G => triggerConfig (i).delayTap'length)
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => triggerConfig (i).delayTap,
-                    dataOut => triggerConfigS(i).delayTap );
-
-    U_SyncTapLd : entity work.SynchronizerOneShot
-      generic map ( TPD_G   => TPD_G )
-      port map (    clk     => evrClk,
-                    rst     => evrRst,
-                    dataIn  => triggerConfig (i).loadTap,
-                    dataOut => triggerConfigS(i).loadTap );
+    triggerConfigAV((i+1)*EVRV2_TRIGGER_CONFIG_BITS_C-1 downto i*EVRV2_TRIGGER_CONFIG_BITS_C)
+      <= toSlv(triggerConfig(i));
+    triggerConfigS(i) <= toTriggerConfig(triggerConfigSV((i+1)*EVRV2_TRIGGER_CONFIG_BITS_C-1 downto i*EVRV2_TRIGGER_CONFIG_BITS_C));
 
     delay_wrb(i) <= triggerConfig(i).delayTap;
     delay_ldb(i) <= triggerConfig(i).loadTap;

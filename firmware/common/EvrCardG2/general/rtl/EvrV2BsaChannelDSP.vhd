@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-05-11
+-- Last update: 2017-11-28
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -46,8 +46,8 @@ entity EvrV2BsaChannelDSP is
     evrClk        : in  sl;
     evrRst        : in  sl;
     channelConfig : in  EvrV2ChannelConfig;
-    evtSelect     : in  sl;
-    strobeIn      : in  sl;
+    evtSelect     : in  sl;                  -- latch event
+    strobeIn      : in  sl;                  -- process and push to DMA
     dataIn        : in  TimingMessageType;
     dmaData       : out EvrV2DmaDataType );
 end EvrV2BsaChannelDSP;
@@ -279,7 +279,9 @@ begin  -- mapping
   begin  -- process
     v := r;
     v.strobe    := strobeIn;
-    v.evtSelect := evtSelect;
+    if evtSelect = '1' then
+      v.evtSelect := '1';
+    end if;
 
     pendActiveClear := '0';
     v.newActiveOp   := OP_Hold;
@@ -305,6 +307,7 @@ begin  -- mapping
       v.count := r.count+1;
       v.phase := r.phase+1;
       v.ramen := '1';
+      v.evtSelect := '0';
       
       -- premature termination
       if r.evtSelect='1' then
@@ -374,8 +377,8 @@ begin  -- mapping
     
     case r.rstate is
       when TAG_S =>
-        v.dmaData.tData  := EVRV2_BSA_CHANNEL_TAG &
-                            slv(conv_unsigned(CHAN_C,16));
+        v.dmaData.tData         := EVRV2_BSA_CHANNEL_TAG & toSlv(0,16);
+        v.dmaData.tData(CHAN_C) := '1';
         v.rstate := PIDL_S;
       when PIDL_S =>
         v.dmaData.tData  := r.pulseId(31 downto 0);
