@@ -28,6 +28,7 @@
 #include <asm/uaccess.h>
 #include <asm/atomic.h>
 #include <linux/cdev.h>
+#include <linux/vmalloc.h>
 #include "tpr.h"
 
 #undef TPRDEBUG
