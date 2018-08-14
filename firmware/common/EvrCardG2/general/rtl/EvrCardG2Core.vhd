@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2017-04-23
+-- Last update: 2018-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -424,10 +424,8 @@ begin
          ledGreenL       => ledGreenL(0),
          ledBlueL        => ledBlueL (0));           
 
---   rxStatus.locked       <= ;
-   rxStatus.resetDone    <= not evrRst;
---   rxStatus.bufferByDone <= ;
---   rxStatus.bufferByErr  <= ;
+--   rxStatus.resetDone    <= not evrRst;
+   rxStatus.resetDone    <= rxLinkUp;
    
    ------------------------------------------------------------------------------------------------
    -- Timing Core
