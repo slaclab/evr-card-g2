@@ -50,10 +50,6 @@ architecture mapping of JtagBridgeWrapper is
     PORT (
       s_axi_aclk : IN STD_LOGIC;
       s_axi_aresetn : IN STD_LOGIC;
-      tap_tdi : out STD_LOGIC;
-      tap_tdo : in STD_LOGIC;
-      tap_tms : out STD_LOGIC;
-      tap_tck : out STD_LOGIC;
       S_AXI_araddr : IN STD_LOGIC_VECTOR(4 DOWNTO 0);
       S_AXI_arprot : IN STD_LOGIC_VECTOR(2 DOWNTO 0);
       S_AXI_arready : OUT STD_LOGIC;
@@ -78,25 +74,13 @@ architecture mapping of JtagBridgeWrapper is
 
   signal aresetn : sl;
 
-  signal tck,tdi,tdo,tms : sl;
-  
 begin
 
   aresetn <= not axilRst;
 
-  U_Jtag : BSCANE2
-    port map ( tdo => tdo,
-               tdi => tdi,
-               tms => tms,
-               tck => tck );
-  
   U_JtagBridge : jtag_bridge
     port map ( s_axi_aclk    => axilClk,
                s_axi_aresetn => aresetn,
-               tap_tdi       => tdi,
-               tap_tdo       => tdo,
-               tap_tms       => tms,
-               tap_tck       => tck,
                S_AXI_araddr  => axilReadMaster .araddr(4 downto 0),
                S_AXI_arprot  => axilReadMaster .arprot,
                S_AXI_arready => axilReadSlave  .arready,
