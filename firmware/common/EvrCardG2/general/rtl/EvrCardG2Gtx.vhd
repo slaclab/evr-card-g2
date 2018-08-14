@@ -118,8 +118,8 @@ begin
                  probe0(8 downto 7) => decErr,
                  probe0(9)          => dataValid,
                  probe0( 29 downto 10) => gtRxData,
-                 probe0( 45 downto 30) => rxData,
-                 probe0( 47 downto 46) => rxDataK,
+                 probe0( 45 downto 30) => data,
+                 probe0( 47 downto 46) => dataK,
                  probe0( 71 downto 48) => cnt,
                  probe0(255 downto 72) => (others=>'0') );
   end generate;
