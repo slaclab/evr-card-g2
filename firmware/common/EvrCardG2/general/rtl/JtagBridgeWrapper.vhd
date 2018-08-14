@@ -84,7 +84,7 @@ begin
 
   aresetn <= not axilRst;
 
-  U_Jtag : MASTER_JTAG
+  U_Jtag : BSCANE2
     port map ( tdo => tdo,
                tdi => tdi,
                tms => tms,
