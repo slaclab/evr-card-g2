@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2016-04-19
+-- Last update: 2018-08-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -88,7 +88,7 @@ architecture rtl of EvrCardG2Gtx is
    signal linkUp        : sl;
    signal decErr        : slv(1 downto 0);
    signal dispErr       : slv(1 downto 0);
-   signal cnt           : slv(7 downto 0);
+   signal cnt           : slv(23 downto 0);
    signal gtRxData      : slv(19 downto 0);
    signal data          : slv(15 downto 0);
    signal dataK         : slv(1 downto 0);
@@ -97,8 +97,33 @@ architecture rtl of EvrCardG2Gtx is
    signal txOutClk      : sl;
    signal txUsrClk      : sl;
 
+   constant DEBUG_C : boolean := ite(EVR_VERSION_G, false,true);
+
+   component ila_0
+     port ( clk     : in sl;
+            probe0  : in slv(255 downto 0) );
+   end component;
+
 begin
 
+  GEN_DEBUG : if DEBUG_C generate
+    U_ILA : ila_0
+      port map ( clk        => evrRxRecClk,
+                 probe0(0)  => rxRst,
+                 probe0(1)  => stableRst,
+                 probe0(2)  => rxReset,
+                 probe0(3)  => gtRxResetDone,
+                 probe0(4)  => linkUp,
+                 probe0(6 downto 5) => dispErr,
+                 probe0(8 downto 7) => decErr,
+                 probe0(9)          => dataValid,
+                 probe0( 29 downto 10) => gtRxData,
+                 probe0( 45 downto 30) => rxData,
+                 probe0( 47 downto 46) => rxDataK,
+                 probe0( 71 downto 48) => cnt,
+                 probe0(255 downto 72) => (others=>'0') );
+  end generate;
+    
    rxError   <= not(dataValid) and linkUp;
    rxDspErr  <= dispErr;
    rxDecErr  <= decErr;
@@ -149,21 +174,18 @@ begin
    rxDataK   <= dataK when(linkUp = '1') else (others => '0');
    dataValid <= not (uOr(decErr) or uOr(dispErr));
    
-   process(evrRxRecClk)
-   begin
-      if rising_edge(evrRxRecClk) then
-         if gtRxResetDone = '0' then
-            cnt    <= (others => '0') after TPD_G;
-            linkUp <= '0'             after TPD_G;
-         else
-            if cnt = x"FF" then
-               linkUp <= '1' after TPD_G;
-            else
-               cnt <= cnt + 1 after TPD_G;
-            end if;
-         end if;
+  process(evrRxRecClk, gtRxResetDone)
+  begin
+    if gtRxResetDone = '0' then
+      cnt    <= (others => '0') after TPD_G;
+      linkUp <= '0'             after TPD_G;
+    elsif rising_edge(evrRxRecClk) then
+      if cnt = x"0000FF" then
+        linkUp <= '1' after TPD_G;
       end if;
-   end process;
+      cnt <= cnt + 1 after TPD_G;
+    end if;
+  end process;
 
    TxBUFG_Inst : BUFG
       port map (
