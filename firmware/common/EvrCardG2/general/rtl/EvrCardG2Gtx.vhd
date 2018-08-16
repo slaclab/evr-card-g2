@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2018-08-13
+-- Last update: 2018-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ architecture rtl of EvrCardG2Gtx is
    signal txOutClk      : sl;
    signal txUsrClk      : sl;
 
-   constant DEBUG_C : boolean := ite(EVR_VERSION_G, false,true);
+   constant DEBUG_C : boolean := true;
 
    component ila_0
      port ( clk     : in sl;
