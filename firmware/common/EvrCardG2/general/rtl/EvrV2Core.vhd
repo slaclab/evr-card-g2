@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-11-28
+-- Last update: 2019-04-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -31,22 +31,24 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPciePkg.all;
 use work.TimingPkg.all;
+use work.TimingExtnPkg.all;
 use work.EvrV2Pkg.all;
 --use work.PciPkg.all;
 use work.SsiPkg.all;
 
 entity EvrV2Core is
   generic (
-    TPD_G         : time             := 1 ns;
-    AXIL_BASEADDR : slv(31 downto 0) := x"00080000" );
+    TPD_G          : time             := 1 ns;
+    AXIL_BASEADDR0 : slv(31 downto 0) := x"00060000";
+    AXIL_BASEADDR1 : slv(31 downto 0) := x"00080000" );
   port (
     -- AXI-Lite and IRQ Interface
     axiClk              : in  sl;
     axiRst              : in  sl;
-    axilWriteMaster     : in  AxiLiteWriteMasterType;
-    axilWriteSlave      : out AxiLiteWriteSlaveType;
-    axilReadMaster      : in  AxiLiteReadMasterType;
-    axilReadSlave       : out AxiLiteReadSlaveType;
+    axilWriteMaster     : in  AxiLiteWriteMasterArray(1 downto 0);
+    axilWriteSlave      : out AxiLiteWriteSlaveArray (1 downto 0);
+    axilReadMaster      : in  AxiLiteReadMasterArray (1 downto 0);
+    axilReadSlave       : out AxiLiteReadSlaveArray  (1 downto 0);
     irqActive           : in  sl;
     irqEnable           : out sl;
     irqReq              : out sl;
@@ -77,42 +79,25 @@ architecture mapping of EvrV2Core is
 --  constant NSOFTCHANS    _C  : natural := 0;
   constant NSOFTCHANS_C      : natural := 2;
   constant NCHANNELS_C       : natural := NHARDCHANS_C+NSOFTCHANS_C;
-  constant NUM_AXI_MASTERS_C : natural := 2+NCHANNELS_C+NTRIGGERS_C;
+  constant NUM_AXI_MASTERS_C : natural := 2;
+  
   constant CSR_INDEX_C       : natural := 0;
   constant DMA_INDEX_C       : natural := 1;
-  constant CHAN_INDEX_C      : natural := 2;
-  constant TRIG_INDEX_C      : natural := 2+NCHANNELS_C;
-  
-  function crossBarConfig return AxiLiteCrossbarMasterConfigArray is
-    variable ret : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0);
-    variable i   : integer;
-    variable a   : slv(31 downto 0);
-  begin
-    ret(0).baseAddr := AXIL_BASEADDR;
-    ret(0).addrBits := 8;
-    ret(0).connectivity := x"FFFF";
-    ret(1).baseAddr := AXIL_BASEADDR + toSlv(256,32);
-    ret(1).addrBits := 8;
-    ret(1).connectivity := x"FFFF";
-    for i in 0 to NCHANNELS_C-1 loop
-      ret(i+CHAN_INDEX_C).baseAddr := AXIL_BASEADDR + toSlv((i+1)*4096,32);
-      ret(i+CHAN_INDEX_C).addrBits := 6;
-      ret(i+CHAN_INDEX_C).connectivity := x"FFFF";
-    end loop;
-    for i in 0 to NTRIGGERS_C-1 loop
-      ret(i+TRIG_INDEX_C).baseAddr := AXIL_BASEADDR + toSlv((i+1+NCHANNELS_C)*4096,32);
-      ret(i+TRIG_INDEX_C).addrBits := 6;
-      ret(i+TRIG_INDEX_C).connectivity := x"FFFF";
-    end loop;
-    return ret;
-  end function;
-  
-  constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := crossBarConfig;
+  constant AXI_CROSSBAR_MASTERS_CONFIG0_C : AxiLiteCrossbarMasterConfigArray(1 downto 0) :=
+    genAxiLiteConfig( 2, AXIL_BASEADDR0, 16, 10 );
+  signal mAxiWriteMasters0 : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
+  signal mAxiWriteSlaves0  : AxiLiteWriteSlaveArray (NUM_AXI_MASTERS_C-1 downto 0);
+  signal mAxiReadMasters0  : AxiLiteReadMasterArray (NUM_AXI_MASTERS_C-1 downto 0);
+  signal mAxiReadSlaves0   : AxiLiteReadSlaveArray  (NUM_AXI_MASTERS_C-1 downto 0);
 
-  signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
-  signal mAxiWriteSlaves  : AxiLiteWriteSlaveArray (NUM_AXI_MASTERS_C-1 downto 0);
-  signal mAxiReadMasters  : AxiLiteReadMasterArray (NUM_AXI_MASTERS_C-1 downto 0);
-  signal mAxiReadSlaves   : AxiLiteReadSlaveArray  (NUM_AXI_MASTERS_C-1 downto 0);
+  constant TRIG_INDEX_C      : natural := 1;
+  constant CHAN_INDEX_C      : natural := 0;
+  constant AXI_CROSSBAR_MASTERS_CONFIG1_C : AxiLiteCrossbarMasterConfigArray(1 downto 0) :=
+    genAxiLiteConfig( 2, AXIL_BASEADDR1, 18, 17 );
+  signal mAxiWriteMasters1 : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
+  signal mAxiWriteSlaves1  : AxiLiteWriteSlaveArray (NUM_AXI_MASTERS_C-1 downto 0);
+  signal mAxiReadMasters1  : AxiLiteReadMasterArray (NUM_AXI_MASTERS_C-1 downto 0);
+  signal mAxiReadSlaves1   : AxiLiteReadSlaveArray  (NUM_AXI_MASTERS_C-1 downto 0);
   
   constant STROBE_INTERVAL_C : integer := 12;
   
@@ -127,15 +112,29 @@ architecture mapping of EvrV2Core is
 
   signal gtxDebugS   : slv(7 downto 0);
 
-  signal rStrobe        : slv(198 downto 0) := (others=>'0');
+  type RegType is record
+    strobe      : slv       (198 downto 0);
+    count       : slv       ( 27 downto 0);
+    reset       : sl;
+    eventCount  : Slv20Array(NCHANNELS_C downto 0);
+    eventCountL : Slv20Array(NCHANNELS_C downto 0);
+  end record;
+
+  constant REG_INIT_C : RegType := (
+    strobe      => (others=>'0'),
+    count       => (others=>'0'),
+    reset       => '1',
+    eventCount  => (others=>(others=>'0')),
+    eventCountL => (others=>(others=>'0')) );
+
+  signal r    : RegType := REG_INIT_C;
+  signal rin  : RegType;
   
   signal timingMsg      : TimingMessageType := TIMING_MESSAGE_INIT_C;
   signal dmaSel         : slv(NCHANNELS_C-1 downto 0) := (others=>'0');
   signal eventSel       : slv(15 downto 0) := (others=>'0');
   signal summarySel     : slv(15 downto 0) := (others=>'0');
-  signal eventCount     : SlVectorArray(NCHANNELS_C downto 0,31 downto 0);
-  signal eventCountV    : Slv32Array(NCHANNELS_C downto 0);
-  signal rstCount : sl;
+  signal eventCountV    : Slv32Array(NCHANNELS_C downto 0) := (others=>(others=>'0'));
   
   signal dmaCtrl    : AxiStreamCtrlType;
   signal dmaData    : EvrV2DmaDataArray(NHARDCHANS_C+2 downto 0);
@@ -230,43 +229,59 @@ begin  -- rtl
   -------------------------
   -- AXI-Lite Crossbar Core
   -------------------------  
-  AxiLiteCrossbar_Inst : entity work.AxiLiteCrossbar
+  AxiLiteCrossbar0_Inst : entity work.AxiLiteCrossbar
     generic map (
       TPD_G              => TPD_G,
       NUM_SLAVE_SLOTS_G  => 1,
-      NUM_MASTER_SLOTS_G => NUM_AXI_MASTERS_C,
-      MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG_C)
+      NUM_MASTER_SLOTS_G => 2,
+      MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG0_C)
     port map (
       axiClk              => axiClk,
       axiClkRst           => axiRst,
-      sAxiWriteMasters(0) => axilWriteMaster,
-      sAxiWriteSlaves (0) => axilWriteSlave,
-      sAxiReadMasters (0) => axilReadMaster,
-      sAxiReadSlaves  (0) => axilReadSlave,
-      mAxiWriteMasters    => mAxiWriteMasters,
-      mAxiWriteSlaves     => mAxiWriteSlaves,
-      mAxiReadMasters     => mAxiReadMasters,
-      mAxiReadSlaves      => mAxiReadSlaves);   
+      sAxiWriteMasters(0) => axilWriteMaster(0),
+      sAxiWriteSlaves (0) => axilWriteSlave (0),
+      sAxiReadMasters (0) => axilReadMaster (0),
+      sAxiReadSlaves  (0) => axilReadSlave  (0),
+      mAxiWriteMasters    => mAxiWriteMasters0,
+      mAxiWriteSlaves     => mAxiWriteSlaves0,
+      mAxiReadMasters     => mAxiReadMasters0,
+      mAxiReadSlaves      => mAxiReadSlaves0);   
 
-  eventCountV(NCHANNELS_C) <= muxSlVectorArray(eventCount,NCHANNELS_C);
+  AxiLiteCrossbar1_Inst : entity work.AxiLiteCrossbar
+    generic map (
+      TPD_G              => TPD_G,
+      NUM_SLAVE_SLOTS_G  => 1,
+      NUM_MASTER_SLOTS_G => 2,
+      MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG1_C)
+    port map (
+      axiClk              => axiClk,
+      axiClkRst           => axiRst,
+      sAxiWriteMasters(0) => axilWriteMaster(1),
+      sAxiWriteSlaves (0) => axilWriteSlave (1),
+      sAxiReadMasters (0) => axilReadMaster (1),
+      sAxiReadSlaves  (0) => axilReadSlave  (1),
+      mAxiWriteMasters    => mAxiWriteMasters1,
+      mAxiWriteSlaves     => mAxiWriteSlaves1,
+      mAxiReadMasters     => mAxiReadMasters1,
+      mAxiReadSlaves      => mAxiReadSlaves1);   
   
   U_Reg : entity work.EvrV2Reg
     generic map ( TPD_G        => TPD_G,
                   DMA_ENABLE_G => true )
     port map (    axiClk              => axiClk,
                   axiRst              => axiRst,
-                  axilWriteMaster     => mAxiWriteMasters (CSR_INDEX_C),
-                  axilWriteSlave      => mAxiWriteSlaves  (CSR_INDEX_C),
-                  axilReadMaster      => mAxiReadMasters  (CSR_INDEX_C),
-                  axilReadSlave       => mAxiReadSlaves   (CSR_INDEX_C),
+                  axilWriteMaster     => mAxiWriteMasters0 (CSR_INDEX_C),
+                  axilWriteSlave      => mAxiWriteSlaves0  (CSR_INDEX_C),
+                  axilReadMaster      => mAxiReadMasters0  (CSR_INDEX_C),
+                  axilReadSlave       => mAxiReadSlaves0   (CSR_INDEX_C),
                   -- configuration
                   irqEnable           => irqEnable,
                   trigSel             => open,
                   dmaFullThr          => dmaFullThr(0),
                   -- status
                   irqReq              => irqRequest,
-                  partitionAddr       => partitionAddr,
-                  rstCount            => rstCount,
+--                  partitionAddr       => partitionAddr,
+                  rstCount            => open,
                   eventCount          => eventCountV(NCHANNELS_C),
                   gtxDebug            => gtxDebugS );
     
@@ -274,10 +289,10 @@ begin  -- rtl
     generic map ( DMA_SIZE_G       => 1 )
     port map (    dmaDescToPci  (0)=> rxDescToPci,
                   dmaDescFromPci(0)=> rxDescFromPci,
-                  axiReadMaster    => mAxiReadMasters (DMA_INDEX_C),
-                  axiReadSlave     => mAxiReadSlaves  (DMA_INDEX_C),
-                  axiWriteMaster   => mAxiWriteMasters(DMA_INDEX_C),
-                  axiWriteSlave    => mAxiWriteSlaves (DMA_INDEX_C),
+                  axiReadMaster    => mAxiReadMasters0 (DMA_INDEX_C),
+                  axiReadSlave     => mAxiReadSlaves0  (DMA_INDEX_C),
+                  axiWriteMaster   => mAxiWriteMasters0(DMA_INDEX_C),
+                  axiWriteSlave    => mAxiWriteSlaves0 (DMA_INDEX_C),
                   irqReq           => irqRequest,
                   cntRst           => '0',
                   pciClk           => pciClk,
@@ -306,7 +321,7 @@ begin  -- rtl
     generic map ( CHANNELS_C    => ReadoutChannels+3,
                   AXIS_CONFIG_C => SAXIS_MASTER_CONFIG_C )
     port map (    clk        => evrClk,
-                  strobe     => rStrobe(rStrobe'left),
+                  strobe     => r.strobe(r.strobe'left),
                   modeSel    => modeSel,
                   dmaCntl    => dmaCtrl,
                   dmaData    => dmaData,
@@ -318,19 +333,20 @@ begin  -- rtl
     port map (    evrClk     => evrClk,
                   evrRst     => evrRst,
                   enable     => anyDmaEnabled,
-                  strobeIn   => rStrobe(0),
+                  strobeIn   => r.strobe(0),
                   dataIn     => timingMsg,
                   dmaData    => dmaData        (ReadoutChannels) );
 
   Loop_EventSel: for i in 0 to NCHANNELS_C-1 generate
     U_EventSel : entity work.EvrV2EventSelect
-      generic map ( TPD_G         => TPD_G )
+      generic map ( TPD_G         => TPD_G,
+                    USER_BITS_G   => EXPT_PARTITIONS_C )
       port map    ( clk           => evrClk,
                     rst           => evrRst,
                     config        => channelConfigS(i),
-                    strobeIn      => rStrobe(0),
+                    strobeIn      => r.strobe(0),
                     dataIn        => timingMsg,
-                    exptIn        => exptBus,
+                    userIn        => toTrigVector(evrBus.extn.expt),
                     selectOut     => eventSel(i),
                     dmaOut        => dmaSel(i) );
     summarySel(i) <= dmaSel(i) and not channelConfigS(i).bsaEnabled;
@@ -345,7 +361,7 @@ begin  -- rtl
                     evrRst        => evrRst,
                     channelConfig => channelConfigS(i),
                     evtSelect     => dmaSel(i),
-                    strobeIn      => rStrobe(i*STROBE_INTERVAL_C+8),
+                    strobeIn      => r.strobe(i*STROBE_INTERVAL_C+8),
                     dataIn        => timingMsg,
                     dmaData       => dmaData(i) );
   end generate;  -- i
@@ -356,7 +372,7 @@ begin  -- rtl
                   evrRst        => evrRst,
                   enable        => '1',
                   evtSelect     => summarySel,
-                  strobeIn      => rStrobe(NHARDCHANS_C*STROBE_INTERVAL_C+15),
+                  strobeIn      => r.strobe(NHARDCHANS_C*STROBE_INTERVAL_C+15),
                   dataIn        => timingMsg,
                   dmaData       => dmaData(NHARDCHANS_C+2) );
   
@@ -365,7 +381,7 @@ begin  -- rtl
                   CHANNELS_C => dmaSel'length )
     port map (    clk        => evrClk,
                   rst        => evrBus.strobe,
-                  strobe     => rStrobe(NHARDCHANS_C*STROBE_INTERVAL_C+30),
+                  strobe     => r.strobe(NHARDCHANS_C*STROBE_INTERVAL_C+30),
                   eventSel   => dmaSel,
                   eventData  => timingMsg,
                   dmaData    => dmaData   (NHARDCHANS_C+1) );
@@ -376,12 +392,44 @@ begin  -- rtl
                timingIn  => evrBus,
                timingOut => timingMsg );
 
-  process (evrClk)
+  comb : process ( r, evrBus, eventSel, evrModeSel ) is
+    variable v : RegType;
+  begin
+    v := r;
+
+    v.reset  := '0';
+    v.count  := r.count+1;
+    v.strobe := r.strobe(r.strobe'left-1 downto 0) & evrBus.strobe;
+    
+    for i in 0 to NCHANNELS_C-1 loop
+      if eventSel(i) = '1' then
+        v.eventCount(i) := r.eventCount(i)+1;
+      end if;
+    end loop;
+    if evrBus.strobe = '1' then
+      v.eventCount(NCHANNELS_C) := r.eventCount(NCHANNELS_C)+1;
+    end if;
+
+    if ((evrModeSel = '0' and r.count = toSlv(118999998,28)) or
+        (evrModeSel = '1' and r.count = toSlv(181999998,28))) then
+      v.reset := '1';
+    end if;
+
+    if r.reset = '1' then
+      v.count       := (others=>'0');
+      v.eventCount  := (others=>(others=>'0'));
+      v.eventCountL := r.eventCount;
+    end if;
+    
+    rin <= v;
+  end process comb;
+    
+  seq : process (evrClk)
   begin
     if rising_edge(evrClk) then
-      rStrobe    <= rStrobe(rStrobe'left-1 downto 0) & evrBus.strobe;
+      r <= rin;
     end if;
-  end process;
+  end process seq;
 
   SyncVector_Gtx : entity work.SynchronizerVector
     generic map (
@@ -392,39 +440,39 @@ begin  -- rtl
       dataIn                => gtxDebug,
       dataOut               => gtxDebugS );
 
-  Sync_EvtCount : entity work.SyncStatusVector
-    generic map ( TPD_G   => TPD_G,
-                  WIDTH_G => NCHANNELS_C+1 )
-    port map    ( statusIn(NCHANNELS_C) => evrBus.strobe,
-                  statusIn(NCHANNELS_C-1 downto 0) => eventSel(NCHANNELS_C-1 downto 0),
-                  cntRstIn     => rstCount,
-                  rollOverEnIn => (others=>'1'),
-                  cntOut       => eventCount,
-                  wrClk        => evrClk,
-                  wrRst        => '0',
-                  rdClk        => axiClk,
-                  rdRst        => axiRst );
-
-  triggerStrobe <= rStrobe(rStrobe'left) when modeSel='0' else
+  GEN_EVTCOUNT : for i in 0 to NCHANNELS_C generate
+    Sync_EvtCount : entity work.SynchronizerVector
+      generic map ( TPD_G   => TPD_G,
+                    WIDTH_G => 20 )
+      port map    ( clk      => axiClk,
+                    dataIn   => r.eventCountL(i),
+                    dataOut  => eventCountV  (i)(19 downto 0) );
+  end generate;
+  
+  triggerStrobe <= r.strobe(r.strobe'left) when modeSel='0' else
                    evrBus.strobe;
   
-  Out_Trigger: for i in 0 to NTRIGGERS_C-1 generate
-     U_Reg  : entity work.EvrV2TriggerReg
-       generic map ( TPD_G      => TPD_G,
-                     USE_TAP_C  => true )
-       port map (    axiClk              => axiClk,
-                     axiRst              => axiRst,
-                     axilWriteMaster     => mAxiWriteMasters (TRIG_INDEX_C+i),
-                     axilWriteSlave      => mAxiWriteSlaves  (TRIG_INDEX_C+i),
-                     axilReadMaster      => mAxiReadMasters  (TRIG_INDEX_C+i),
-                     axilReadSlave       => mAxiReadSlaves   (TRIG_INDEX_C+i),
-                     -- configuration
-                     triggerConfig       => triggerConfig(i),
-                     -- status
-                     delay_rd            => delay_rd(i) );
+  U_TReg  : entity work.EvrV2TrigReg
+    generic map ( TPD_G      => TPD_G,
+                  TRIGGERS_C => NTRIGGERS_C,
+                  EVR_CARD_G => true,
+                  USE_MASK_G => true,
+                  USE_TAP_C  => true )
+    port map (    axiClk              => axiClk,
+                  axiRst              => axiRst,
+                  axilWriteMaster     => mAxiWriteMasters1 (TRIG_INDEX_C),
+                  axilWriteSlave      => mAxiWriteSlaves1  (TRIG_INDEX_C),
+                  axilReadMaster      => mAxiReadMasters1  (TRIG_INDEX_C),
+                  axilReadSlave       => mAxiReadSlaves1   (TRIG_INDEX_C),
+                  -- configuration
+                  triggerConfig       => triggerConfig,
+                  -- status
+                  delay_rd            => delay_rd );
 
+  Out_Trigger: for i in 0 to NTRIGGERS_C-1 generate
      U_Trig : entity work.EvrV2Trigger
         generic map ( TPD_G        => TPD_G,
+                      CHANNELS_C   => NHARDCHANS_C,
                       TRIG_DEPTH_C => 256,
                       USE_MASK_G   => true,
                       --DEBUG_C    => (i<1) )
@@ -432,28 +480,29 @@ begin  -- rtl
         port map (    clk      => evrClk,
                       rst      => evrRst,
                       config   => triggerConfigS(i),
-                      arm      => eventSel,
+                      arm      => eventSel(NHARDCHANS_C-1 downto 0),
                       fire     => triggerStrobe,
                       trigstate=> dbTrigOut(i) );
   end generate Out_Trigger;
   
-  GEN_CHANREG: for i in 0 to NCHANNELS_C-1 generate
-    eventCountV(i) <= muxSlVectorArray(eventCount,i);
-    U_EvrChanReg : entity work.EvrV2ChannelReg
-      generic map ( TPD_G        => TPD_G,
-                    DMA_ENABLE_G => true )
-      port map (    axiClk              => axiClk,
-                    axiRst              => axiRst,
-                    axilWriteMaster     => mAxiWriteMasters (CHAN_INDEX_C+i),
-                    axilWriteSlave      => mAxiWriteSlaves  (CHAN_INDEX_C+i),
-                    axilReadMaster      => mAxiReadMasters  (CHAN_INDEX_C+i),
-                    axilReadSlave       => mAxiReadSlaves   (CHAN_INDEX_C+i),
-                    -- configuration
-                    channelConfig       => channelConfig(i),
-                    -- status
-                    eventCount          => eventCountV(i));
-  end generate;
-  
+  U_EvrChanReg : entity work.EvrV2ChannelReg
+    generic map ( TPD_G        => TPD_G,
+                  NCHANNELS_G  => NCHANNELS_C,
+                  DMA_ENABLE_G => true,
+                  EVR_CARD_G   => true )
+--                  AXIL_XBAR_G  => false,
+--                  AXIL_BASEADDR=> AXI_CROSSBAR_MASTERS_CONFIG1_C(CHAN_INDEX_C).baseAddr )
+    port map (    axiClk              => axiClk,
+                  axiRst              => axiRst,
+                  axilWriteMaster     => mAxiWriteMasters1 (CHAN_INDEX_C),
+                  axilWriteSlave      => mAxiWriteSlaves1  (CHAN_INDEX_C),
+                  axilReadMaster      => mAxiReadMasters1  (CHAN_INDEX_C),
+                  axilReadSlave       => mAxiReadSlaves1   (CHAN_INDEX_C),
+                  -- configuration
+                  channelConfig       => channelConfig,
+                  -- status
+                  eventCount          => eventCountV(NCHANNELS_C-1 downto 0) );
+
   anyDmaEnabled <= uOr(dmaEnabled);
 
   -- Synchronize configurations to evrClk

@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2017-03-09
+-- Last update: 2018-07-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -26,6 +26,7 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
 use work.StdRtlPkg.all;
+use work.AxiLitePkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -37,6 +38,10 @@ entity EvrCardG2GMux is
       -- AxiLite/DRP interface
       axiClk     : in  sl;
       axiRst     : in  sl;
+      axiWriteMaster     : in  AxiLiteWriteMasterType;
+      axiWriteSlave      : out AxiLiteWriteSlaveType;
+      axiReadMaster      : in  AxiLiteReadMasterType;
+      axiReadSlave       : out AxiLiteReadSlaveType;
       evrSel     : in  sl := '0';  -- LCLS/LCLS-II
       -- EVR Ports
       evrRefClkP : in  slv(1 downto 0);
@@ -82,6 +87,21 @@ architecture rtl of EvrCardG2GMux is
   signal evrClkFbO, evrClkFbI, evrClkI : sl;
   signal evrTxClkFbO, evrTxClkFbI, evrTxClkI : sl;
   signal evrLocked, evrTxLocked : sl;
+
+  signal drpRdy          : sl;
+  signal drpEn           : sl;
+  signal drpWe           : sl;
+  signal drpUsrRst       : sl;
+  signal drpAddr         : slv(8 downto 0);
+  signal drpDi           : slv(15 downto 0);
+  signal drpDo           : slv(15 downto 0);
+  signal mdrpRdy         : slv(1 downto 0);
+  signal mdrpEn          : slv(1 downto 0);
+  signal mdrpWe          : slv(1 downto 0);
+  signal mdrpUsrRst      : slv(1 downto 0);
+  signal mdrpAddr        : Slv9Array (1 downto 0);
+  signal mdrpDi          : Slv16Array(1 downto 0);
+  signal mdrpDo          : Slv16Array(1 downto 0);
 begin
 
   nevrSel <= not evrSel;
@@ -165,60 +185,99 @@ begin
      end if;
    end process seq;
 
-  evrRst   <= intEvrRst(0) when evrSel='0' else
-              intEvrRst(1);
+  evrSel_p : process (evrSel, intEvrRst,
+                      intRxLinkUp, intRxError, intRxDspErr, intRxDecErr,
+                      intRxData, intRxDataK, intEvrTxRst,
+                      mdrpRdy, mdrpDo,
+                      txInhibit, drpEn, drpWe, drpUsrRst, drpAddr, drpDi) is
+    variable ievrSel : integer;
+  begin
+    if evrSel = '0' then
+      ievrSel := 0;
+    else
+      ievrSel := 1;
+    end if;
+    
+    evrRst   <= intEvrRst  (ievrSel);
+    rxLinkUp <= intRxLinkUp(ievrSel);
+    rxError  <= intRxError (ievrSel);
+    rxDspErr <= intRxDspErr(ievrSel);
+    rxDecErr <= intRxDecErr(ievrSel);
+    rxData   <= intRxData  (ievrSel);
+    rxDataK  <= intRxDataK (ievrSel);
+    evrTxRst <= intEvrTxRst(ievrSel);
+    drpRdy   <= mdrpRdy    (ievrSel);
+    drpDo    <= mdrpDo     (ievrSel);
+    
+    intTxInhibit          <= "11";
+    intTxInhibit(ievrSel) <= txInhibit;
+    mdrpEn                <= "00";
+    mdrpEn      (ievrSel) <= drpEn;
+    mdrpWe                <= "00";
+    mdrpWe      (ievrSel) <= drpWe;
+    mdrpUsrRst            <= "00";
+    mdrpUsrRst  (ievrSel) <= drpUsrRst;
+    mdrpAddr              <= drpAddr & drpAddr;
+    mdrpDi                <= drpDi   & drpDi;
+  end process;
   
-  rxLinkUp <= intRxLinkUp(0) when evrSel='0' else
-              intRxLinkUp(1);
-
-  rxError  <= intRxError(0) when evrSel='0' else
-              intRxError(1);
-
-  rxDspErr <= intRxDspErr(0) when evrSel='0' else
-              intRxDspErr(1);
-
-  rxDecErr <= intRxDecErr(0) when evrSel='0' else
-              intRxDecErr(1);
-
-  rxData   <= intRxData(0) when evrSel='0' else
-              intRxData(1);
-
-  rxDataK  <= intRxDataK(0) when evrSel='0' else
-              intRxDataK(1);
-
-  evrTxRst <= intEvrTxRst(0) when evrSel='0' else
-              intEvrTxRst(1);
-
-  intTxInhibit(0) <= txInhibit when evrSel='0' else '1';
-  intTxInhibit(1) <= txInhibit when evrSel='1' else '1';
-  
+  U_DRP : entity work.AxiLiteToDrp
+    generic map ( COMMON_CLK_G => true,
+                  ADDR_WIDTH_G => 9 )
+    port map (
+      -- AXI-Lite Port
+      axilClk         => axiClk,
+      axilRst         => axiRst,
+      axilReadMaster  => axiReadMaster,
+      axilReadSlave   => axiReadSlave,
+      axilWriteMaster => axiWriteMaster,
+      axilWriteSlave  => axiWriteSlave,
+      -- DRP Interface
+      drpClk          => axiClk,
+      drpRst          => axiRst,
+      drpRdy          => drpRdy,
+      drpEn           => drpEn,
+      drpWe           => drpWe,
+      drpUsrRst       => drpUsrRst,
+      drpAddr         => drpAddr,
+      drpDi           => drpDi,
+      drpDo           => drpDo );
+     
   GEN_GTX : for i in 0 to 1 generate
     U_Gtx : entity work.EvrCardG2Gtx
       generic map ( EVR_VERSION_G => i>0 )
-   port map ( evrRefClkP => evrRefClkP(i),
-              evrRefClkN => evrRefClkN(i),
-              evrRxP     => evrRxP(i),
-              evrRxN     => evrRxN(i),
-              evrTxP     => evrTxP(i),
-              evrTxN     => evrTxN(i),
-              evrRefClk  => intEvrRefClk(i),
-              evrRecClk  => open,
-              -- EVR Interface
-              rxReset    => rxReset,
-              rxPolarity => rxPolarity,
-              evrClk     => intEvrClk(i),
-              evrRst     => intEvrRst(i),
-              rxLinkUp   => intRxLinkUp(i),
-              rxError    => intRxError(i),
-              rxDspErr   => intRxDspErr(i),
-              rxDecErr   => intRxDecErr(i),
-              rxData     => intRxData(i),
-              rxDataK    => intRxDataK(i),
-              evrTxClk   => intEvrTxClk(i),
-              evrTxRst   => intEvrTxRst(i),
-              txInhibit  => intTxInhibit(i),
-              txData     => txData,
-              txDataK    => txDataK );
+      port map ( evrRefClkP => evrRefClkP(i),
+                 evrRefClkN => evrRefClkN(i),
+                 evrRxP     => evrRxP(i),
+                 evrRxN     => evrRxN(i),
+                 evrTxP     => evrTxP(i),
+                 evrTxN     => evrTxN(i),
+                 evrRefClk  => intEvrRefClk(i),
+                 evrRecClk  => open,
+                 -- EVR Interface
+                 rxReset    => rxReset,
+                 rxPolarity => rxPolarity,
+                 evrClk     => intEvrClk(i),
+                 evrRst     => intEvrRst(i),
+                 rxLinkUp   => intRxLinkUp(i),
+                 rxError    => intRxError(i),
+                 rxDspErr   => intRxDspErr(i),
+                 rxDecErr   => intRxDecErr(i),
+                 rxData     => intRxData(i),
+                 rxDataK    => intRxDataK(i),
+                 evrTxClk   => intEvrTxClk(i),
+                 evrTxRst   => intEvrTxRst(i),
+                 txInhibit  => intTxInhibit(i),
+                 txData     => txData,
+                 txDataK    => txDataK,
+                 -- DRP Interface (drpClk Domain)      
+                 drpClk     => axiClk,
+                 drpRdy     => mdrpRdy (i),
+                 drpEn      => mdrpEn  (i),
+                 drpWe      => mdrpWe  (i),
+                 drpAddr    => mdrpAddr(i),
+                 drpDi      => mdrpDi  (i),
+                 drpDo      => mdrpDo  (i));
   end generate;
   
 end rtl;

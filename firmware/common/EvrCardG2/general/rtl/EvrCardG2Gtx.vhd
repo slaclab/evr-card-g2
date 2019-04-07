@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2016-04-19
+-- Last update: 2018-07-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -59,7 +59,15 @@ entity EvrCardG2Gtx is
       evrTxRst   : out sl;
       txInhibit  : in  sl := '1';
       txData     : in  slv(15 downto 0) := (others=>'0');
-      txDataK    : in  slv(1 downto 0)  := (others=>'0'));
+      txDataK    : in  slv(1 downto 0)  := (others=>'0');
+      -- DRP Interface (drpClk Domain)      
+      drpClk         : in  sl               := '0';
+      drpRdy         : out sl;
+      drpEn          : in  sl               := '0';
+      drpWe          : in  sl               := '0';
+      drpAddr        : in  slv(8 downto 0)  := "000000000";
+      drpDi          : in  slv(15 downto 0) := X"0000";
+      drpDo          : out slv(15 downto 0));
 end EvrCardG2Gtx;
 
 architecture rtl of EvrCardG2Gtx is
@@ -271,6 +279,14 @@ begin
          -- Misc.
          loopbackIn       => (others => '0'),
          txPowerDown      => (others => txInhibit),
-         rxPowerDown      => (others => '0'));
+         rxPowerDown      => (others => '0'),
+         -- DRP Interface (drpClk Domain)      
+         drpClk           => drpClk,
+         drpRdy           => drpRdy,
+         drpEn            => drpEn,
+         drpWe            => drpWe,
+         drpAddr          => drpAddr,
+         drpDi            => drpDi,
+         drpDo            => drpDo );
 
 end rtl;

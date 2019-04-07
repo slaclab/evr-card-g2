@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-22
--- Last update: 2017-05-05
+-- Last update: 2019-03-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -440,7 +440,7 @@ begin
                end if;
 
                -- Set AXIS tKeep
-               v.txMaster.tKeep := x"FFFF";
+               v.txMaster.tKeep(15 downto 0) := x"FFFF";
 
                -- Check for frame length error
                if (r.frameErr = '1') or (r.dmaDescToPci.doneLength = r.maxFrameCheck(0)) then
@@ -593,11 +593,11 @@ begin
          SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         BRAM_EN_G           => false,
+         BRAM_EN_G           => true,
          USE_BUILT_IN_G      => false,
          GEN_SYNC_FIFO_G     => true,
          CASCADE_SIZE_G      => 1,
-         FIFO_ADDR_WIDTH_G   => 4,
+         FIFO_ADDR_WIDTH_G   => 9,
          -- AXI Stream Port Configurations
          SLAVE_AXI_CONFIG_G  => PCIE_AXIS_CONFIG_C,
          MASTER_AXI_CONFIG_G => PCIE_AXIS_CONFIG_C)            

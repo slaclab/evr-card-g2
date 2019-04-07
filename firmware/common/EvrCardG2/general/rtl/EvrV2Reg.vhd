@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-11-21
+-- Last update: 2019-03-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -29,6 +29,8 @@ use ieee.NUMERIC_STD.all;
 use work.StdRtlPkg.all;
 use work.AxiLitePkg.all;
 use work.TimingPkg.all;
+use work.TimingExtnPkg.all;
+use work.XpmPkg.all;
 use work.EvrV2Pkg.all;
 
 entity EvrV2Reg is

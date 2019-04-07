@@ -13,6 +13,8 @@ export TOP_DIR = $(abspath $(PWD)/../..)
 
 export REMOVE_UNUSED_CODE = 1
 
+export TIMING_EXT_PKG = 1
+
 # Use top level makefile
 include $(TOP_DIR)/submodules/ruckus/system_vivado.mk
 

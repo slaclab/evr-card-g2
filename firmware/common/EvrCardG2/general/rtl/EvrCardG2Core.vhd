@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2017-04-23
+-- Last update: 2019-03-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -28,6 +28,7 @@ use work.AxiLitePkg.all;
 use work.AxiStreamPkg.all;
 use work.SsiPciePkg.all;
 use work.TimingPkg.all;
+use work.TimingExtnPkg.all;
 
 entity EvrCardG2Core is
    generic (
@@ -90,15 +91,17 @@ architecture mapping of EvrCardG2Core is
    signal axiLiteReadMaster  : AxiLiteReadMasterArray (BAR_SIZE_C-1 downto 0);
    signal axiLiteReadSlave   : AxiLiteReadSlaveArray  (BAR_SIZE_C-1 downto 0);
 
-   constant NUM_AXI_MASTERS_C : natural := 7;
+   constant NUM_AXI_MASTERS_C : natural := 9;
 
    constant VERSION_INDEX_C  : natural := 0;
    constant BOOT_MEM_INDEX_C : natural := 1;
    constant XADC_INDEX_C     : natural := 2;
    constant XBAR_INDEX_C     : natural := 3;
    constant LED_INDEX_C      : natural := 4;
-   constant TPR_INDEX_C      : natural := 5;
-   constant CORE_INDEX_C     : natural := 6;
+   constant CSR_INDEX_C      : natural := 5;
+   constant TPR_INDEX_C      : natural := 6;
+   constant CORE_INDEX_C     : natural := 7;
+   constant DRP_INDEX_C      : natural := 8;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       VERSION_INDEX_C  => (
@@ -121,6 +124,10 @@ architecture mapping of EvrCardG2Core is
          baseAddr      => X"00050000",
          addrBits      => 16,
          connectivity  => X"0001"),
+      CSR_INDEX_C      => (
+         baseAddr      => X"00060000",
+         addrBits      => 16,
+         connectivity  => X"0001"),
       TPR_INDEX_C     => (
          baseAddr      => X"00080000",
          addrBits      => 18,
@@ -128,6 +135,10 @@ architecture mapping of EvrCardG2Core is
       CORE_INDEX_C     => (
          baseAddr      => X"000C0000",
          addrBits      => 18,
+         connectivity  => X"0001"),
+      DRP_INDEX_C      => (
+         baseAddr      => X"00070000",
+         addrBits      => 16,
          connectivity  => X"0001"));
 
    signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -187,7 +198,7 @@ architecture mapping of EvrCardG2Core is
 
    signal heartBeat    : sl;
    signal appTimingBus : TimingBusType;
-   signal exptBus      : ExptBusType;
+--   signal exptBus      : ExptBusType;
    signal dmaReady     : sl;
    
 begin
@@ -374,6 +385,10 @@ begin
        port map (
          axiClk     => axiClk,
          axiRst     => axiRst,
+         axiReadMaster  => mAxiReadMasters (DRP_INDEX_C),
+         axiReadSlave   => mAxiReadSlaves  (DRP_INDEX_C),
+         axiWriteMaster => mAxiWriteMasters(DRP_INDEX_C),
+         axiWriteSlave  => mAxiWriteSlaves (DRP_INDEX_C),
          evrSel     => evrModeSel,
          -- EVR Ports
          evrRefClkP => evrRefClkP,
@@ -455,7 +470,6 @@ begin
        appTimingClk    => evrClk,
        appTimingRst    => evrRst,
        appTimingBus    => appTimingBus,
-       exptBus         => exptBus,
        timingPhy       => open,
        timingClkSel    => evrModeSel,
        axilClk         => axiClk,
@@ -484,10 +498,10 @@ begin
      port map (
        axiClk              => axiClk,
        axiRst              => axiRst,
-       axilWriteMaster     => mAxiWriteMasters(TPR_INDEX_C),
-       axilWriteSlave      => mAxiWriteSlaves (TPR_INDEX_C),
-       axilReadMaster      => mAxiReadMasters (TPR_INDEX_C),
-       axilReadSlave       => mAxiReadSlaves  (TPR_INDEX_C),
+       axilWriteMaster     => mAxiWriteMasters(TPR_INDEX_C downto CSR_INDEX_C),
+       axilWriteSlave      => mAxiWriteSlaves (TPR_INDEX_C downto CSR_INDEX_C),
+       axilReadMaster      => mAxiReadMasters (TPR_INDEX_C downto CSR_INDEX_C),
+       axilReadSlave       => mAxiReadSlaves  (TPR_INDEX_C downto CSR_INDEX_C),
        irqActive           => irqActive,
        irqEnable           => irqEnable(0),
        irqReq              => irqReq   (0),
@@ -500,7 +514,7 @@ begin
        evrClk              => evrClk,
        evrRst              => evrRst,
        evrBus              => appTimingBus,
-       exptBus             => exptBus,
+       exptBus             => EXPT_BUS_INIT_C,
        gtxDebug            => (others=>'0'),
        -- Trigger and Sync Port
        syncL               => syncL,
