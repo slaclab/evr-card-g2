@@ -61,7 +61,6 @@ entity EvrV2Core is
     evrClk              : in  sl;
     evrRst              : in  sl;
     evrBus              : in  TimingBusType;
-    exptBus             : in  ExptBusType;
     gtxDebug            : in  slv(7 downto 0);
     -- Trigger and Sync Port
     syncL               : in  sl;
@@ -489,9 +488,9 @@ begin  -- rtl
     generic map ( TPD_G        => TPD_G,
                   NCHANNELS_G  => NCHANNELS_C,
                   DMA_ENABLE_G => true,
-                  EVR_CARD_G   => true )
+                  EVR_CARD_G   => true,
 --                  AXIL_XBAR_G  => false,
---                  AXIL_BASEADDR=> AXI_CROSSBAR_MASTERS_CONFIG1_C(CHAN_INDEX_C).baseAddr )
+                  AXIL_BASEADDR_G => AXI_CROSSBAR_MASTERS_CONFIG1_C(CHAN_INDEX_C).baseAddr )
     port map (    axiClk              => axiClk,
                   axiRst              => axiRst,
                   axilWriteMaster     => mAxiWriteMasters1 (CHAN_INDEX_C),
@@ -549,7 +548,7 @@ begin  -- rtl
     generic map ( TPD_G   => TPD_G,
                   WIDTH_G => partitionAddr'length )
     port map (    clk     => axiClk,
-                  dataIn  => exptBus.message.partitionAddr,
+                  dataIn  => evrBus.extn.expt.partitionAddr,
                   dataOut => partitionAddr );
 
 end mapping;

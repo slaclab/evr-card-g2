@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2019-03-23
+-- Last update: 2019-04-07
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -514,7 +514,6 @@ begin
        evrClk              => evrClk,
        evrRst              => evrRst,
        evrBus              => appTimingBus,
-       exptBus             => EXPT_BUS_INIT_C,
        gtxDebug            => (others=>'0'),
        -- Trigger and Sync Port
        syncL               => syncL,
