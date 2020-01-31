@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2019-04-07
+-- Last update: 2020-01-31
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -337,21 +337,28 @@ begin
    -----------------------
    -- AXI-Lite XADC Module
    -----------------------
-   AxiXadcMinimumCore_Inst : entity work.AxiXadcMinimumCore
-      generic map (
-         TPD_G => TPD_G) 
-      port map (
-         -- XADC Ports
-         vPIn           => vPIn,
-         vNIn           => vNIn,
-         -- AXI-Lite Register Interface
-         axiReadMaster  => mAxiReadMasters(XADC_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves(XADC_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(XADC_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves(XADC_INDEX_C),
-         -- Clocks and Resets
-         axiClk         => axiClk,
-         axiRst         => axiRst);         
+   --AxiXadcMinimumCore_Inst : entity work.AxiXadcMinimumCore
+   --   generic map (
+   --      TPD_G => TPD_G) 
+   --   port map (
+   --      -- XADC Ports
+   --      vPIn           => vPIn,
+   --      vNIn           => vNIn,
+   --      -- AXI-Lite Register Interface
+   --      axiReadMaster  => mAxiReadMasters(XADC_INDEX_C),
+   --      axiReadSlave   => mAxiReadSlaves(XADC_INDEX_C),
+   --      axiWriteMaster => mAxiWriteMasters(XADC_INDEX_C),
+   --      axiWriteSlave  => mAxiWriteSlaves(XADC_INDEX_C),
+   --      -- Clocks and Resets
+   --      axiClk         => axiClk,
+   --      axiRst         => axiRst);
+   U_JtagBridge : entity work.JtagBridgeWrapper
+     port map ( axilClk            => axiClk,
+                axilRst            => axiRst,
+                axilReadMaster     => mAxiReadMasters (XADC_INDEX_C),
+                axilReadSlave      => mAxiReadSlaves  (XADC_INDEX_C),
+                axilWriteMaster    => mAxiWriteMasters(XADC_INDEX_C),
+                axilWriteSlave     => mAxiWriteSlaves (XADC_INDEX_C) );
 
    ---------------------------------------------------------
    -- AXI-Lite LCLS-I & LCLS-II Timing Clock Crossbar Module
@@ -439,10 +446,8 @@ begin
          ledGreenL       => ledGreenL(0),
          ledBlueL        => ledBlueL (0));           
 
---   rxStatus.locked       <= ;
-   rxStatus.resetDone    <= not evrRst;
---   rxStatus.bufferByDone <= ;
---   rxStatus.bufferByErr  <= ;
+--   rxStatus.resetDone    <= not evrRst;
+   rxStatus.resetDone    <= rxLinkUp;
    
    ------------------------------------------------------------------------------------------------
    -- Timing Core
