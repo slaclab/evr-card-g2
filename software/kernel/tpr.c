@@ -773,8 +773,8 @@ int tpr_mmap(struct file *filp, struct vm_area_struct *vma)
    }
    else {
      if (vsize > TPR_SH_MEM_WINDOW) {
-       printk(KERN_WARNING "%s: Mmap: mmap vsize %08x, baseLen %08x. Maj=%i\n", MOD_NAME,
-              (unsigned int) vsize, (unsigned int) shared->parent->bar[0].baseLen, shared->parent->major);
+       printk(KERN_WARNING "%s: Mmap: mmap vsize %08x, TPR_SH_MEM_WINDOW %08x. Maj=%i\n", MOD_NAME,
+              (unsigned int) vsize, (unsigned int)TPR_SH_MEM_WINDOW, shared->parent->major);
        return -EINVAL;
      }
      /* Handled by tpr_vmfault */
