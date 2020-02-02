@@ -1,0 +1,89 @@
+############################
+## This file is part of 'SLAC Firmware Standard Library'.
+## It is subject to the license terms in the LICENSE.txt file found in the 
+## top-level directory of this distribution and at: 
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+## No part of 'SLAC Firmware Standard Library', including this file, 
+## may be copied, modified, propagated, or distributed except according to 
+## the terms contained in the LICENSE.txt file.
+##############################################################################
+#schemaversion 3.0.0
+#once EvrV2Reg
+
+EvrV2Reg: &EvrV2Reg
+  class: MMIODev
+  configPrio: 1
+  description: Base
+  size: 0x20
+  children:
+    #########################################################  
+    IrqEnable:
+      at:
+        offset: 0x00
+      class: IntField
+      name: IrqEnable
+      sizeBits: 1
+      lsbit: 0
+      mode: RW
+      description: IRQ enable
+    #########################################################  
+    IrqStatus:
+      at:
+        offset: 0x04
+      class: IntField
+      name: IrqStatus
+      sizeBits: 1
+      lsbit: 0
+      mode: RO
+      description: IRQ status
+    #########################################################  
+    PartitionAddr:
+      at:
+        offset: 0x08
+      class: IntField
+      name: PartitionAddr
+      sizeBits: 32
+      lsbit: 0
+      mode: RO
+      description: Partition address
+    #########################################################  
+    GtxDebug:
+      at:
+        offset: 0x0C
+      class: IntField
+      name: GtxDebug
+      sizeBits: 32
+      lsbit: 0
+      mode: RO
+      description: Gtx debug
+    #########################################################  
+    CountReset:
+      at:
+        offset: 0x10
+      class: IntField
+      name: CountReset
+      sizeBits: 1
+      lsbit: 0
+      mode: RW
+      description: Count reset
+    #########################################################  
+    FrameCount:
+      at:
+        offset: 0x14
+      class: IntField
+      name: FrameCount
+      sizeBits: 32
+      lsbit: 0
+      mode: RO
+      description: Frame count
+    #########################################################  
+    FullThreshold:
+      at:
+        offset: 0x18
+      class: IntField
+      name: FullThreshold
+      sizeBits: 24
+      lsbit: 0
+      mode: RW
+      description: Full threshold
+    #########################################################  

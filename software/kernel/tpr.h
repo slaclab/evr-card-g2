@@ -23,7 +23,7 @@
 #define END_TAG     15
 
 #define EVENT_MSGSZ    92
-#define BSACNTL_MSGSZ  36
+#define BSACNTL_MSGSZ  44
 #define BSAEVNT_MSGSZ  44
 
 /*
@@ -47,7 +47,7 @@ struct bar_dev {
   void*             reg;
 };
 
-#define MOD_SHARED 12
+#define MOD_SHARED 14
 #define OPEN_SHARES 256
 
 struct tpr_dev {
@@ -100,6 +100,9 @@ struct tpr_dev gDevices[MAX_PCI_DEVICES];
 #define BUF_SIZE 4096
 #define NUMBER_OF_RX_BUFFERS 1023
 
+#define RO_CHANNELS 14
+#define TR_CHANNELS 12
+
 struct TprEntry {
   u32 word[MSG_SIZE];
 };
@@ -129,26 +132,12 @@ struct TprReg {
   __u32 reserved_0[0x10000>>2];
   __u32 FpgaVersion;
   __u32 reserved_04[(0x30000>>2)-1];
-  __u32 xbarOut[4]; // 0x30000
-  __u32 reserved_30010[(0x40000>>2)-4];
-  __u32 irqControl; // 0x80000
+  __u32 xbarOut[4]; // 0x40000
+  __u32 reserved_40010[(0x20000>>2)-4];
+  __u32 irqControl; // 0x60000
   __u32 irqStatus;
-  __u32 reserved_8[3];
-  __u32 trigMaster;
-  __u32 reserved_18[2];
-  struct ChReg {
-    __u32 control;
-    __u32 reserved[7];
-  } channel[12];
-  __u32 reserved_1a0[24];
-  struct TrReg {    // 0x80200
-    __u32 control;
-    __u32 delay;
-    __u32 width;
-    __u32 delayTap;
-  } trigger[12];
-  __u32 reserved_2c0[80];
-  //  PcieRxDesc   0x80400
+  __u32 reserved_60008[0x3f8>>2];
+  //  PcieRxDesc   0x60400
   __u32 rxFree    [16];   // WO 0x400 Write Desc/Address
   __u32 rxFreeStat[16];   // RO 0x440 Free FIFO (31:31 full, 30:30 valid, 9:0 count)
   __u32 reserved  [32];
@@ -156,6 +145,16 @@ struct TprReg {
   __u32 rxFifoSize;       // RW 0x504 Buffers per FIFO
   __u32 rxCount ;         // RO 0x508 (rxCount)
   __u32 lastDesc;         // RO 0x50C (lastDesc)
+
+  __u32 reserved_60510[((0x20000-0x510)>>2)];
+  struct ChReg {    // 0x80000
+    __u32 control;
+    __u32 reserved[0x3ff];
+  } channel[32];
+  struct TrReg {    // 0xa0000
+    __u32 control;
+    __u32 reserved[0x3ff];
+  } trigger[32];
 };
 
 // Structure for RX buffers

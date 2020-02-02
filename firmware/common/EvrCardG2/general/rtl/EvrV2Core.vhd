@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2019-04-07
+-- Last update: 2020-01-31
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -115,6 +115,8 @@ architecture mapping of EvrV2Core is
     strobe      : slv       (198 downto 0);
     count       : slv       ( 27 downto 0);
     reset       : sl;
+    eventSel    : slv       (NCHANNELS_C downto 0);
+    dmaSel      : slv       (NCHANNELS_C downto 0);
     eventCount  : Slv20Array(NCHANNELS_C downto 0);
     eventCountL : Slv20Array(NCHANNELS_C downto 0);
   end record;
@@ -123,6 +125,8 @@ architecture mapping of EvrV2Core is
     strobe      => (others=>'0'),
     count       => (others=>'0'),
     reset       => '1',
+    eventSel    => (others=>'0'),
+    dmaSel      => (others=>'0'),
     eventCount  => (others=>(others=>'0')),
     eventCountL => (others=>(others=>'0')) );
 
@@ -130,13 +134,15 @@ architecture mapping of EvrV2Core is
   signal rin  : RegType;
   
   signal timingMsg      : TimingMessageType := TIMING_MESSAGE_INIT_C;
+  signal timingMsg_i    : TimingMessageType := TIMING_MESSAGE_INIT_C;
   signal dmaSel         : slv(NCHANNELS_C-1 downto 0) := (others=>'0');
   signal eventSel       : slv(15 downto 0) := (others=>'0');
+  signal eventSel_i     : slv(15 downto 0) := (others=>'0');
   signal summarySel     : slv(15 downto 0) := (others=>'0');
   signal eventCountV    : Slv32Array(NCHANNELS_C downto 0) := (others=>(others=>'0'));
   
   signal dmaCtrl    : AxiStreamCtrlType;
-  signal dmaData    : EvrV2DmaDataArray(NHARDCHANS_C+2 downto 0);
+  signal dmaData    : EvrV2DmaDataArray(NHARDCHANS_C+2 downto 0) := (others=>EVRV2_DMA_DATA_INIT_C);
 
   constant SAXIS_MASTER_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);
   
@@ -338,19 +344,20 @@ begin  -- rtl
 
   Loop_EventSel: for i in 0 to NCHANNELS_C-1 generate
     U_EventSel : entity work.EvrV2EventSelect
-      generic map ( TPD_G         => TPD_G,
-                    USER_BITS_G   => EXPT_PARTITIONS_C )
+      generic map ( TPD_G         => TPD_G )
       port map    ( clk           => evrClk,
                     rst           => evrRst,
                     config        => channelConfigS(i),
                     strobeIn      => r.strobe(0),
                     dataIn        => timingMsg,
-                    userIn        => toTrigVector(evrBus.extn.expt),
-                    selectOut     => eventSel(i),
-                    dmaOut        => dmaSel(i) );
-    summarySel(i) <= dmaSel(i) and not channelConfigS(i).bsaEnabled;
+                    selectOut     => eventSel_i(i),
+                    dmaOut        => open );
+    eventSel  (i) <= r.eventSel(i);
+    dmaSel    (i) <= r.dmaSel  (i);
+    summarySel(i) <= r.dmaSel  (i) and not channelConfigS(i).bsaEnabled;
   end generate;  -- i
 
+  --  No longer needed?
   Loop_BsaCh: for i in 0 to NHARDCHANS_C-1 generate
     U_BsaChannel : entity work.EvrV2BsaChannelDSP
       generic map ( TPD_G         => TPD_G,
@@ -389,9 +396,18 @@ begin  -- rtl
     port map ( clk       => evrClk,
                disable   => modeSel,
                timingIn  => evrBus,
-               timingOut => timingMsg );
+               timingOut => timingMsg_i );
 
-  comb : process ( r, evrBus, eventSel, evrModeSel ) is
+  --  fixup pulseId from XTPG
+  pid_fixup : process (timingMsg_i) is
+  begin
+    timingMsg <= timingMsg_i;
+    if timingMsg_i.pulseId(63)='1' then
+      timingMsg.pulseId <= timingMsg_i.timeStamp;
+    end if;
+  end process pid_fixup;
+    
+  comb : process ( r, evrBus, eventSel_i, evrModeSel, channelConfigS ) is
     variable v : RegType;
   begin
     v := r;
@@ -401,7 +417,15 @@ begin  -- rtl
     v.strobe := r.strobe(r.strobe'left-1 downto 0) & evrBus.strobe;
     
     for i in 0 to NCHANNELS_C-1 loop
-      if eventSel(i) = '1' then
+      --  Add in DAQ event selection
+      v.eventSel(i) := eventSel_i(i);
+      if r.strobe(0) = '1' then
+        if channelConfigS(i).rateSel(12 downto 11)="11" then
+          v.eventSel(i) := toTrigVector(evrBus.extn.expt)(conv_integer(channelConfigS(i).rateSel(2 downto 0)));
+        end if;
+      end if;
+      v.dmaSel(i) := v.eventSel(i) and channelConfigS(i).dmaEnabled;
+      if r.eventSel(i) = '1' then
         v.eventCount(i) := r.eventCount(i)+1;
       end if;
     end loop;
@@ -455,7 +479,6 @@ begin  -- rtl
     generic map ( TPD_G      => TPD_G,
                   TRIGGERS_C => NTRIGGERS_C,
                   EVR_CARD_G => true,
-                  USE_MASK_G => true,
                   USE_TAP_C  => true )
     port map (    axiClk              => axiClk,
                   axiRst              => axiRst,
@@ -488,9 +511,7 @@ begin  -- rtl
     generic map ( TPD_G        => TPD_G,
                   NCHANNELS_G  => NCHANNELS_C,
                   DMA_ENABLE_G => true,
-                  EVR_CARD_G   => true,
---                  AXIL_XBAR_G  => false,
-                  AXIL_BASEADDR_G => AXI_CROSSBAR_MASTERS_CONFIG1_C(CHAN_INDEX_C).baseAddr )
+                  EVR_CARD_G   => true )
     port map (    axiClk              => axiClk,
                   axiRst              => axiRst,
                   axilWriteMaster     => mAxiWriteMasters1 (CHAN_INDEX_C),

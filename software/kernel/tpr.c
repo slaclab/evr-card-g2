@@ -168,6 +168,7 @@ int tpr_open(struct inode *inode, struct file *filp) {
             reg = (struct TprReg*)(dev->bar[0].reg);
             reg->channel[minor].control = reg->channel[minor].control | (1<<2);
             reg->irqControl = 1;
+            dev->irqEnable++;
         }
         shared->minor = minor;
         spin_lock(&dev->lock);
@@ -462,8 +463,10 @@ static void tpr_handle_dma(unsigned long arg)
   }
 
   //  Enable the interrupt
-  if (dev->minors)
+  if (dev->minors) {
     ((struct TprReg*)dev->bar[0].reg)->irqControl = 1;
+    dev->irqEnable++;
+  }
 }
 
 
@@ -623,10 +626,9 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
 
    tprreg->irqControl = 0;  // Disable interrupts
 
-   for( i=0; i<12; i++) {
+   for( i=0; i<TR_CHANNELS; i++) {
      tprreg->trigger[i].control=0;  // Disable all channels
    }
-   tprreg->trigMaster=1;  // Set LCLS-II mode
 
    // FIFO size for detecting DMA complete
    tprreg->rxFifoSize = NUMBER_OF_RX_BUFFERS-1;
@@ -711,10 +713,10 @@ void tpr_remove(struct pci_dev *pcidev) {
      spin_unlock_irqrestore(&dev->lock, flags);
 
      //  Clear the registers
-     for( i=0; i<12; i++) {
+     for( i=0; i<RO_CHANNELS; i++)
        tprreg->channel[i].control=0;  // Disable event selection, DMA
+     for( i=0; i<TR_CHANNELS; i++)
        tprreg->trigger[i].control=0;  // Disable TTL
-     }
 
      //  Free all rx buffers awaiting read.
      tprreg->rxMaxFrame = 0;

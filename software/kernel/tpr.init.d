@@ -14,11 +14,9 @@
 function tpr_start()
 {
     /sbin/modprobe tpr || exit 1
-    test -e /dev/er[a-z]3 && /bin/rm -f /dev/er[a-z]*
     test -e /dev/tpr[a-z] && /bin/rm -f /dev/tpr[a-z]*
-#    `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/er%c3 c %d 13\n", n++, $1}' /proc/devices`
-    `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%cBSA c %d 13\n", n++, $1}' /proc/devices`
-    `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c c %d 12\n", n++, $1}' /proc/devices`
+    `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%cBSA c %d 15\n", n++, $1}' /proc/devices`
+    `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c c %d 14\n", n++, $1}' /proc/devices`
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c0 c %d 0\n", n++, $1}' /proc/devices`
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c1 c %d 1\n", n++, $1}' /proc/devices`
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c2 c %d 2\n", n++, $1}' /proc/devices`
@@ -31,6 +29,8 @@ function tpr_start()
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c9 c %d 9\n", n++, $1}' /proc/devices`
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%ca c %d 10\n", n++, $1}' /proc/devices`
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%cb c %d 11\n", n++, $1}' /proc/devices`
+    `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%cc c %d 12\n", n++, $1}' /proc/devices`
+    `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%cd c %d 13\n", n++, $1}' /proc/devices`
 }
 
 
