@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2020-01-31
+-- Last update: 2020-02-03
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -78,6 +78,7 @@ architecture mapping of EvrV2Core is
 --  constant NSOFTCHANS    _C  : natural := 0;
   constant NSOFTCHANS_C      : natural := 2;
   constant NCHANNELS_C       : natural := NHARDCHANS_C+NSOFTCHANS_C;
+  constant MAXCHANNELS_C     : natural := 16;
   constant NUM_AXI_MASTERS_C : natural := 2;
   
   constant CSR_INDEX_C       : natural := 0;
@@ -97,10 +98,17 @@ architecture mapping of EvrV2Core is
   signal mAxiWriteSlaves1  : AxiLiteWriteSlaveArray (NUM_AXI_MASTERS_C-1 downto 0);
   signal mAxiReadMasters1  : AxiLiteReadMasterArray (NUM_AXI_MASTERS_C-1 downto 0);
   signal mAxiReadSlaves1   : AxiLiteReadSlaveArray  (NUM_AXI_MASTERS_C-1 downto 0);
+
+  constant AXI_CROSSBAR_MASTERS_CONFIG2_C : AxiLiteCrossbarMasterConfigArray(1 downto 0) :=
+    genAxiLiteConfig( 2, AXI_CROSSBAR_MASTERS_CONFIG1_C(CHAN_INDEX_C).baseAddr, 17, 15 );
+  signal mAxiWriteMasters2 : AxiLiteWriteMasterArray(1 downto 0);
+  signal mAxiWriteSlaves2  : AxiLiteWriteSlaveArray (1 downto 0);
+  signal mAxiReadMasters2  : AxiLiteReadMasterArray (1 downto 0);
+  signal mAxiReadSlaves2   : AxiLiteReadSlaveArray  (1 downto 0);
   
   constant STROBE_INTERVAL_C : integer := 12;
-  
-  signal channelConfig    : EvrV2ChannelConfigArray(NCHANNELS_C-1 downto 0);
+
+  signal channelConfig    : EvrV2ChannelConfigArray(MAXCHANNELS_C-1 downto 0);
   signal channelConfigS   : EvrV2ChannelConfigArray(NCHANNELS_C-1 downto 0) := (others=>EVRV2_CHANNEL_CONFIG_INIT_C);
   signal channelConfigAV  : slv(NCHANNELS_C*EVRV2_CHANNEL_CONFIG_BITS_C-1 downto 0);
   signal channelConfigSV  : slv(NCHANNELS_C*EVRV2_CHANNEL_CONFIG_BITS_C-1 downto 0);
@@ -139,10 +147,10 @@ architecture mapping of EvrV2Core is
   signal eventSel       : slv(15 downto 0) := (others=>'0');
   signal eventSel_i     : slv(15 downto 0) := (others=>'0');
   signal summarySel     : slv(15 downto 0) := (others=>'0');
-  signal eventCountV    : Slv32Array(NCHANNELS_C downto 0) := (others=>(others=>'0'));
+  signal eventCountV    : Slv32Array(MAXCHANNELS_C downto 0) := (others=>(others=>'0'));
   
   signal dmaCtrl    : AxiStreamCtrlType;
-  signal dmaData    : EvrV2DmaDataArray(NHARDCHANS_C+2 downto 0) := (others=>EVRV2_DMA_DATA_INIT_C);
+  signal dmaData    : EvrV2DmaDataArray(NCHANNELS_C downto 0) := (others=>EVRV2_DMA_DATA_INIT_C);
 
   constant SAXIS_MASTER_CONFIG_C : AxiStreamConfigType := ssiAxiStreamConfig(4);
   
@@ -362,7 +370,7 @@ begin  -- rtl
     U_BsaChannel : entity work.EvrV2BsaChannelDSP
       generic map ( TPD_G         => TPD_G,
                     CHAN_C        => i,
-                    DEBUG_C       => ite(i>0,false,DEBUG_C) )
+                    DEBUG_C       => false )
       port map    ( evrClk        => evrClk,
                     evrRst        => evrRst,
                     channelConfig => channelConfigS(i),
@@ -506,23 +514,46 @@ begin  -- rtl
                       fire     => triggerStrobe,
                       trigstate=> dbTrigOut(i) );
   end generate Out_Trigger;
-  
-  U_EvrChanReg : entity work.EvrV2ChannelReg
-    generic map ( TPD_G        => TPD_G,
-                  NCHANNELS_G  => NCHANNELS_C,
-                  DMA_ENABLE_G => true,
-                  EVR_CARD_G   => true )
-    port map (    axiClk              => axiClk,
-                  axiRst              => axiRst,
-                  axilWriteMaster     => mAxiWriteMasters1 (CHAN_INDEX_C),
-                  axilWriteSlave      => mAxiWriteSlaves1  (CHAN_INDEX_C),
-                  axilReadMaster      => mAxiReadMasters1  (CHAN_INDEX_C),
-                  axilReadSlave       => mAxiReadSlaves1   (CHAN_INDEX_C),
-                  -- configuration
-                  channelConfig       => channelConfig,
-                  -- status
-                  eventCount          => eventCountV(NCHANNELS_C-1 downto 0) );
 
+  --
+  --  Add an AxiLiteCrossbar for timing closure
+  --
+  AxiLiteCrossbar2_Inst : entity work.AxiLiteCrossbar
+    generic map (
+      TPD_G              => TPD_G,
+      NUM_SLAVE_SLOTS_G  => 1,
+      NUM_MASTER_SLOTS_G => AXI_CROSSBAR_MASTERS_CONFIG2_C'length,
+      MASTERS_CONFIG_G   => AXI_CROSSBAR_MASTERS_CONFIG2_C)
+    port map (
+      axiClk              => axiClk,
+      axiClkRst           => axiRst,
+      sAxiWriteMasters(0) => mAxiWriteMasters1(CHAN_INDEX_C),
+      sAxiWriteSlaves (0) => mAxiWriteSlaves1 (CHAN_INDEX_C),
+      sAxiReadMasters (0) => mAxiReadMasters1 (CHAN_INDEX_C),
+      sAxiReadSlaves  (0) => mAxiReadSlaves1  (CHAN_INDEX_C),
+      mAxiWriteMasters    => mAxiWriteMasters2,
+      mAxiWriteSlaves     => mAxiWriteSlaves2,
+      mAxiReadMasters     => mAxiReadMasters2,
+      mAxiReadSlaves      => mAxiReadSlaves2);   
+  
+  GEN_EVRCHANREG : for i in 0 to 1 generate
+    U_EvrChanReg : entity work.EvrV2ChannelReg
+      generic map ( TPD_G        => TPD_G,
+                    NCHANNELS_G  => 8,
+                    DMA_ENABLE_G => true,
+                    EVR_CARD_G   => true )
+      port map (    axiClk              => axiClk,
+                    axiRst              => axiRst,
+                    axilWriteMaster     => mAxiWriteMasters2 (i),
+                    axilWriteSlave      => mAxiWriteSlaves2  (i),
+                    axilReadMaster      => mAxiReadMasters2  (i),
+                    axilReadSlave       => mAxiReadSlaves2   (i),
+                    -- configuration
+                    channelConfig       => channelConfig(8*i+7 downto 8*i),
+                    -- status
+                    eventCount          => eventCountV(8*i+7 downto 8*i) );
+  end generate;
+  
   anyDmaEnabled <= uOr(dmaEnabled);
 
   -- Synchronize configurations to evrClk
