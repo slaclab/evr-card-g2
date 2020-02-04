@@ -504,7 +504,7 @@ begin  -- rtl
         generic map ( TPD_G        => TPD_G,
                       CHANNELS_C   => NHARDCHANS_C,
                       TRIG_DEPTH_C => 256,
-                      USE_MASK_G   => true,
+                      USE_MASK_G   => false,
                       --DEBUG_C    => (i<1) )
                       DEBUG_C      => false )
         port map (    clk      => evrClk,
