@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2020-01-31
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -32,9 +32,6 @@ use work.SsiPciePkg.all;
 
 library lcls_timing_core;
 use lcls_timing_core.TimingPkg.all;
-use lcls_timing_core.TimingExtnPkg.all;
-
-library l2si_core; 
 
 entity EvrCardG2Core is
    generic (
@@ -358,7 +355,7 @@ begin
    --      -- Clocks and Resets
    --      axiClk         => axiClk,
    --      axiRst         => axiRst);
-   U_JtagBridge : entity l2si_core.JtagBridgeWrapper
+   U_JtagBridge : entity work.JtagBridgeWrapper
      port map ( axilClk            => axiClk,
                 axilRst            => axiRst,
                 axilReadMaster     => mAxiReadMasters (XADC_INDEX_C),
@@ -466,8 +463,7 @@ begin
        USE_TPGMINI_G     => false,
        AXIL_RINGB_G      => true,
        ASYNC_G           => false,
-       AXIL_BASE_ADDR_G  => AXI_CROSSBAR_MASTERS_CONFIG_C(CORE_INDEX_C).baseAddr,
-       AXIL_ERROR_RESP_G => AXI_RESP_DECERR_C)
+       AXIL_BASE_ADDR_G  => AXI_CROSSBAR_MASTERS_CONFIG_C(CORE_INDEX_C).baseAddr )
      port map (
        gtTxUsrClk      => txPhyClk,
        gtTxUsrRst      => txPhyRst,
@@ -478,11 +474,16 @@ begin
        gtRxDecErr      => rxDecErr,
        gtRxControl     => rxControl,
        gtRxStatus      => rxStatus,
+       gtTxReset       => open,
+       gtLoopback      => open,
+       tpgMiniTimingPhy => open,
+       timingClkSel    => evrModeSel,
+       --
        appTimingClk    => evrClk,
        appTimingRst    => evrRst,
        appTimingBus    => appTimingBus,
-       timingPhy       => open,
-       timingClkSel    => evrModeSel,
+       appTimingMode   => open,
+       --
        axilClk         => axiClk,
        axilRst         => axiRst,
        axilReadMaster  => mAxiReadMasters (CORE_INDEX_C),

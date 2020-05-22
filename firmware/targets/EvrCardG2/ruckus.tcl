@@ -7,7 +7,6 @@ source -quiet $::env(RUCKUS_DIR)/vivado_proc.tcl
 
 # Load submodules' code and constraints
 loadRuckusTcl $::env(TOP_DIR)/submodules
-loadSource -path "$::TOP_DIR/submodules/l2si-core/base/rtl/XpmPkg.vhd"
 loadRuckusTcl $::env(TOP_DIR)/common
 
 # Load target's source code and constraints

@@ -35,14 +35,18 @@ use work.SsiPciePkg.all;
 
 library lcls_timing_core;
 use lcls_timing_core.TimingPkg.all;
-use lcls_timing_core.TimingExtnPkg.all;
 use lcls_timing_core.EvrV2Pkg.all;
---use work.PciPkg.all;
 use surf.SsiPkg.all;
+
+library l2si_core;
+--use l2si_core.L2SiPkg.all;
+--use l2si_core.XpmPkg.all;
+use l2si_core.XpmExtensionPkg.all;
 
 entity EvrV2Core is
   generic (
     TPD_G          : time             := 1 ns;
+    GEN_L2SI_G     : boolean          := false;
     AXIL_BASEADDR0 : slv(31 downto 0) := x"00060000";
     AXIL_BASEADDR1 : slv(31 downto 0) := x"00080000" );
   port (
@@ -175,13 +179,15 @@ architecture mapping of EvrV2Core is
   signal dmaFullThr     : Slv24Array (0 downto 0);
   signal dmaFullThrS    : Slv24Array (0 downto 0);
 
-  signal partitionAddr  : slv(31 downto 0);
+  signal partitionAddr  : slv(31 downto 0) := (others=>'0');
   signal modeSel        : sl;
   signal delay_wrb      : Slv6Array(11 downto 0) := (others=>(others=>'0'));
   signal delay_ldb      : slv      (11 downto 0) := (others=>'1');
 
   signal triggerStrobe  : sl;
 
+  signal xpmMessage : XpmMessageType;
+  
   constant DEBUG_C : boolean := false;
 
   component ila_0
@@ -298,8 +304,8 @@ begin  -- rtl
                   dmaFullThr          => dmaFullThr(0),
                   -- status
                   irqReq              => irqRequest,
---                  partitionAddr       => partitionAddr,
                   rstCount            => open,
+                  partitionAddr       => partitionAddr,
                   eventCount          => eventCountV(NCHANNELS_C),
                   gtxDebug            => gtxDebugS );
     
@@ -420,8 +426,9 @@ begin  -- rtl
     end if;
   end process pid_fixup;
     
-  comb : process ( r, evrBus, eventSel_i, evrModeSel, channelConfigS ) is
+  comb : process ( r, evrBus, eventSel_i, evrModeSel, channelConfigS, xpmMessage ) is
     variable v : RegType;
+    variable xpmEvent : XpmEventDataType;
   begin
     v := r;
 
@@ -430,11 +437,11 @@ begin  -- rtl
     v.strobe := r.strobe(r.strobe'left-1 downto 0) & evrBus.strobe;
     
     for i in 0 to NCHANNELS_C-1 loop
-      --  Add in DAQ event selection
       v.eventSel(i) := eventSel_i(i);
-      if r.strobe(0) = '1' then
+      if GEN_L2SI_G and r.strobe(0) = '1' then      --  Add in DAQ event selection
         if channelConfigS(i).rateSel(12 downto 11)="11" then
-          v.eventSel(i) := toTrigVector(evrBus.extn.expt)(conv_integer(channelConfigS(i).rateSel(2 downto 0)));
+          xpmEvent := toXpmEventDataType(xpmMessage.partitionWord(conv_integer(channelConfigS(i).rateSel(2 downto 0))));
+          v.eventSel(i) := xpmEvent.valid and xpmEvent.l0Accept;
         end if;
       end if;
       v.dmaSel(i) := v.eventSel(i) and channelConfigS(i).dmaEnabled;
@@ -611,11 +618,16 @@ begin  -- rtl
                   dataIn  => dmaFullThr (0),
                   dataOut => dmaFullThrS(0) );
 
-  Sync_partAddr : entity surf.SynchronizerVector
-    generic map ( TPD_G   => TPD_G,
-                  WIDTH_G => partitionAddr'length )
-    port map (    clk     => axiClk,
-                  dataIn  => evrBus.extn.expt.partitionAddr,
-                  dataOut => partitionAddr );
+  GEN_PARTADDR : if GEN_L2SI_G generate
 
+    xpmMessage <= toXpmMessageType(evrBus.extension(XPM_STREAM_ID_C));
+    
+    Sync_partAddr : entity surf.SynchronizerVector
+      generic map ( TPD_G   => TPD_G,
+                    WIDTH_G => partitionAddr'length )
+      port map (    clk     => axiClk,
+                    dataIn  => xpmMessage.partitionAddr,
+                    dataOut => partitionAddr );
+  end generate;
+  
 end mapping;

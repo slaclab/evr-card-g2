@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-22
--- Last update: 2015-05-25
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -183,8 +183,7 @@ begin
          SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,      -- Use 36Kb with 72 inputs
@@ -205,12 +204,12 @@ begin
 
    FIFO_TRANS : entity surf.FifoSync
       generic map (
-         TPD_G        => TPD_G,
-         BRAM_EN_G    => false,
-         FWFT_EN_G    => true,
-         DATA_WIDTH_G => 23,
-         FULL_THRES_G => 60,
-         ADDR_WIDTH_G => 6)             -- Use RAM64 
+         TPD_G         => TPD_G,
+         MEMORY_TYPE_G => "distributed",
+         FWFT_EN_G     => true,
+         DATA_WIDTH_G  => 23,
+         FULL_THRES_G  => 60,
+         ADDR_WIDTH_G  => 6)             -- Use RAM64 
       port map (
          clk                => pciClk,
          rst                => pciRst,

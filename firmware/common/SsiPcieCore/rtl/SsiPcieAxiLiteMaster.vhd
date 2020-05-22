@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-22
--- Last update: 2015-06-11
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -71,8 +71,7 @@ architecture rtl of SsiPcieAxiLiteMaster is
 
    function GenAddr (
       hdr  : PcieHdrType;
-      mask : slv(31 downto 0))
-      return slv(31 downto 0) is
+      mask : slv(31 downto 0)) return slv is
       variable i      : natural;
       variable retVar : slv(31 downto 0);
    begin
@@ -231,7 +230,7 @@ begin
                   -- Set the EOF bit
                   v.txMaster.tLast                 := '1';
                   -- TLP = DW0/H2/H1/H0
-                  v.txMaster.tKeep                 := x"FFFF";
+                  v.txMaster.tKeep(15 downto 0)    := x"FFFF";
                   --DW0 (Reordered Data)
                   v.txMaster.tData(103 downto 96)  := r.rdData(31 downto 24);
                   v.txMaster.tData(111 downto 104) := r.rdData(23 downto 16);

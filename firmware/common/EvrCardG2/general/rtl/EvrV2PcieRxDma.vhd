@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-22
--- Last update: 2019-03-21
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -200,8 +200,7 @@ begin
          SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         BRAM_EN_G           => false,
-         USE_BUILT_IN_G      => false,
+         MEMORY_TYPE_G       => "distributed",
          GEN_SYNC_FIFO_G     => false,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => FIFO_ADDR_WIDTH_G,
@@ -538,7 +537,7 @@ begin
             if r.complete = '0' then
                -- Next state
                v.complete             := '1';
-               v.tranLength           := toSlv(1,9);
+               v.tranLength           := toSlv(1,10);
                v.tranCnt              := toSlv(1,10);
                v.cnt                  := toSlv(1,10);
                v.state                := SEND_IO_REQ_HDR_S;
@@ -595,8 +594,7 @@ begin
          SLAVE_READY_EN_G    => true,
          VALID_THOLD_G       => 1,
          -- FIFO configurations
-         BRAM_EN_G           => true,
-         USE_BUILT_IN_G      => false,
+         MEMORY_TYPE_G       => "block",
          GEN_SYNC_FIFO_G     => true,
          CASCADE_SIZE_G      => 1,
          FIFO_ADDR_WIDTH_G   => 9,

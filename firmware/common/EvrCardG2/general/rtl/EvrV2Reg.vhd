@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2019-03-21
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -33,10 +33,8 @@ use surf.AxiLitePkg.all;
 
 library lcls_timing_core;
 use lcls_timing_core.TimingPkg.all;
-use lcls_timing_core.TimingExtnPkg.all;
 
 library l2si_core;
-use l2si_core.XpmPkg.all;
 use lcls_timing_core.EvrV2Pkg.all;
 
 entity EvrV2Reg is
@@ -57,9 +55,9 @@ entity EvrV2Reg is
     dmaFullThr          : out slv(23 downto 0);
     -- status
     irqReq              : in  sl := '0';
-    partitionAddr       : in  slv(PADDR_LEN-1 downto 0) := (others=>'0');
     rstCount            : out sl;
     eventCount          : in  slv(31 downto 0);
+    partitionAddr       : in  slv(31 downto 0) := (others=>'0');
     gtxDebug            : in  slv(7 downto 0) := (others=>'0') );
 end EvrV2Reg;
 

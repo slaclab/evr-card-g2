@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-22
--- Last update: 2015-06-10
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -167,7 +167,7 @@ begin
                   -- Reset the tLast value
                   v.master.tLast      := '0';
                   -- Set the tKeep value
-                  v.master.tKeep      := x"FFFF";
+                  v.master.tKeep(15 downto 0) := x"FFFF";
                   -- Next state
                   v.state             := SOF_10_S;
                end if;
@@ -195,7 +195,7 @@ begin
                   -- Reset the tLast value
                   v.master.tLast   := '0';
                   -- Set the tKeep value
-                  v.master.tKeep   := x"FFFF";
+                  v.master.tKeep(15 downto 0) := x"FFFF";
                -- Check for tLast
                elsif (pciObMaster.tLast = '1') then
                   -- Check the upper half for EOF

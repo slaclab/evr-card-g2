@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-04-22
--- Last update: 2017-05-05
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -288,10 +288,10 @@ begin
       -- 31:2  = Address
       U_DescFifo : entity surf.FifoSync
          generic map(
-            BRAM_EN_G    => true,
-            FWFT_EN_G    => true,
-            DATA_WIDTH_G => 30,
-            ADDR_WIDTH_G => 10)
+            MEMORY_TYPE_G => "block",
+            FWFT_EN_G     => true,
+            DATA_WIDTH_G  => 30,
+            ADDR_WIDTH_G  => 10)
          port map (
             rst        => r.fifoRst,
             clk        => pciClk,

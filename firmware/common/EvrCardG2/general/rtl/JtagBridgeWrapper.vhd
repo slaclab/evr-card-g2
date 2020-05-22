@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver  <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2018-06-27
--- Last update: 2020-02-02
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -48,7 +48,7 @@ end JtagBridgeWrapper;
 
 architecture mapping of JtagBridgeWrapper is
 
-  COMPONENT jtag_bridge
+  COMPONENT debug_bridge
     PORT (
       s_axi_aclk : IN STD_LOGIC;
       s_axi_aresetn : IN STD_LOGIC;
@@ -80,7 +80,7 @@ begin
 
   aresetn <= not axilRst;
 
-  U_JtagBridge : jtag_bridge
+  U_JtagBridge : debug_bridge
     port map ( s_axi_aclk    => axilClk,
                s_axi_aresetn => aresetn,
                S_AXI_araddr  => axilReadMaster .araddr(4 downto 0),
