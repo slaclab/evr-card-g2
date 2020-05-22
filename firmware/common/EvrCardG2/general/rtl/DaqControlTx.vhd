@@ -25,8 +25,12 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.TimingPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
+library lcls_timing_core;
+use lcls_timing_core.TimingPkg.all;
 
 entity DaqControlTx is
   port (
@@ -86,7 +90,7 @@ begin
 
   full   <= rxnotready or txnotready;
   
-  Synchronizer_Tx : entity work.Synchronizer
+  Synchronizer_Tx : entity surf.Synchronizer
     generic map (
       OUT_POLARITY_G => '0')
     port map (
@@ -94,7 +98,7 @@ begin
       dataIn  => ready,
       dataOut => txnotready);
 
-  Synchronizer_Rx : entity work.Synchronizer
+  Synchronizer_Rx : entity surf.Synchronizer
     generic map (
       OUT_POLARITY_G => '1')
     port map (
@@ -102,7 +106,7 @@ begin
       dataIn  => rxrst,
       dataOut => rxnotready);
 
-  Fifo_L1 : entity work.FifoSync
+  Fifo_L1 : entity surf.FifoSync
     generic map ( DATA_WIDTH_G => l1tword'length+l1tag'length,
                   ADDR_WIDTH_G => 4 )
     port map    ( clk               => txClk,

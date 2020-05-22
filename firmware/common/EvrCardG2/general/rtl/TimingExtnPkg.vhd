@@ -22,8 +22,12 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.XpmPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
+library l2si_core;
+use l2si_core.XpmPkg.all;
 
 package TimingExtnPkg is
 

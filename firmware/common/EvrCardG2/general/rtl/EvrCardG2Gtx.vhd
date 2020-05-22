@@ -25,7 +25,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -157,14 +159,14 @@ begin
          I => gtRefClkDiv2,
          O => stableClk);   
 
-   PwrUpRst_Inst : entity work.PwrUpRst
+   PwrUpRst_Inst : entity surf.PwrUpRst
       generic map(
          TPD_G => TPD_G)
       port map (
          clk    => stableClk,
          rstOut => stableRst);            
 
-   Decoder8b10b_Inst : entity work.Decoder8b10b
+   Decoder8b10b_Inst : entity surf.Decoder8b10b
       generic map (
          TPD_G          => TPD_G,
          RST_POLARITY_G => '0',         -- Active low polarity
@@ -200,7 +202,7 @@ begin
          I => txOutClk,
          O => txUsrClk);   
    
-   Gtx7Core_Inst : entity work.Gtx7Core
+   Gtx7Core_Inst : entity surf.Gtx7Core
       generic map (
          TPD_G                 => TPD_G,
          SIM_GTRESET_SPEEDUP_G => "FALSE",

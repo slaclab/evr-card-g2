@@ -25,9 +25,13 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.TimingPkg.all;
-use work.EvrV2Pkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
+library lcls_timing_core;
+use lcls_timing_core.TimingPkg.all;
+use lcls_timing_core.EvrV2Pkg.all;
 
 entity EvrV2BsaControl is
   generic (

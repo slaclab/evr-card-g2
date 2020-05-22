@@ -25,9 +25,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 use work.SsiPciePkg.all;
 
 entity SsiPcieTxDmaFifoMux is
@@ -188,7 +190,7 @@ begin
       end if;
    end process seq;
 
-   FIFO_TX : entity work.AxiStreamFifo
+   FIFO_TX : entity surf.AxiStreamFifo
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,

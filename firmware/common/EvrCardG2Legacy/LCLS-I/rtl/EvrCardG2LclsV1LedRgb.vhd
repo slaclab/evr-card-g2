@@ -25,8 +25,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 entity EvrCardG2LclsV1LedRgb is
    generic (
@@ -102,7 +104,7 @@ begin
 
    linkError <= rxError or not (rxLinkUp);
 
-   Sync_1 : entity work.SynchronizerVector
+   Sync_1 : entity surf.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
          WIDTH_G => 2)          
@@ -113,7 +115,7 @@ begin
          dataOut(0) => state(0),
          dataOut(1) => state(1)); 
 
-   Sync_2 : entity work.SynchronizerVector
+   Sync_2 : entity surf.SynchronizerVector
       generic map (
          TPD_G   => TPD_G,
          WIDTH_G => 8)          
@@ -134,7 +136,7 @@ begin
       end if;
    end process;
 
-   Sync_3 : entity work.SynchronizerOneShot
+   Sync_3 : entity surf.SynchronizerOneShot
       generic map (
          TPD_G => TPD_G)          
       port map (

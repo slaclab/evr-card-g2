@@ -23,12 +23,18 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
 use work.SsiPciePkg.all;
-use work.TimingPkg.all;
-use work.TimingExtnPkg.all;
+
+library lcls_timing_core;
+use lcls_timing_core.TimingPkg.all;
+use lcls_timing_core.TimingExtnPkg.all;
+
+library l2si_core; 
 
 entity EvrCardG2Core is
    generic (
@@ -267,7 +273,7 @@ begin
     -------------------------
    -- AXI-Lite Crossbar Core
    -------------------------  
-   AxiLiteCrossbar_Inst : entity work.AxiLiteCrossbar
+   AxiLiteCrossbar_Inst : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -288,7 +294,7 @@ begin
    --------------------------
    -- AXI-Lite Version Module
    --------------------------          
-   AxiVersion_Inst : entity work.AxiVersion
+   AxiVersion_Inst : entity surf.AxiVersion
       generic map (
          TPD_G           => TPD_G,
          BUILD_INFO_G    => BUILD_INFO_G,
@@ -309,7 +315,7 @@ begin
    --------------------
    -- Boot Flash Module
    --------------------
-   AxiMicronP30Core_Inst : entity work.AxiMicronP30Core
+   AxiMicronP30Core_Inst : entity surf.AxiMicronP30Core
       generic map (
          TPD_G          => TPD_G,
          AXI_CLK_FREQ_G => AXI_CLK_FREQ_C)  -- units of Hz
@@ -337,7 +343,7 @@ begin
    -----------------------
    -- AXI-Lite XADC Module
    -----------------------
-   --AxiXadcMinimumCore_Inst : entity work.AxiXadcMinimumCore
+   --AxiXadcMinimumCore_Inst : entity surf.AxiXadcMinimumCore
    --   generic map (
    --      TPD_G => TPD_G) 
    --   port map (
@@ -352,7 +358,7 @@ begin
    --      -- Clocks and Resets
    --      axiClk         => axiClk,
    --      axiRst         => axiRst);
-   U_JtagBridge : entity work.JtagBridgeWrapper
+   U_JtagBridge : entity l2si_core.JtagBridgeWrapper
      port map ( axilClk            => axiClk,
                 axilRst            => axiRst,
                 axilReadMaster     => mAxiReadMasters (XADC_INDEX_C),
@@ -363,7 +369,7 @@ begin
    ---------------------------------------------------------
    -- AXI-Lite LCLS-I & LCLS-II Timing Clock Crossbar Module
    ---------------------------------------------------------
-   AxiSy56040Reg_Inst : entity work.AxiSy56040Reg
+   AxiSy56040Reg_Inst : entity surf.AxiSy56040Reg
       generic map (
          TPD_G          => TPD_G,
          AXI_CLK_FREQ_G => AXI_CLK_FREQ_C,
@@ -453,7 +459,7 @@ begin
    -- Timing Core
    -- Decode timing message from GTX and distribute to system
    ------------------------------------------------------------------------------------------------
-   TimingCore_1: entity work.TimingCore
+   TimingCore_1: entity lcls_timing_core.TimingCore
      generic map (
        TPD_G             => TPD_G,
        TPGEN_G           => false,

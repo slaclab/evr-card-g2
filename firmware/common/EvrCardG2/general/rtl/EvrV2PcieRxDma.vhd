@@ -29,9 +29,11 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_arith.all;
 use ieee.std_logic_unsigned.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 use work.SsiPciePkg.all;
 
 entity EvrV2PcieRxDma is
@@ -151,7 +153,7 @@ architecture rtl of EvrV2PcieRxDma is
    
 begin
 
-   --U_Sync_sAxis : entity work.SynchronizerOneShot
+   --U_Sync_sAxis : entity surf.SynchronizerOneShot
    --  port map (clk     => pciClk,
    --            dataIn  => sAxisMaster.tValid,
    --            dataOut => sAxisMaster_tValid );
@@ -190,7 +192,7 @@ begin
    --             probe0(246 downto 223) => r.dmaDescToPci.doneLength,
    --             probe0(255 downto 247) => (others=>'0') );
    
-   FIFO_RX : entity work.AxiStreamFifo
+   FIFO_RX : entity surf.AxiStreamFifo
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,
@@ -585,7 +587,7 @@ begin
       end if;
    end process seq;
 
-   FIFO_TX : entity work.AxiStreamFifo
+   FIFO_TX : entity surf.AxiStreamFifo
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,

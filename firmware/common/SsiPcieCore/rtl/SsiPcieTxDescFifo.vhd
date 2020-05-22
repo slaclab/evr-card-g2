@@ -25,7 +25,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
 
 entity SsiPcieTxDescFifo is
    generic (
@@ -86,7 +88,7 @@ begin
    -- Bits[63:32] = Tx Address
    -- Bits[31:24] = Tx Control
    -- Bits[23:00] = Tx Length in words, 1 based
-   U_RxFifo : entity work.FifoSync
+   U_RxFifo : entity surf.FifoSync
       generic map(
          TPD_G        => TPD_G,
          BRAM_EN_G    => false,

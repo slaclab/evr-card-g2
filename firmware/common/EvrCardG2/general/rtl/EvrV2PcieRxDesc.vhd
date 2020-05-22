@@ -25,8 +25,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 use work.SsiPciePkg.all;
 
 entity EvrV2PcieRxDesc is
@@ -284,7 +286,7 @@ begin
    for i in 0 to (DMA_SIZE_G-1) generate
       -- FIFO for free descriptors
       -- 31:2  = Address
-      U_DescFifo : entity work.FifoSync
+      U_DescFifo : entity surf.FifoSync
          generic map(
             BRAM_EN_G    => true,
             FWFT_EN_G    => true,

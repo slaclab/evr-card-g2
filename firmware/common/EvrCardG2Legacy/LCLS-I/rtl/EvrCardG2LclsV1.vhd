@@ -23,9 +23,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 use work.EvrCardG2Pkg.all;
+
+library lcls_timing_core; 
 
 entity EvrCardG2LclsV1 is
    generic (
@@ -146,7 +150,7 @@ begin
    -------------------------
    -- AXI-Lite Crossbar Core
    -------------------------  
-   AxiLiteCrossbar_Inst : entity work.AxiLiteCrossbar
+   AxiLiteCrossbar_Inst : entity surf.AxiLiteCrossbar
       generic map (
          TPD_G              => TPD_G,
          NUM_SLAVE_SLOTS_G  => 1,
@@ -167,7 +171,7 @@ begin
    --------------------------
    -- AXI-Lite Version Module
    --------------------------          
-   AxiVersion_Inst : entity work.AxiVersion
+   AxiVersion_Inst : entity surf.AxiVersion
       generic map (
          TPD_G           => TPD_G,
          BUFR_CLK_DIV_G  => 2,
@@ -187,7 +191,7 @@ begin
    --------------------
    -- Boot Flash Module
    --------------------
-   AxiMicronP30Core_Inst : entity work.AxiMicronP30Core
+   AxiMicronP30Core_Inst : entity surf.AxiMicronP30Core
       generic map (
          TPD_G          => TPD_G,
          AXI_CLK_FREQ_G => AXI_CLK_FREQ_C)  -- units of Hz
@@ -215,7 +219,7 @@ begin
    -----------------------
    -- AXI-Lite XADC Module
    -----------------------
-   AxiXadcMinimumCore_Inst : entity work.AxiXadcMinimumCore
+   AxiXadcMinimumCore_Inst : entity surf.AxiXadcMinimumCore
       generic map (
          TPD_G => TPD_G) 
       port map (
@@ -234,7 +238,7 @@ begin
    ---------------------------------------------------------
    -- AXI-Lite LCLS-I & LCLS-II Timing Clock Crossbar Module
    ---------------------------------------------------------
-   AxiSy56040Reg_Inst : entity work.AxiSy56040Reg
+   AxiSy56040Reg_Inst : entity surf.AxiSy56040Reg
       generic map (
          TPD_G          => TPD_G,
          AXI_CLK_FREQ_G => AXI_CLK_FREQ_C,
@@ -284,7 +288,7 @@ begin
    -----------
    -- EVR Core
    -----------
-   EvrV1Core_Inst : entity work.EvrV1Core
+   EvrV1Core_Inst : entity lcls_timing_core.EvrV1Core
       generic map (
          TPD_G           => TPD_G,
          SYNC_POLARITY_G => '0',        -- '0' = active LOW logic

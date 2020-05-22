@@ -23,9 +23,11 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
-use work.AxiStreamPkg.all;
-use work.SsiPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiStreamPkg.all;
+use surf.SsiPkg.all;
 use work.SsiPciePkg.all;
 
 library unisim;
@@ -78,13 +80,13 @@ begin
    pciClk <= locClk;
    pciRst <= locRst;
 
-   Synchronizer_userRst : entity work.Synchronizer
+   Synchronizer_userRst : entity surf.Synchronizer
       port map (
          clk     => locClk,
          dataIn  => userRst,
          dataOut => locRst);     
 
-   Synchronizer_userLink : entity work.Synchronizer
+   Synchronizer_userLink : entity surf.Synchronizer
       port map (
          clk     => locClk,
          dataIn  => userLink,
@@ -233,7 +235,7 @@ begin
       end if;
    end process;
 
-   FIFO_TX : entity work.SsiInsertSof
+   FIFO_TX : entity surf.SsiInsertSof
       generic map (
          TPD_G               => TPD_G,
          COMMON_CLK_G        => true,
@@ -254,7 +256,7 @@ begin
          mAxisMaster => pciObMaster,
          mAxisSlave  => pciObSlave);
 
-   FIFO_RX : entity work.AxiStreamFifo
+   FIFO_RX : entity surf.AxiStreamFifo
       generic map (
          -- General Configurations
          TPD_G               => TPD_G,

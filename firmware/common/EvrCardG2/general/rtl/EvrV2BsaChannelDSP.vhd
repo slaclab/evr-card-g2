@@ -29,10 +29,14 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.TimingPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+
+library lcls_timing_core;
+use lcls_timing_core.TimingPkg.all;
 use work.DspLogicPkg.all;
-use work.EvrV2Pkg.all;
+use lcls_timing_core.EvrV2Pkg.all;
 
 library UNISIM;
 use UNISIM.vcomponents.all;
@@ -206,7 +210,7 @@ begin  -- mapping
                 frameOut;
 
   -- Could save half of the BRAM by instrumenting as double wide SinglePort
-  U_Pipeline : entity work.SimpleDualPortRam
+  U_Pipeline : entity surf.SimpleDualPortRam
     generic map ( TPD_G        => TPD_G,
                   DATA_WIDTH_G => 64,
                   ADDR_WIDTH_G => 9 )

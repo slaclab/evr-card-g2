@@ -25,7 +25,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
 
 library UNISIM;
 use UNISIM.VCOMPONENTS.all;
@@ -56,7 +58,7 @@ architecture mapping of EvrCardG2Trig is
 
 begin
 
-   U_CLK190 : entity work.ClockManager7
+   U_CLK190 : entity surf.ClockManager7
      generic map ( INPUT_BUFG_G     => false,
                    NUM_CLOCKS_G     => 1,
                    CLKIN_PERIOD_G   => 8.0,

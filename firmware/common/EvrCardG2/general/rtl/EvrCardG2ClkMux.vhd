@@ -25,7 +25,9 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
 
 library UNISIM;
 use UNISIM.VCOMPONENTS.all;
@@ -94,7 +96,7 @@ begin
    rstInLoc <= recRstIn(0) when clkSel='0' else
                recRstIn(1);
                 
-   U_RstSyncO : entity work.RstSync
+   U_RstSyncO : entity surf.RstSync
      port map ( clk      => clk,
                 asyncRst => rstInLoc,
                 syncrst  => recRstOut );

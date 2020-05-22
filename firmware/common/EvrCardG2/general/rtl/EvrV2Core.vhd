@@ -26,15 +26,19 @@ use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 use ieee.NUMERIC_STD.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
 use work.SsiPciePkg.all;
-use work.TimingPkg.all;
-use work.TimingExtnPkg.all;
-use work.EvrV2Pkg.all;
+
+library lcls_timing_core;
+use lcls_timing_core.TimingPkg.all;
+use lcls_timing_core.TimingExtnPkg.all;
+use lcls_timing_core.EvrV2Pkg.all;
 --use work.PciPkg.all;
-use work.SsiPkg.all;
+use surf.SsiPkg.all;
 
 entity EvrV2Core is
   generic (
@@ -243,7 +247,7 @@ begin  -- rtl
   -------------------------
   -- AXI-Lite Crossbar Core
   -------------------------  
-  AxiLiteCrossbar0_Inst : entity work.AxiLiteCrossbar
+  AxiLiteCrossbar0_Inst : entity surf.AxiLiteCrossbar
     generic map (
       TPD_G              => TPD_G,
       NUM_SLAVE_SLOTS_G  => 1,
@@ -261,7 +265,7 @@ begin  -- rtl
       mAxiReadMasters     => mAxiReadMasters0,
       mAxiReadSlaves      => mAxiReadSlaves0);   
 
-  AxiLiteCrossbar1_Inst : entity work.AxiLiteCrossbar
+  AxiLiteCrossbar1_Inst : entity surf.AxiLiteCrossbar
     generic map (
       TPD_G              => TPD_G,
       NUM_SLAVE_SLOTS_G  => 1,
@@ -352,7 +356,7 @@ begin  -- rtl
                   dmaData    => dmaData        (ReadoutChannels) );
 
   Loop_EventSel: for i in 0 to NCHANNELS_C-1 generate
-    U_EventSel : entity work.EvrV2EventSelect
+    U_EventSel : entity lcls_timing_core.EvrV2EventSelect
       generic map ( TPD_G         => TPD_G )
       port map    ( clk           => evrClk,
                     rst           => evrRst,
@@ -401,7 +405,7 @@ begin  -- rtl
                   eventData  => timingMsg,
                   dmaData    => dmaData   (NHARDCHANS_C+1) );
 
-  U_V2FromV1 : entity work.EvrV2FromV1
+  U_V2FromV1 : entity lcls_timing_core.EvrV2FromV1
     port map ( clk       => evrClk,
                disable   => modeSel,
                timingIn  => evrBus,
@@ -463,7 +467,7 @@ begin  -- rtl
     end if;
   end process seq;
 
-  SyncVector_Gtx : entity work.SynchronizerVector
+  SyncVector_Gtx : entity surf.SynchronizerVector
     generic map (
       TPD_G          => TPD_G,
       WIDTH_G        => 8)
@@ -473,7 +477,7 @@ begin  -- rtl
       dataOut               => gtxDebugS );
 
   GEN_EVTCOUNT : for i in 0 to NCHANNELS_C generate
-    Sync_EvtCount : entity work.SynchronizerVector
+    Sync_EvtCount : entity surf.SynchronizerVector
       generic map ( TPD_G   => TPD_G,
                     WIDTH_G => 20 )
       port map    ( clk      => axiClk,
@@ -484,7 +488,7 @@ begin  -- rtl
   triggerStrobe <= r.strobe(r.strobe'left) when modeSel='0' else
                    evrBus.strobe;
   
-  U_TReg  : entity work.EvrV2TrigReg
+  U_TReg  : entity lcls_timing_core.EvrV2TrigReg
     generic map ( TPD_G      => TPD_G,
                   TRIGGERS_C => NTRIGGERS_C,
                   EVR_CARD_G => true,
@@ -501,7 +505,7 @@ begin  -- rtl
                   delay_rd            => delay_rd );
 
   Out_Trigger: for i in 0 to NTRIGGERS_C-1 generate
-     U_Trig : entity work.EvrV2Trigger
+     U_Trig : entity lcls_timing_core.EvrV2Trigger
         generic map ( TPD_G        => TPD_G,
                       CHANNELS_C   => NHARDCHANS_C,
                       TRIG_DEPTH_C => 256,
@@ -517,7 +521,7 @@ begin  -- rtl
   end generate Out_Trigger;
 
   Compl_Trigger: for i in 0 to NTRIGGERS_C/2-1 generate
-    U_Trig : entity work.EvrV2TriggerCompl
+    U_Trig : entity lcls_timing_core.EvrV2TriggerCompl
       generic map ( REG_OUT_G => true )
       port map ( clk     => evrClk,
                  rst     => evrRst,
@@ -529,7 +533,7 @@ begin  -- rtl
   --
   --  Add an AxiLiteCrossbar for timing closure
   --
-  AxiLiteCrossbar2_Inst : entity work.AxiLiteCrossbar
+  AxiLiteCrossbar2_Inst : entity surf.AxiLiteCrossbar
     generic map (
       TPD_G              => TPD_G,
       NUM_SLAVE_SLOTS_G  => 1,
@@ -548,7 +552,7 @@ begin  -- rtl
       mAxiReadSlaves      => mAxiReadSlaves2);   
   
   GEN_EVRCHANREG : for i in 0 to 1 generate
-    U_EvrChanReg : entity work.EvrV2ChannelReg
+    U_EvrChanReg : entity lcls_timing_core.EvrV2ChannelReg
       generic map ( TPD_G        => TPD_G,
                     NCHANNELS_G  => 8,
                     DMA_ENABLE_G => true,
@@ -568,7 +572,7 @@ begin  -- rtl
   anyDmaEnabled <= uOr(dmaEnabled);
 
   -- Synchronize configurations to evrClk
-  U_SyncChannelConfig : entity work.SynchronizerVector
+  U_SyncChannelConfig : entity surf.SynchronizerVector
     generic map ( WIDTH_G => NCHANNELS_C*EVRV2_CHANNEL_CONFIG_BITS_C )
     port map ( clk     => evrClk,
                dataIn  => channelConfigAV,
@@ -582,7 +586,7 @@ begin  -- rtl
     dmaEnabled(i) <= channelConfigS(i).dmaEnabled;
   end generate Sync_Channel;
 
-  U_SyncTriggerConfig : entity work.SynchronizerVector
+  U_SyncTriggerConfig : entity surf.SynchronizerVector
     generic map ( WIDTH_G => NTRIGGERS_C*EVRV2_TRIGGER_CONFIG_BITS_C )
     port map ( clk     => evrClk,
                dataIn  => triggerConfigAV,
@@ -599,7 +603,7 @@ begin  -- rtl
 
   end generate Sync_Trigger;
 
-  Sync_dmaFullThr : entity work.SynchronizerVector
+  Sync_dmaFullThr : entity surf.SynchronizerVector
     generic map ( TPD_G   => TPD_G,
                   WIDTH_G => 24 )
     port map (    clk     => evrClk,
@@ -607,7 +611,7 @@ begin  -- rtl
                   dataIn  => dmaFullThr (0),
                   dataOut => dmaFullThrS(0) );
 
-  Sync_partAddr : entity work.SynchronizerVector
+  Sync_partAddr : entity surf.SynchronizerVector
     generic map ( TPD_G   => TPD_G,
                   WIDTH_G => partitionAddr'length )
     port map (    clk     => axiClk,

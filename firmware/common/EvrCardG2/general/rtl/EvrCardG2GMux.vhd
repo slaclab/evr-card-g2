@@ -25,8 +25,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -221,7 +223,7 @@ begin
     mdrpDi                <= drpDi   & drpDi;
   end process;
   
-  U_DRP : entity work.AxiLiteToDrp
+  U_DRP : entity surf.AxiLiteToDrp
     generic map ( COMMON_CLK_G => true,
                   ADDR_WIDTH_G => 9 )
     port map (

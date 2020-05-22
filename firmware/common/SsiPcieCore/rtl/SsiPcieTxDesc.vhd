@@ -25,8 +25,10 @@ use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 use ieee.std_logic_arith.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 use work.SsiPciePkg.all;
 
 entity SsiPcieTxDesc is
@@ -298,7 +300,7 @@ begin
 
    -- FIFO for done descriptors
    -- 31:0  = Addr
-   U_RxFifo : entity work.FifoSync
+   U_RxFifo : entity surf.FifoSync
       generic map(
          TPD_G        => TPD_G,
          BRAM_EN_G    => true,
