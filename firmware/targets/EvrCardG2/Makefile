@@ -17,7 +17,9 @@ target: prom
 #  Add DRP bus
 #export PRJ_VERSION = CED20017
 #  Add DAQ trigger bits
-export PRJ_VERSION = CED20018
+#export PRJ_VERSION = CED20018
+#  Add EvrV2TriggerCompl for standby triggers
+export PRJ_VERSION = CED20019
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1

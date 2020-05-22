@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2020-02-03
+-- Last update: 2020-05-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -186,7 +186,8 @@ architecture mapping of EvrV2Core is
   end component;
 
   signal dbDmaValid : slv(11 downto 0);
-  signal dbTrigOut : slv(11 downto 0);
+  signal dbTrig     : slv(11 downto 0);
+  signal dbTrigOut  : slv(11 downto 0);
   signal dbDmaRxIbMaster : AxiStreamMasterType;
   
 begin  -- rtl
@@ -512,9 +513,19 @@ begin  -- rtl
                       config   => triggerConfigS(i),
                       arm      => eventSel(NHARDCHANS_C-1 downto 0),
                       fire     => triggerStrobe,
-                      trigstate=> dbTrigOut(i) );
+                      trigstate=> dbTrig(i) );
   end generate Out_Trigger;
 
+  Compl_Trigger: for i in 0 to NTRIGGERS_C/2-1 generate
+    U_Trig : entity work.EvrV2TriggerCompl
+      generic map ( REG_OUT_G => true )
+      port map ( clk     => evrClk,
+                 rst     => evrRst,
+                 config  => triggerConfigS(2*i+1 downto 2*i),
+                 trigIn  => dbTrig   (2*i+1 downto 2*i),
+                 trigOut => dbTrigOut(2*i+1 downto 2*i) );
+  end generate;
+  
   --
   --  Add an AxiLiteCrossbar for timing closure
   --
