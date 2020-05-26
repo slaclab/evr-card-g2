@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-07-10
--- Last update: 2019-04-07
+-- Last update: 2020-05-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -27,17 +27,23 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 use ieee.math_real.all;
 
-use work.StdRtlPkg.all;
-use work.AxiLitePkg.all;
-use work.AxiStreamPkg.all;
-use work.TimingPkg.all;
-use work.TimingExtnPkg.all;
-use work.XpmPkg.all;
+
+library surf;
+use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
+use surf.AxiStreamPkg.all;
+
+library lcls_timing_core;
+use lcls_timing_core.TimingPkg.all;
+--use lcls_timing_core.TimingExtnPkg.all;
+
+library l2si_core;
+use l2si_core.XpmPkg.all;
 use work.SsiPciePkg.all;
-use work.TPGPkg.all;
-use work.EvrV2Pkg.all;
-use work.XpmPkg.all;
-use work.XpmMiniPkg.all;
+use lcls_timing_core.TPGPkg.all;
+use lcls_timing_core.EvrV2Pkg.all;
+use l2si_core.XpmPkg.all;
+use l2si_core.XpmMiniPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -76,7 +82,7 @@ architecture top_level_app of EvrCardG2Sim is
   signal evrClk   : sl;
   signal evrRst   : sl;
   signal evrBus   : TimingBusType := TIMING_BUS_INIT_C;
-  signal exptBus  : ExptBusType   := EXPT_BUS_INIT_C;
+--  signal exptBus  : ExptBusType   := EXPT_BUS_INIT_C;
 
   signal trigOut  : slv(11 downto 0);
   
@@ -161,7 +167,7 @@ begin
     wait;
   end process;
     
-  --U_TPG : entity work.TPGMini
+  --U_TPG : entity lcls_timing_core.TPGMini
   --  port map ( statusO => open,
   --             configI => tpgConfig,
   --             txClk   => evrClk,
@@ -170,7 +176,7 @@ begin
   --             txData  => xData.data,
   --             txDataK => xData.dataK );
 
-  U_TPG : entity work.TPGMini
+  U_TPG : entity lcls_timing_core.TPGMini
       generic map (
          NARRAYSBSA     => 1,
          STREAM_INTF    => true )
@@ -195,7 +201,7 @@ begin
   --
   --  Use a TimingSerializer to generate advance signal
   --
-  U_TS : entity work.TimingSerializer
+  U_TS : entity lcls_timing_core.TimingSerializer
     port map ( clk          => evrClk,
                rst          => evrRst,
                fiducial     => tpgFiducial,
@@ -204,8 +210,8 @@ begin
                advance  (0) => tpgAdvance );
   
 
-  U_Xpm : entity work.XpmMini
-     generic map ( NDsLinks => 1 )
+  U_Xpm : entity l2si_core.XpmMini
+     generic map ( NUM_DS_LINKS_G => 1 )
      port map ( regclk       => axilClk,
                 regrst       => axilRst,
                 update       => '0',
@@ -222,7 +228,7 @@ begin
   xData.data  <= xPhy.data;
   xData.dataK <= xPhy.dataK;
   
-  U_TPR : entity work.TimingFrameRx
+  U_TPR : entity lcls_timing_core.TimingFrameRx
     port map ( rxClk               => evrClk,
                rxRst               => evrRst,
                rxData              => xData,
@@ -231,10 +237,10 @@ begin
                timingMessage       => evrBus.message,
                timingMessageStrobe => evrBus.strobe,
                timingMessageValid  => evrBus.valid,
-               timingExtn          => evrBus.extn,
-               timingExtnValid     => evrBus.extnValid,
+               timingExtension     => evrBus.extension,
                rxVersion           => open,
                staData             => open );
+  evrBus.modesel <= '1';
   
   U_DUT : entity work.EvrV2Core
     generic map ( AXIL_BASEADDR0 => AXI_MASTERS_CONFIG_C(CSR_INDEX_C).baseAddr,
@@ -260,13 +266,13 @@ begin
                gtxDebug            => x"00",
                -- Trigger and Sync Port
                syncL               => '1',
-               trigOut             => open,
+               trigOut             => trigOut,
                evrModeSel          => '1',
                delay_ld            => open,
                delay_wr            => open,
                delay_rd            => (others=>"000000") );
 
-  --U_MOD : entity work.EvrV2Module
+  --U_MOD : entity lcls_timing_core.EvrV2Module
   --  generic map ( AXIL_BASEADDR => AXI_MASTERS_CONFIG_C(MODU_INDEX_C).baseAddr,
   --                NTRIGGERS_G   => 2 )
   --  port map ( axiClk              => axilClk,
@@ -284,7 +290,7 @@ begin
   --             trigOut             => open,
   --             evrModeSel          => '1' );
 
-  U_AxiXbar : entity work.AxiLiteCrossbar
+  U_AxiXbar : entity surf.AxiLiteCrossbar
     generic map ( NUM_SLAVE_SLOTS_G  => 1,
                   NUM_MASTER_SLOTS_G => 2,
                   MASTERS_CONFIG_G   => AXI_MASTERS_CONFIG_C )
@@ -349,8 +355,8 @@ begin
      wreg(x"00060018", a); -- dmaFullThr?
 
      for i in 0 to ReadoutChannels-1 loop
---       a := x"40000000"; -- fixed rate 0
-       a := x"40001800"; -- fixed rate 0
+       a := x"40000000"; -- fixed rate 0
+--       a := x"40001800"; -- partition 0
 --       a := x"40000001"; -- fixed rate 1
        wreg(x"00080004"+4096*i, a); -- event select
 --     a := x"00000004"; -- delay 4 cycles
@@ -370,7 +376,7 @@ begin
      wreg(x"000a0004", x"00000C01");  -- delay
      wreg(x"000a0008", x"00000004");  -- width
      
-     wreg(x"000a1000", x"80010002");  -- enable
+     wreg(x"000a1000", x"90010002");  -- enable + complEn,OR
      wreg(x"000a1004", x"00000003");  -- delay
      wreg(x"000a1008", x"00000004");  -- width
 
