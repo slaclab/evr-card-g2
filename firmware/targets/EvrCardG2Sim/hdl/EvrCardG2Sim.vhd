@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-07-10
--- Last update: 2020-05-26
+-- Last update: 2020-07-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -35,15 +35,18 @@ use surf.AxiStreamPkg.all;
 
 library lcls_timing_core;
 use lcls_timing_core.TimingPkg.all;
---use lcls_timing_core.TimingExtnPkg.all;
+use lcls_timing_core.TPGMiniEdefPkg.all;
 
 library l2si_core;
 use l2si_core.XpmPkg.all;
-use work.SsiPciePkg.all;
 use lcls_timing_core.TPGPkg.all;
 use lcls_timing_core.EvrV2Pkg.all;
 use l2si_core.XpmPkg.all;
 use l2si_core.XpmMiniPkg.all;
+
+library xil_defaultlib;
+use xil_defaultlib.SsiPciePkg.all;
+use xil_defaultlib.AxiLiteSimPkg.all;
 
 library unisim;
 use unisim.vcomponents.all;
@@ -110,12 +113,61 @@ architecture top_level_app of EvrCardG2Sim is
   signal xpmConfig   : XpmMiniConfigType := XPM_MINI_CONFIG_INIT_C;
   signal xpmStream   : XpmStreamType := XPM_STREAM_INIT_C;
 
+  signal evgTx       : TimingRxType := TIMING_RX_INIT_C;
+
+  constant GEN_LCLS1_C : boolean := true;
+
+  constant EVR_HALF_PERIOD : time := ite(GEN_LCLS1_C, 4.2 ns, 2.7 ns);
+
+  function axiLiteWriteConfig return AxiLiteWriteCmdArray is
+    variable v : AxiLiteWriteCmdArray(4*ReadoutChannels+7 downto 0);
+    variable a : slv(31 downto 0);
+    variable k : integer := 0;
+  begin
+    v(0) := (x"00060000", x"00000001");  -- irq_enable
+    v(1) := (x"00060018", toSlv(16,32)); -- dma_full_threshold
+    k := 2;
+    for i in 0 to ReadoutChannels-1 loop
+      if GEN_LCLS1_C then
+        v(k) := (x"00080004"+4096*i, x"40001028");
+      else
+        v(k) := (x"00080004"+4096*i, x"40000000");
+      end if;
+      k := k+1;
+      if i>2 then
+        v(k) := (x"0008000C"+4096*i, toSlv(0,32));
+      else
+        v(k) := (x"0008000C"+4096*i, toSlv(2-i,12) & toSlv(0,20));
+      end if;
+      k := k+1;
+      v(k) := (x"00080010"+4096*i, x"00000001");
+      k := k+1;
+    end loop;
+    v(k) := (x"000a0000", x"80010001");  -- enable
+    k := k+1;
+    v(k) := (x"000a0004", x"00000C01");  -- delay
+    k := k+1;
+    v(k) := (x"000a0008", x"00000004");  -- width
+    k := k+1;
+    v(k) := (x"000a1000", x"90010002");  -- enable + complEn,OR
+    k := k+1;
+    v(k) := (x"000a1004", x"00000003");  -- delay
+    k := k+1;
+    v(k) := (x"000a1008", x"00000004");  -- width
+    k := k+1;
+    for i in 0 to ReadoutChannels-1 loop
+      if i > 10 then
+        a := toSlv(7,32);
+      else
+        a := toSlv(7,32);
+      end if;
+      v(k) := (x"00080000"+4096*i, a); -- enable + bsa + dma
+      k := k+1;
+    end loop;
+    return v;
+  end axiLiteWriteConfig;
 begin
 
-  xpmConfig.partition.l0Select.enabled <= '1';
-  xpmConfig.partition.l0Select.rateSel <= toSlv(0,16);
-  xpmConfig.partition.l0Select.destSel <= x"8000";
-  
   process is
   begin
     axilClk <= '1';
@@ -135,9 +187,9 @@ begin
   process is
   begin
     evrClk <= '1';
-    wait for 2.7 ns;
+    wait for EVR_HALF_PERIOD;
     evrClk <= '0';
-    wait for 2.7 ns;
+    wait for EVR_HALF_PERIOD;
   end process;
 
   process is
@@ -166,83 +218,109 @@ begin
     tpgConfig.bsadefv(0).init    <= '1';
     wait;
   end process;
-    
-  --U_TPG : entity lcls_timing_core.TPGMini
-  --  port map ( statusO => open,
-  --             configI => tpgConfig,
-  --             txClk   => evrClk,
-  --             txRst   => evrRst,
-  --             txRdy   => '1',
-  --             txData  => xData.data,
-  --             txDataK => xData.dataK );
 
-  U_TPG : entity lcls_timing_core.TPGMini
+  GEN_LCLS1 : if GEN_LCLS1_C generate
+    U_TPGS : entity lcls_timing_core.TPGMiniStream
       generic map (
-         NARRAYSBSA     => 1,
-         STREAM_INTF    => true )
+        NUM_EDEFS      => 1,
+        AC_PERIOD      => 20*1666 )
       port map (
-         -- Register Interface
-         statusO        => open,
-         configI        => tpgConfig,
-         -- TPG Interface
-         txClk          => evrClk,
-         txRst          => evrRst,
-         txRdy          => '1',
-         streams    (0) => tpgStream,
-         advance    (0) => tpgAdvance,
-         fiducial       => tpgFiducial );
+        -- Register Interface
+        config         => tpgConfig,
+        edefConfig     => TPG_MINI_EDEF_CONFIG_INIT_C,
 
-  xpmStream.fiducial   <= tpgFiducial;
-  xpmStream.advance(0) <= tpgAdvance;
-  xpmStream.streams(0) <= tpgStream;
+        txClk          => evrClk,
+        txRst          => evrRst,
+        txRdy          => '1',
+        txData         => evgTx.data,
+        txDataK        => evgTx.dataK );
 
-  --  This doesn't work!
-  --  tpgAdvance <= tpgStream.ready;
-  --
-  --  Use a TimingSerializer to generate advance signal
-  --
-  U_TS : entity lcls_timing_core.TimingSerializer
-    port map ( clk          => evrClk,
-               rst          => evrRst,
-               fiducial     => tpgFiducial,
-               streams  (0) => tpgStream,
-               streamIds(0) => x"0",
-               advance  (0) => tpgAdvance );
+    U_TPGSRx : entity lcls_timing_core.TimingStreamRx
+      port map (
+        rxClk               => evrClk,
+        rxRst               => evrRst,
+        rxData              => evgTx,
+        timingMessageUser   => evrBus.stream,
+        timingMessageStrobe => evrBus.strobe,
+        timingMessageValid  => evrBus.valid );
+
+    evrBus.modesel <= '0';
+  end generate;
+
+  GEN_LCLS2 : if not GEN_LCLS1_C generate
+    xpmConfig.partition.l0Select.enabled <= '1';
+    xpmConfig.partition.l0Select.rateSel <= toSlv(0,16);
+    xpmConfig.partition.l0Select.destSel <= x"8000";
   
+    U_TPG : entity lcls_timing_core.TPGMini
+      generic map (
+        NARRAYSBSA     => 1,
+        STREAM_INTF    => true )
+      port map (
+        -- Register Interface
+        statusO        => open,
+        configI        => tpgConfig,
+        -- TPG Interface
+        txClk          => evrClk,
+        txRst          => evrRst,
+        txRdy          => '1',
+        streams    (0) => tpgStream,
+        advance    (0) => tpgAdvance,
+        fiducial       => tpgFiducial );
 
-  U_Xpm : entity l2si_core.XpmMini
-     generic map ( NUM_DS_LINKS_G => 1 )
-     port map ( regclk       => axilClk,
-                regrst       => axilRst,
-                update       => '0',
-                config       => xpmConfig,
-                status       => open,
-                dsRxClk  (0) => evrClk,
-                dsRxRst  (0) => evrRst,
-                dsRx     (0) => TIMING_RX_INIT_C,
-                dsTx     (0) => xPhy,
-                timingClk    => evrClk,
-                timingRst    => evrRst,
-                timingStream => xpmStream );
+    xpmStream.fiducial   <= tpgFiducial;
+    xpmStream.advance(0) <= tpgAdvance;
+    xpmStream.streams(0) <= tpgStream;
 
-  xData.data  <= xPhy.data;
-  xData.dataK <= xPhy.dataK;
-  
-  U_TPR : entity lcls_timing_core.TimingFrameRx
-    port map ( rxClk               => evrClk,
-               rxRst               => evrRst,
-               rxData              => xData,
-               messageDelay        => (others=>'0'),
-               messageDelayRst     => '0',
-               timingMessage       => evrBus.message,
-               timingMessageStrobe => evrBus.strobe,
-               timingMessageValid  => evrBus.valid,
-               timingExtension     => evrBus.extension,
-               rxVersion           => open,
-               staData             => open );
-  evrBus.modesel <= '1';
-  
-  U_DUT : entity work.EvrV2Core
+    --  This doesn't xil_defaultlib!
+    --  tpgAdvance <= tpgStream.ready;
+    --
+    --  Use a TimingSerializer to generate advance signal
+    --
+    U_TS : entity lcls_timing_core.TimingSerializer
+      port map ( clk          => evrClk,
+                 rst          => evrRst,
+                 fiducial     => tpgFiducial,
+                 streams  (0) => tpgStream,
+                 streamIds(0) => x"0",
+                 advance  (0) => tpgAdvance );
+    
+
+    U_Xpm : entity l2si_core.XpmMini
+      generic map ( NUM_DS_LINKS_G => 1 )
+      port map ( regclk       => axilClk,
+                 regrst       => axilRst,
+                 update       => '0',
+                 config       => xpmConfig,
+                 status       => open,
+                 dsRxClk  (0) => evrClk,
+                 dsRxRst  (0) => evrRst,
+                 dsRx     (0) => TIMING_RX_INIT_C,
+                 dsTx     (0) => xPhy,
+                 timingClk    => evrClk,
+                 timingRst    => evrRst,
+                 timingStream => xpmStream );
+
+    xData.data  <= xPhy.data;
+    xData.dataK <= xPhy.dataK;
+    
+    U_TPR : entity lcls_timing_core.TimingFrameRx
+      port map ( rxClk               => evrClk,
+                 rxRst               => evrRst,
+                 rxData              => xData,
+                 messageDelay        => (others=>'0'),
+                 messageDelayRst     => '0',
+                 timingMessage       => evrBus.message,
+                 timingMessageStrobe => evrBus.strobe,
+                 timingMessageValid  => evrBus.valid,
+                 timingExtension     => evrBus.extension,
+                 rxVersion           => open,
+                 staData             => open );
+
+    evrBus.modesel <= '1';
+  end generate;
+                      
+  U_DUT : entity xil_defaultlib.EvrV2Core
     generic map ( AXIL_BASEADDR0 => AXI_MASTERS_CONFIG_C(CSR_INDEX_C).baseAddr,
                   AXIL_BASEADDR1 => AXI_MASTERS_CONFIG_C(TPR_INDEX_C).baseAddr )
     port map ( axiClk              => axilClk,
@@ -267,7 +345,7 @@ begin
                -- Trigger and Sync Port
                syncL               => '1',
                trigOut             => trigOut,
-               evrModeSel          => '1',
+               evrModeSel          => evrBus.modesel,
                delay_ld            => open,
                delay_wr            => open,
                delay_rd            => (others=>"000000") );
@@ -304,93 +382,13 @@ begin
                mAxiWriteSlaves     => mAxiWriteSlaves,
                mAxiReadMasters     => mAxiReadMasters,
                mAxiReadSlaves      => mAxiReadSlaves );
-    
-  -- Initialize the AxiStreamDmaRingWrite
-  process is
-    
-    procedure wreg(addr : slv(31 downto 0); data : slv(31 downto 0)) is
-    begin
-       wait until axilClk='0';
-       axilWriteMaster.awaddr  <= addr;
-       axilWriteMaster.awvalid <= '1';
-       axilWriteMaster.wdata   <= data;
-       axilWriteMaster.wvalid  <= '1';
-       axilWriteMaster.bready  <= '1';
-       wait until axilClk='1';
-       wait until axilClk='0';
-       wait until axilWriteSlave.bvalid='1';
-       wait until axilClk='1';
-       wait until axilClk='0';
-       axilWriteMaster.awvalid <= '0';
-       axilWriteMaster.wvalid  <= '0';
-       axilWriteMaster.bready  <= '0';
-       wait until axilClk='1';
-       wait until axilClk='0';
-       wait until axilClk='1';
-     end procedure;
 
-     constant da : slv(31 downto 0) := x"00001000";
-     variable a  : slv(31 downto 0) := x"00000000";
-     constant DMA_BUFFERS_C : integer := 32;
-   begin
-     wait until axilRst='0';
-     --a := toSlv(DMA_BUFFERS_C-1,32);
-     --wreg(1024+260, a);
-     --a := x"80001000";
-     --wreg(1024+256, a);
-     ----  Setup DMA buffers
-     --for i in 0 to DMA_BUFFERS_C-1 loop
-     --  wreg(1024+4*0, a); -- write to DMA engine 0
-     --  a := a + da;
-     --end loop;
-
-     -- Setup triggers
-
-     -- Setup event select
-     a := x"00000001";
-     wreg(x"00060000", a); -- irq enable
---     a := x"00000001";
---     wreg(20, a); -- trigSel (LCLS/LCLS-II)
-     a := toSlv(DMA_BUFFERS_C,32);
-     wreg(x"00060018", a); -- dmaFullThr?
-
-     for i in 0 to ReadoutChannels-1 loop
-       a := x"40000000"; -- fixed rate 0
---       a := x"40001800"; -- partition 0
---       a := x"40000001"; -- fixed rate 1
-       wreg(x"00080004"+4096*i, a); -- event select
---     a := x"00000004"; -- delay 4 cycles
---       a := x"00000000"; -- delay 0 cycles
---       a := x"00200000"; -- presample 2 cycles
-       if i>2 then
-         a := toSlv(0,32);
-       else
-         a := toSlv(2-i,12) & toSlv(0,20);
-       end if;
-       wreg(x"0008000C"+4096*i, a); -- bsa active setup/delay
-       a := x"00000001";
-       wreg(x"00080010"+4096*i, a); -- bsa active width
-     end loop;
-     
-     wreg(x"000a0000", x"80010001");  -- enable
-     wreg(x"000a0004", x"00000C01");  -- delay
-     wreg(x"000a0008", x"00000004");  -- width
-     
-     wreg(x"000a1000", x"90010002");  -- enable + complEn,OR
-     wreg(x"000a1004", x"00000003");  -- delay
-     wreg(x"000a1008", x"00000004");  -- width
-
-     for i in 0 to ReadoutChannels-1 loop
-       if i > 10 then
-         a := toSlv(7,32);
-       else
-         a := toSlv(7,32);
-       end if;
-       wreg(x"00080000"+4096*i, a); -- enable + bsa + dma
-     end loop;
-     
-     axilDone <= '1';
-     wait;
-   end process;
+  U_AxiLite : entity xil_defaultlib.AxiLiteWriteMasterSim
+    generic map ( CMDS => axiLiteWriteConfig )
+    port map ( clk    => axilClk,
+               rst    => axilRst,
+               master => axilWriteMaster,
+               slave  => axilWriteSlave,
+               done   => axilDone );
 
 end top_level_app;

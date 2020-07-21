@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2020-05-21
+-- Last update: 2020-07-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -128,6 +128,7 @@ architecture mapping of EvrV2Core is
   signal gtxDebugS   : slv(7 downto 0);
 
   type RegType is record
+    strobei     : sl;
     strobe      : slv       (198 downto 0);
     count       : slv       ( 27 downto 0);
     reset       : sl;
@@ -138,6 +139,7 @@ architecture mapping of EvrV2Core is
   end record;
 
   constant REG_INIT_C : RegType := (
+    strobei     => '0',
     strobe      => (others=>'0'),
     count       => (others=>'0'),
     reset       => '1',
@@ -434,7 +436,8 @@ begin  -- rtl
 
     v.reset  := '0';
     v.count  := r.count+1;
-    v.strobe := r.strobe(r.strobe'left-1 downto 0) & evrBus.strobe;
+    v.strobei := evrBus.strobe;
+    v.strobe := r.strobe(r.strobe'left-1 downto 0) & r.strobei;
     
     for i in 0 to NCHANNELS_C-1 loop
       v.eventSel(i) := eventSel_i(i);
