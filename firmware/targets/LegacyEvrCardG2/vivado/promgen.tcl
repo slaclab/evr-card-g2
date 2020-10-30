@@ -10,9 +10,3 @@
 set format     "mcs"
 set inteface   "bpix16"
 set size       "128"
-
-set BIT_PATH   "$::env(IMPL_DIR)/$::env(PROJECT).bit"
-set DATA_PATH  "$::env(IMAGES_DIR)/$::env(PROJECT)_$::env(PRJ_VERSION).tar.gz"
-
-set loadbit    "up 0x00000000 ${BIT_PATH}"
-set loaddata   "up 0x0016F97E ${DATA_PATH}"

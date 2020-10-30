@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-04-13
+-- Last update: 2020-10-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -33,7 +33,8 @@ library lcls_timing_core;
 
 entity EvrCardG2LclsV1 is
    generic (
-      TPD_G : time := 1 ns); 
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G : BuildInfoType ); 
    port (
       -- AXI-Lite and IRQ Interface
       axiClk              : in    sl;
@@ -144,9 +145,11 @@ architecture mapping of EvrCardG2LclsV1 is
    signal rxData      : slv(15 downto 0);
    signal rxDataK     : slv(1 downto 0);
    signal eventStream : slv(7 downto 0);
-
+   signal serialNoLong: slv(127 downto 0);
 begin
 
+   serialNumber <= serialNoLong(63 downto 0);
+  
    -------------------------
    -- AXI-Lite Crossbar Core
    -------------------------  
@@ -174,11 +177,12 @@ begin
    AxiVersion_Inst : entity surf.AxiVersion
       generic map (
          TPD_G           => TPD_G,
-         BUFR_CLK_DIV_G  => 2,
+         BUILD_INFO_G    => BUILD_INFO_G,
+         BUFR_CLK_DIV_G  => 4,
          EN_DEVICE_DNA_G => true)   
       port map (
          -- Serial Number outputs
-         dnaValueOut    => serialNumber,
+         dnaValueOut => serialNoLong,
          -- AXI-Lite Register Interface
          axiReadMaster  => mAxiReadMasters(VERSION_INDEX_C),
          axiReadSlave   => mAxiReadSlaves(VERSION_INDEX_C),
@@ -291,6 +295,7 @@ begin
    EvrV1Core_Inst : entity lcls_timing_core.EvrV1Core
       generic map (
          TPD_G           => TPD_G,
+         BUILD_INFO_G    => BUILD_INFO_G,
          SYNC_POLARITY_G => '0',        -- '0' = active LOW logic
          USE_WSTRB_G     => true,       -- true = using wstrb due to legacy PCIe driver
          ENDIAN_G        => true)       -- true = big endian  

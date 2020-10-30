@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2015-10-14
+-- Last update: 2020-10-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -23,11 +23,13 @@
 library ieee;
 use ieee.std_logic_1164.all;
 
-use work.StdRtlPkg.all;
+library surf;
+use surf.StdRtlPkg.all;
 
 entity LegacyEvrCardG2 is
    generic (
-      TPD_G : time := 1 ns); 
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G : BuildInfoType ); 
    port (
       -- XADC Ports
       vPIn       : in    sl;
@@ -55,12 +57,12 @@ entity LegacyEvrCardG2 is
       pciTxP     : out   slv(3 downto 0);
       pciTxN     : out   slv(3 downto 0);
       -- EVR Ports
-      evrRefClkP : in    slv(1 downto 0);
-      evrRefClkN : in    slv(1 downto 0);
-      evrRxP     : in    slv(1 downto 0);
-      evrRxN     : in    slv(1 downto 0);
-      evrTxP     : out   slv(1 downto 0);
-      evrTxN     : out   slv(1 downto 0);
+      evrRefClkP : in    slv(0 downto 0);
+      evrRefClkN : in    slv(0 downto 0);
+      evrRxP     : in    slv(0 downto 0);
+      evrRxN     : in    slv(0 downto 0);
+      evrTxP     : out   slv(0 downto 0);
+      evrTxN     : out   slv(0 downto 0);
       -- Trigger and Sync Port
       syncL      : in    sl;
       trigOut    : out   slv(11 downto 0);
@@ -78,7 +80,8 @@ begin
 
    EvrCardG2Core_Inst : entity work.EvrCardG2Core
       generic map (
-         TPD_G => TPD_G) 
+         TPD_G => TPD_G,
+         BUILD_INFO_G => BUILD_INFO_G ) 
       port map (
          -- XADC Ports
          vPIn       => vPIn,

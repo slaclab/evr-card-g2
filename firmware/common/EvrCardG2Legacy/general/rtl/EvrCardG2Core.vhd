@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2016-04-07
+-- Last update: 2020-10-29
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -32,7 +32,8 @@ use work.SsiPciePkg.all;
 
 entity EvrCardG2Core is
    generic (
-      TPD_G : time := 1 ns); 
+      TPD_G : time := 1 ns;
+      BUILD_INFO_G : BuildInfoType ); 
    port (
       -- XADC Ports
       vPIn       : in    sl;
@@ -60,12 +61,12 @@ entity EvrCardG2Core is
       pciTxP     : out   slv(3 downto 0);
       pciTxN     : out   slv(3 downto 0);
       -- EVR Ports
-      evrRefClkP : in    slv(1 downto 0);
-      evrRefClkN : in    slv(1 downto 0);
-      evrRxP     : in    slv(1 downto 0);
-      evrRxN     : in    slv(1 downto 0);
-      evrTxP     : out   slv(1 downto 0);
-      evrTxN     : out   slv(1 downto 0);
+      evrRefClkP : in    slv(0 downto 0);
+      evrRefClkN : in    slv(0 downto 0);
+      evrRxP     : in    slv(0 downto 0);
+      evrRxN     : in    slv(0 downto 0);
+      evrTxP     : out   slv(0 downto 0);
+      evrTxN     : out   slv(0 downto 0);
       -- Trigger and Sync Port
       syncL      : in    sl;
       trigOut    : out   slv(11 downto 0);
@@ -108,9 +109,8 @@ architecture mapping of EvrCardG2Core is
    signal irqReq       : slv(BAR_SIZE_C-1 downto 0);
    signal trig         : Slv12Array(1 downto 0);
    signal serialNumber : slv(63 downto 0);
-   signal evrRefClk    : slv(1 downto 0);
+   signal evrRefClk    : slv(0 downto 0);
    signal evrRecClk    : slv(1 downto 0);
-   signal evrModeSel   : sl;
 
 begin
 
@@ -123,7 +123,7 @@ begin
       generic map (
          TPD_G => TPD_G)
       port map (
-         evrModeSel => evrModeSel,
+         evrModeSel => '0',
          -- Clock
          evrRecClk  => evrRecClk,
          -- Trigger Inputs
@@ -177,7 +177,8 @@ begin
    ------------------         
    EvrCardG2LclsV1_Inst : entity work.EvrCardG2LclsV1
       generic map (
-         TPD_G => TPD_G) 
+         TPD_G           => TPD_G,
+         BUILD_INFO_G    => BUILD_INFO_G )
       port map (
          -- AXI-Lite and IRQ Interface
          axiClk              => axiClk,
@@ -225,39 +226,11 @@ begin
          ledGreenL           => ledGreenL(0),
          ledBlueL            => ledBlueL(0));   
 
-   ------------------         
-   -- LCLS-II EVR Core
-   ------------------                  
-   EvrCardG2LclsV2_Inst : entity work.EvrCardG2LclsV2
-      generic map (
-         TPD_G => TPD_G) 
-      port map (
-         -- AXI-Lite and IRQ Interface
-         axiClk              => axiClk,
-         axiRst              => axiRst,
-         sAxiLiteWriteMaster => axiLiteWriteMaster(1),
-         sAxiLiteWriteSlave  => axiLiteWriteSlave(1),
-         sAxiLiteReadMaster  => axiLiteReadMaster(1),
-         sAxiLiteReadSlave   => axiLiteReadSlave(1),
-         irqActive           => irqActive,
-         irqEnable           => irqEnable(1),
-         irqReq              => irqReq(1),
-         -- EVR Ports
-         evrRefClkP          => evrRefClkP(1),
-         evrRefClkN          => evrRefClkN(1),
-         evrRxP              => evrRxP(1),
-         evrRxN              => evrRxN(1),
-         evrTxP              => evrTxP(1),
-         evrTxN              => evrTxN(1),
-         evrRefClk           => evrRefClk(1),
-         evrModeSel          => evrModeSel,
-         -- Trigger and Sync Port
-         syncL               => syncL,
-         trigOut             => trig(1),
-         -- Misc.
-         cardRst             => cardRst,
-         ledRedL             => ledRedL(1),
-         ledGreenL           => ledGreenL(1),
-         ledBlueL            => ledBlueL(1));            
+
+   axiLiteWriteSlave(1) <= AXI_LITE_WRITE_SLAVE_INIT_C;
+   axiLiteReadSlave (1) <= AXI_LITE_READ_SLAVE_INIT_C;
+   ledRedL  (1) <= '1';
+   ledGreenL(1) <= '1';
+   ledBlueL (1) <= '1';
 
 end mapping;
