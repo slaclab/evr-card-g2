@@ -40,7 +40,7 @@ struct shared_tpr {
   struct shared_tpr *next;
   struct shared_tpr *prev;
 };
-  
+
 struct bar_dev {
   ulong             baseHdwr;
   ulong             baseLen;
