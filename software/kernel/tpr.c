@@ -70,7 +70,7 @@ long tpr_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 
 // PCI device IDs
 static struct pci_device_id tpr_ids[] = {
-  { PCI_DEVICE(0x1A4A, 0x2011) },  // SLAC TPR
+  { PCI_DEVICE(0x1A4A, 0x2010) },  // SLAC TPR
   { 0, }
 };
 
