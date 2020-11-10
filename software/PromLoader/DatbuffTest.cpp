@@ -15,7 +15,7 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
@@ -27,7 +27,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <errno.h>
-#include <signal.h> 
+#include <signal.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <termios.h>
@@ -82,24 +82,24 @@ int main(int argc, char **argv) {
     fflush(stdout);
 
     virt_addr = (void *)((uint64_t)map_base+(target & MAP_MASK));
-	
+
 	int i;
-	
+
 	if(argc < 4) {
 		for(i = 0; i < (int)MAP_SIZE; i += 4) {
 			volatile uint32_t val32;
 			volatile uint8_t *val8 = (volatile uint8_t *)&val32;
-			
-			
+
+
 			if(i % 32 == 0) printf("\n%04X   ", (unsigned int)(target + i));
-			
+
 // #define READ_TWICE
-			
+
 #ifdef READ_TWICE
          val32 = *((uint32_t*)((uint64_t)virt_addr+i));
 #endif
          val32 = *((uint32_t*)((uint64_t)virt_addr+i));
-			
+
 			read_result = val8[0];
 			printf("%02X", (unsigned int)read_result);
 			read_result = val8[1];
@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 			printf("%02X", (unsigned int)read_result);
 			printf(" ");
 		}
-		
+
 		fflush(stdout);
 	}
 

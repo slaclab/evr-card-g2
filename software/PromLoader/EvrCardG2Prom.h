@@ -2,17 +2,17 @@
 // File          : EvrCardG2Prom.h
 // Author        : Larry Ruckman  <ruckman@slac.stanford.edu>
 // Created       : 07/24/2015
-// Project       :  
+// Project       :
 //-----------------------------------------------------------------------------
 // Description :
 //    EvrCardG2 PROM C++ Class
 //-----------------------------------------------------------------------------
 // This file is part of 'SLAC Generic Prom Loader'.
-// It is subject to the license terms in the LICENSE.txt file found in the 
-// top-level directory of this distribution and at: 
-//    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-// No part of 'SLAC Generic Prom Loader', including this file, 
-// may be copied, modified, propagated, or distributed except according to 
+// It is subject to the license terms in the LICENSE.txt file found in the
+// top-level directory of this distribution and at:
+//    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+// No part of 'SLAC Generic Prom Loader', including this file,
+// may be copied, modified, propagated, or distributed except according to
 // the terms contained in the LICENSE.txt file.
 // Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
@@ -43,52 +43,52 @@ class EvrCardG2Prom {
       //! Deconstructor
       ~EvrCardG2Prom ( );
 
-      //! Check for a valid firmware version 
+      //! Check for a valid firmware version
       bool checkFirmwareVersion ( );
-      
+
       //! Check if file exist
-      bool fileExist ( );      
-      
+      bool fileExist ( );
+
       //! Erase the PROM
-      void eraseBootProm ( );    
+      void eraseBootProm ( );
 
       //! Write the .mcs file to the PROM
-      bool bufferedWriteBootProm ( );       
+      bool bufferedWriteBootProm ( );
 
       //! Compare the .mcs file with the PROM
-      bool verifyBootProm ( );     
+      bool verifyBootProm ( );
 
       //! Print Reminder
-      void rebootReminder ( );      
-   
+      void rebootReminder ( );
+
    private:
       // Local Variables
-      string filePath;  
+      string filePath;
       void volatile *mapVersion;
       void volatile *mapBuild;
       void volatile *mapData;
       void volatile *mapAddress;
-      void volatile *mapRead;      
-      
+      void volatile *mapRead;
+
       //! Erase Command
       void eraseCommand(uint32_t address);
-      
+
       //! Program Command
       void programCommand(uint32_t address, uint16_t data);
-      
+
       //! Buffered Program Command
       void bufferedProgramCommand(uint32_t *address, uint16_t *data, uint16_t size);
 
       //! Read FLASH memory Command
       uint16_t readWordCommand(uint32_t address);
 
-      //! Generate request word 
+      //! Generate request word
       uint32_t genReqWord(uint16_t cmd, uint16_t data);
 
       //! Generic FLASH write Command
       void writeToFlash(uint32_t address, uint16_t cmd, uint16_t data);
 
       //! Generic FLASH read Command
-      uint16_t readFlash(uint32_t address, uint16_t cmd);        
+      uint16_t readFlash(uint32_t address, uint16_t cmd);
 };
 #endif
