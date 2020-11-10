@@ -22,24 +22,27 @@ static unsigned triggerDelay = 1;
 static unsigned triggerWidth = 0;
 static bool     verbose = false;
 
+enum TimingMode { LCLS1=0, LCLS2=1, UED=2 };
+
 extern int optind;
 
-static void link_test          (TprReg&, bool lcls2, bool lring);
-static void frame_rates        (TprReg&, bool lcls2);
-static void frame_capture      (TprReg&, char, bool lcls2);
+static void link_test          (TprReg&, TimingMode, bool lring);
+static void frame_rates        (TprReg&, TimingMode);
+static void frame_capture      (TprReg&, char, TimingMode);
 static void dump_frame         (const uint32_t*);
 static bool parse_frame        (const uint32_t*, uint64_t&, uint64_t&);
 static bool parse_bsa_event    (const uint32_t*, uint64_t&, uint64_t&, 
                                 uint64_t&, uint64_t&, uint64_t&);
 static bool parse_bsa_control  (const uint32_t*, uint64_t&, uint64_t&, 
                                 uint64_t&, uint64_t&, uint64_t&);
-static void generate_triggers  (TprReg&, bool lcls2);
+static void generate_triggers  (TprReg&, TimingMode);
 
 static void usage(const char* p) {
   printf("Usage: %s [options]\n",p);
   printf("          -d <dev>  : <tpr a/b>\n");
-  printf("          -1        : test LCLS-I timing\n");
+  printf("          -1        : test LCLS-I  timing\n");
   printf("          -2        : test LCLS-II timing\n");
+  printf("          -U        : test UED     timing\n");
   printf("          -n        : skip frame capture test\n");
   printf("          -r        : dump ring buffers\n");
   printf("          -D delay[,width[,polarity]]  : trigger parameters\n");
@@ -54,16 +57,16 @@ int main(int argc, char** argv) {
   int c;
   bool lUsage = false;
 
-  bool lTestI  = false;
-  bool lTestII = false;
+  TimingMode tmode = LCLS1;
   bool lFrameTest = true;
   bool lDumpRingb = false;
   char* endptr;
 
-  while ( (c=getopt( argc, argv, "12d:nrT:D:h?")) != EOF ) {
+  while ( (c=getopt( argc, argv, "12Ud:nrT:D:h?")) != EOF ) {
     switch(c) {
-    case '1': lTestI  = true; break;
-    case '2': lTestII = true; break;
+    case '1': tmode = LCLS1; break;
+    case '2': tmode = LCLS2; break;
+    case 'U': tmode = UED  ; break;
     case 'n': lFrameTest = false; break;
     case 'r': lDumpRingb = true; break;
     case 'd':
@@ -140,58 +143,41 @@ int main(int argc, char** argv) {
     reg.xbar.setTpr( XBar::StraightIn );
     reg.xbar.setTpr( XBar::StraightOut);
 
-    if (lTestII) {
+    {
       //
-      //  Validate LCLS-II link
+      //  Validate link
       //
-      link_test(reg, true, lDumpRingb);
+      link_test(reg, tmode, lDumpRingb);
 
       //
       //  Capture series of timing frames (show table)
       //
       if (lFrameTest) {
-        frame_rates  (reg, true);
-        frame_capture(reg,tprid, true);
+        frame_rates  (reg, tmode);
+        frame_capture(reg,tprid, tmode);
       }
       //
       //  Generate triggers (what device can digitize them)
       //
       if (triggerWidth)
-        generate_triggers(reg, true);
-    }
-
-    if (lTestI) {
-      //
-      //  Validate LCLS-I link
-      link_test(reg, false, lDumpRingb);
-
-      //
-      //  Capture series of timing frames (show table)
-      //
-      if (lFrameTest) {
-        frame_rates  (reg, false);
-        frame_capture(reg,tprid, false);
-      }
-      //
-      //  Generate triggers
-      //
-      if (triggerWidth)
-        generate_triggers(reg, false);
+        generate_triggers(reg, tmode);
     }
   }
 
   return 0;
 }
 
-void link_test(TprReg& reg, bool lcls2, bool lring)
+void link_test(TprReg& reg, TimingMode tmode, bool lring)
 {
-  static const double ClkMin[] = { 118, 184 };
-  static const double ClkMax[] = { 120, 187 };
-  static const double FrameMin[] = { 356, 928000 };
-  static const double FrameMax[] = { 362, 929000 };
-  unsigned ilcls = lcls2 ? 1:0;
+  static const double ClkMin[] = { 118, 184, 118 };
+  static const double ClkMax[] = { 120, 187, 120 };
+  static const double FrameMin[] = { 356, 928000, 356 };
+  static const double FrameMax[] = { 362, 929000, 362 };
+  unsigned ilcls = unsigned(tmode);
 
-  reg.tpr.clkSel(lcls2);
+  reg.tpr.clkSel(tmode==LCLS2);
+  reg.tpr.modeSel(tmode!=LCLS1);
+  reg.tpr.modeSelEn(true);
   reg.tpr.rxPolarity(false);
   usleep(100000);
   reg.tpr.resetCounts();
@@ -261,16 +247,22 @@ void link_test(TprReg& reg, bool lcls2, bool lring)
   reg.ring1.dump  ("%08x");
 }
 
-void frame_rates(TprReg& reg, bool lcls2)
+void frame_rates(TprReg& reg, TimingMode tmode)
 {
   const unsigned nrates=7;
-  unsigned ilcls = lcls2 ? nrates : 0;
+  unsigned ilcls = unsigned(tmode);
   unsigned rates[nrates];
-  static const unsigned rateMin[] = { 356, 116, 56, 27,  8, 3, 0, 909999, 69999,  9999,  999,  99,  9, 0 };
-  static const unsigned rateMax[] = { 364, 124, 64, 33, 12, 7, 2, 910001, 70001, 10001, 1001, 101, 11, 2 };
+  static const unsigned rateMin[][7] = { 
+      {    356,   116,   56,  27,  8, 3, 0 },
+      { 909999, 69999, 9999, 999, 99, 9, 0 },
+      { 499999, 71427, 9999, 999, 99, 9, 0 } };
+  static const unsigned rateMax[][7] = { 
+      {    364,   124,    64,   33,  12,  7, 2, },
+      { 910001, 70001, 10001, 1001, 101, 11, 2, },
+      { 500001, 71429, 10001, 1001, 101, 11, 2 } };
 
   for(unsigned i=0; i<nrates; i++) {
-    if (lcls2)
+    if (ilcls) // FixedRate
       reg.base.channel[i].evtSel  = (1<<30) | i;
     else {
       switch(i) {
@@ -297,13 +289,13 @@ void frame_rates(TprReg& reg, bool lcls2)
     unsigned rate = rates[i];
     printf("FixedRate[%i]: %7u  %s\n",
            i, rate, 
-           (rate > rateMin[i+ilcls] && 
-            rate < rateMax[i+ilcls]) ? "PASS":"FAIL");
+           (rate > rateMin[ilcls][i] && 
+            rate < rateMax[ilcls][i]) ? "PASS":"FAIL");
     reg.base.channel[i].control = 0;
   }
 }
 
-void frame_capture(TprReg& reg, char tprid, bool lcls2)
+void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
 {
   int idx=11;
   char dev[16];
@@ -328,7 +320,7 @@ void frame_capture(TprReg& reg, char tprid, bool lcls2)
 
   reg.base.dump();
 
-  unsigned urate   = lcls2 ? 0 : (1<<11) | (0x3f<<3); // max rate
+  unsigned urate   = tmode!=LCLS1 ? 0 : (1<<11) | (0x3f<<3); // max rate
   unsigned destsel = 1<<17; // BEAM - DONT CARE
   reg.base.channel[_channel].evtSel = (destsel<<13) | (urate<<0);
   reg.base.channel[_channel].bsaDelay = 0;
@@ -348,7 +340,7 @@ void frame_capture(TprReg& reg, char tprid, bool lcls2)
   int64_t bsarp = q.bsawp;
 
   read(fd, buff, 32);
-  usleep(lcls2 ? 20 : 100000);
+  usleep(tmode!=LCLS1 ? 20 : 100000);
   //  disable channel 0
   reg.base.channel[_channel].control = ucontrol;
 
@@ -365,7 +357,7 @@ void frame_capture(TprReg& reg, char tprid, bool lcls2)
       if (parse_frame(p, pulseId, timeStamp)) {
         if (pulseIdP) {
           uint64_t pulseIdN = pulseIdP+1;
-          if (!lcls2) pulseIdN = (pulseId&~0x1ffffULL) | (pulseIdN&0x1ffffULL);
+          if (tmode==LCLS1) pulseIdN = (pulseId&~0x1ffffULL) | (pulseIdN&0x1ffffULL);
           printf(" 0x%016llx %9u.%09u %s\n", 
                  (unsigned long long)pulseId, 
                  unsigned(timeStamp>>32), 
@@ -477,7 +469,7 @@ bool parse_bsa_control(const uint32_t* p,
   return false;
 }
 
-void generate_triggers(TprReg& reg, bool lcls2)
+void generate_triggers(TprReg& reg, TimingMode tmode)
 {
   unsigned _channel = 0;
   for(unsigned i=0; i<12; i++) 
@@ -488,7 +480,7 @@ void generate_triggers(TprReg& reg, bool lcls2)
   unsigned ucontrol = 0;
   reg.base.channel[_channel].control = ucontrol;
 
-  unsigned urate   = lcls2 ? 0 : (1<<11) | (0x3f<<3); // max rate
+  unsigned urate   = tmode!=LCLS1 ? 0 : (1<<11) | (0x3f<<3); // max rate
   //unsigned urate   = (1<<11) | (0x9<<3); // max rate
   unsigned destsel = 1<<17; // BEAM - DONT CARE
   reg.base.channel[_channel].evtSel = (destsel<<13) | (urate<<0);

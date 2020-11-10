@@ -153,6 +153,10 @@ namespace Tpr {
   public:
     bool clkSel     () const;
     void clkSel     (bool lcls2);
+    bool modeSelEn  () const;
+    void modeSelEn  (bool);
+    bool modeSel    () const;
+    void modeSel    (bool lcls2);
     bool rxPolarity () const;
     void rxPolarity (bool p);
     void resetRx    ();
