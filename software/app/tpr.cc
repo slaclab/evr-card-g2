@@ -18,40 +18,41 @@ void XBar::setTpr( XBar::InMode  m ) { outMap[3] = m==XBar::StraightIn  ? 1:3; }
 void XBar::setTpr( XBar::OutMode m ) { outMap[1] = m==XBar::StraightOut ? 3:1; }
 void XBar::dump() const { for(unsigned i=0; i<4; i++) printf("Out[%d]: %d\n",i,outMap[i]); }
 
-void TprBase::dump() const {
-  static const unsigned NChan=12;
+void TprCsr::dump() const {
   printf("irqEnable [%p]: %08x\n",&irqEnable,irqEnable);
   printf("irqStatus [%p]: %08x\n",&irqStatus,irqStatus);
   printf("gtxDebug  [%p]: %08x\n",&gtxDebug  ,gtxDebug);
   printf("trigSel   [%p]: %08x\n",&trigMaster,trigMaster);
-  printf("channel0  [%p]\n",&channel[0].control);
-  printf("control : ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",channel[i].control);
-  printf("\nevtCount: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",channel[i].evtCount);
-  printf("\nbsaCount: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",channel[i].bsaCount);
-  printf("\nevtSel  : ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",channel[i].evtSel);
-  printf("\nbsaDelay: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",channel[i].bsaDelay);
-  printf("\nbsaWidth: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",channel[i].bsaWidth);
-  printf("\nframeCnt: %08x\n",frameCount);
-  printf("bsaCnCnt: %08x\n",bsaCntlCount);
-  printf("trigger0  [%p]\n",&trigger[0].control);
-  printf("trgCntrl: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",trigger[i].control);
-  printf("\ntrgDelay: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",trigger[i].delay);
-  printf("\ntrgWidth: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",trigger[i].width);
-  printf("\ntrgDelayTap: ");
-  for(unsigned i=0; i<NChan; i++)      printf("%08x ",trigger[i].delayTap);
-  printf("\n");
 }
 
-void TprBase::setupDma    (unsigned fullThr) {
+void TprBase::dump() const {
+  static const unsigned NChan=14;
+  static const unsigned NTrig=12;
+  printf("\nchannel0  [%p]\n",&channel[0].control);
+#define CHAN_REG(reg) {                                                 \
+    printf("%s: ",#reg);                                                \
+    for(unsigned i=0; i<NChan; i++)    printf("%08x ",channel[i].reg);  \
+    printf("\n"); }
+  CHAN_REG(control);
+  CHAN_REG(evtCount);
+  CHAN_REG(bsaCount);
+  CHAN_REG(evtSel);
+  CHAN_REG(bsaDelay);
+  CHAN_REG(bsaWidth);
+#undef CHAN_REG
+  printf("\ntrigger0  [%p]\n",&trigger[0].control);
+#define TRIG_REG(reg) {                                                 \
+    printf("%s: ",#reg);                                                \
+    for(unsigned i=0; i<NTrig; i++)    printf("%08x ",trigger[i].reg);  \
+    printf("\n"); }
+  TRIG_REG(control);
+  TRIG_REG(delay);
+  TRIG_REG(width);
+  TRIG_REG(delayTap);
+#undef TRIG_REG
+}
+
+void TprCsr::setupDma    (unsigned fullThr) {
   dmaFullThr = fullThr;
 }
 
@@ -74,6 +75,32 @@ void TprBase::setupChannel(unsigned i,
   channel[i].control  = bsaWidth ? 7 : 5;
 }
 
+void TprBase::setupChannel(unsigned i,
+                           Destination d,
+                           ACRate      r,
+                           unsigned    timeSlotMask,
+                           unsigned    bsaPresample,
+                           unsigned    bsaDelay,
+                           unsigned    bsaWidth) {
+  channel[i].control  = 0;
+  channel[i].evtSel   = (1<<30) | (1<<11) | ((timeSlotMask&0x7fe)<<2) | (unsigned(r)&0x7); //
+  channel[i].bsaDelay = (bsaPresample<<20) | bsaDelay;
+  channel[i].bsaWidth = bsaWidth;
+  channel[i].control  = bsaWidth ? 7 : 5;
+}
+
+void TprBase::setupChannel(unsigned i,
+                           EventCode   r,
+                           unsigned    bsaPresample,
+                           unsigned    bsaDelay,
+                           unsigned    bsaWidth) {
+  channel[i].control  = 0;
+  channel[i].evtSel   = (1<<30) | (2<<11) | (unsigned(r)&0xff); //
+  channel[i].bsaDelay = (bsaPresample<<20) | bsaDelay;
+  channel[i].bsaWidth = bsaWidth;
+  channel[i].control  = bsaWidth ? 7 : 5;
+}
+
 void TprBase::setupTrigger(unsigned i,
                            unsigned source,
                            unsigned polarity,
@@ -81,6 +108,7 @@ void TprBase::setupTrigger(unsigned i,
                            unsigned width,
                            unsigned delayTap) {
   trigger[i].control  = (polarity ? (1<<16):0);
+  usleep(1);
   trigger[i].delay    = delay;
   trigger[i].width    = width;
   trigger[i].control  = (source&0xffff) | (polarity ? (1<<16):0) | (1<<31);
@@ -195,13 +223,19 @@ void RingB::clear() {
   usleep(10);
   csr = v&~(1<<30);
 }
-void RingB::dump() const
+void RingB::dump(const char* fmt) const
 {
+  char sfmt[16];
+  sprintf(sfmt,"%s%%c",fmt);
   for(unsigned i=0; i<0x1ff; i++)
-    printf("%05x%c",data[i],(i&0xf)==0xf ? '\n':' ');
+    printf(sfmt,data[i],(i&0xf)==0xf ? '\n':' ');
 }
 void RingB::dumpFrames() const
 {
+#define print_u16 {                             \
+    volatile uint32_t v  = (data[j++]<<16);     \
+    printf("%8x ",v);                           \
+  }
 #define print_u32 {                             \
     volatile uint32_t v  = (data[j++]<<16);     \
     v = (v>>16) | (data[j++]<<16);              \
@@ -219,7 +253,7 @@ void RingB::dumpFrames() const
     v = (v>>16) | (uint64_t(data[j++])<<48);    \
     printf("%16lx ",v);                         \
   }
-  printf("%16.16s %16.16s %16.16s %8.8s %8.8s %8.8s %8.8s %8.8s %8.8s\n",
+  printf("%8.8s %16.16s %16.16s %8.8s %8.8s %16.16s %16.16s %16.16s %16.16s\n",
          "Version","PulseID","TimeStamp","Markers","BeamReq",
          "BsaInit","BsaActiv","BsaAvgD","BsaDone");
   unsigned i=0;
@@ -228,7 +262,7 @@ void RingB::dumpFrames() const
       if (i+80 >= 0x1fff)
         break;
       unsigned j=i+2;
-      printf("%16x ",data[j++]&0xffff);
+      print_u16; // version
       print_u64; // pulse ID
       print_u64; // time stamp
       print_u32; // rates/timeslot
