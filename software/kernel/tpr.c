@@ -63,7 +63,16 @@ int     tpr_mmap     (struct file *filp, struct vm_area_struct *vma);
 int     tpr_fasync   (int fd, struct file *filp, int mode);
 void    tpr_vmopen   (struct vm_area_struct *vma);
 void    tpr_vmclose  (struct vm_area_struct *vma);
+
+// vm_operations_struct.fault callback function has a different signature
+// starting at kernel version 4.11. In this new version the struct vm_area_struct
+// in defined as part of the struct vm_fault.
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+int     tpr_vmfault  (struct vm_fault *vmf);
+#else
 int     tpr_vmfault  (struct vm_area_struct *vma, struct vm_fault *vmf);
+#endif
+
 #ifdef CONFIG_COMPAT
 long tpr_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
 #endif
@@ -802,10 +811,21 @@ void tpr_vmclose(struct vm_area_struct *vma)
   dev->vmas--;
 }
 
+// vm_operations_struct.fault callback function has a different signature
+// starting at kernel version 4.11. In this new version the struct vm_area_struct
+// in defined as part of the struct vm_fault.
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+int tpr_vmfault(struct vm_fault* vmf)
+#else
 int tpr_vmfault(struct vm_area_struct* vma,
                 struct vm_fault* vmf)
+#endif
 {
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+  struct tpr_dev* dev = (struct tpr_dev *) vmf->vma->vm_private_data;
+#else
   struct tpr_dev* dev = vma->vm_private_data;
+#endif
   void* pageptr;
 
   pageptr = dev->amem + (vmf->pgoff << PAGE_SHIFT);
