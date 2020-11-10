@@ -14,7 +14,7 @@
 function tpr_start()
 {
     /sbin/modprobe tpr || exit 1
-    test -e /dev/tpr[a-z] && /bin/rm -f /dev/tpr[a-z]*
+    /bin/rm -f /dev/tpr[a-z]*
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%cBSA c %d 15\n", n++, $1}' /proc/devices`
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c c %d 14\n", n++, $1}' /proc/devices`
     `/usr/bin/awk 'BEGIN{n=97;}/tpr/{printf "/bin/mknod -m 666 /dev/tpr%c0 c %d 0\n", n++, $1}' /proc/devices`
