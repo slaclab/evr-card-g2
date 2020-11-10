@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
 	unsigned long read_result;
 	char *filename;
 	off_t target;
-	int access_type = 'w';
 
 	if(argc < 3) {
 		// example: pcimem /sys/bus/pci/devices/0001\:00\:07.0/resource0 0x100 w 0x00
@@ -65,9 +64,6 @@ int main(int argc, char **argv) {
 	}
 	filename = argv[1];
 	target = strtoul(argv[2], 0, 0);
-
-	if(argc > 3)
-		access_type = tolower(argv[3][0]);
 
     if((fd = open(filename, O_RDWR | O_SYNC)) == -1) PRINT_ERROR;
     printf("%s opened.\n", filename);
