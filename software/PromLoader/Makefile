@@ -1,7 +1,7 @@
 # Variables
-ARCH   := $(shell getconf LONG_BIT)
-CC     := g++
-CFLAGS := -Wall -m$(ARCH) -I$(PWD) -lpthread -lrt -lm
+BITENV := $(shell getconf LONG_BIT)
+CC     := $(CROSS_COMPILE)g++
+CFLAGS := -Wall -m$(BITENV) -I$(PWD) -lpthread -lrt -lm
 
 all:
 	$(CC) $(CFLAGS) MemoryMapTest.cpp -o MemoryMapTest
