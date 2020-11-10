@@ -36,7 +36,7 @@ function tpr_start()
 
 function tpr_stop()
 {
-    test -e /dev/tpr[a-z] && /bin/rm -f /dev/tpr[a-z]*
+    /bin/rm -f /dev/tpr[a-z]*
 }
 
 
