@@ -58,7 +58,7 @@ void TprCsr::setupDma    (unsigned fullThr) {
 
 void TprBase::setupDaq    (unsigned i,
                            unsigned partition) {
-  channel[i].evtSel   = (1<<30) | (3<<14) | partition; // 
+  channel[i].evtSel   = (1<<30) | (3<<14) | partition; //
   channel[i].control = 5;
 }
 
@@ -160,7 +160,7 @@ bool TprCore::modeSelEn  () const {
   uint32_t v = CSR;
   return v&(1<<10);
 }
-    
+
 void TprCore::modeSelEn  (bool enable) {
   volatile uint32_t v = CSR;
   v = enable ? (v|(1<<10)) : (v&~(1<<10));
@@ -227,7 +227,7 @@ void TprCore::dump() const {
   printf("RxRstDone: %08x\n", RxRstDone);
   printf("RxDecErrs: %08x\n", RxDecErrs);
   printf("RxDspErrs: %08x\n", RxDspErrs);
-  printf("CSR      : %08x\n", CSR); 
+  printf("CSR      : %08x\n", CSR);
   printf("TxRefClks: %08x\n", TxRefClks);
   printf("BypDone  : %04x\n", (BypassCnts>> 0)&0xffff);
   printf("BypResets: %04x\n", (BypassCnts>>16)&0xffff);
