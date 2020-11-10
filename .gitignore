@@ -13,15 +13,6 @@
 *.so
 *.pyc
 
-# Kernel compiled products
-*.ko
-*.ko.*
-*.mod.c
-*.o.cmd
-*.order
-.tmp_versions
-Module.symvers
-
 # OS files
 .DS_Store
 .DS_Store?
