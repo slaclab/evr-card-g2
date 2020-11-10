@@ -294,7 +294,7 @@ ssize_t tpr_write(struct file *filp, const char *buffer, size_t count, loff_t *f
 
 // tpr_read
 // Returns bit mask of queues with data pending.
-ssize_t tpr_read(struct file *filp, char *buffer, size_t count, loff_t *f_pos) 
+ssize_t tpr_read(struct file *filp, char *buffer, size_t count, loff_t *f_pos)
 {
   ssize_t retval = 0;
   struct shared_tpr *shared = ((struct shared_tpr *) filp->private_data);
@@ -346,7 +346,7 @@ long tpr_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg) {
   return tpr_unlocked_ioctl(file, cmd, arg);
 #else
   return tpr_ioctl(NULL, file, cmd, arg);
-#endif   
+#endif
 }
 #endif
 
@@ -428,10 +428,10 @@ static void tpr_handle_dma(unsigned long arg)
           break;
       }
     }
-    
+
     //  Queue the dma buffer back to the hardware
     ((struct TprReg*)dev->bar[0].reg)->rxFree[0] = next->dma;
-    
+
     next = (struct RxBuffer*)next->lh.next;
   }
 
@@ -478,7 +478,7 @@ irqreturn_t tpr_intr(int irq, void *dev_id, struct pt_regs *regs) {
   struct tpr_dev *dev = (struct tpr_dev *)dev_id;
 
   //
-  //  Handle the interrupt: 
+  //  Handle the interrupt:
   //  wakeup the tasklet that copies the dma data into the sw queues
   //
   stat = ((struct TprReg*)dev->bar[0].reg)->irqStatus;
@@ -577,19 +577,19 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
    dev->dmaBsaCtrl      = 0;
 
    // Add device
-   if ( cdev_add(&dev->cdev, chrdev, MOD_MINORS) ) 
+   if ( cdev_add(&dev->cdev, chrdev, MOD_MINORS) )
      printk(KERN_WARNING  "%s: Probe: Error adding device Maj=%i\n", MOD_NAME, dev->major);
 
    // Enable devices
    if (pci_enable_device(pcidev)) {
      printk(KERN_WARNING  "%s: Could not enable device \n", MOD_NAME);
      return (ERROR);
-   } 
-   
+   }
+
    if (allocBar(&dev->bar[0], dev->major, pcidev, 0) == ERROR)
      return (ERROR);
 
-   // Get IRQ from pci_dev structure. 
+   // Get IRQ from pci_dev structure.
    dev->irq = pcidev->irq;
    printk(KERN_WARNING  "%s: Init: IRQ %d Maj=%i\n", MOD_NAME, dev->irq, dev->major);
 
@@ -619,7 +619,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
    // Device initialization
    tprreg = (struct TprReg* )(dev->bar[0].reg);
 
-   printk(KERN_WARNING  "%s: Init: FpgaVersion %08x Maj=%i\n", 
+   printk(KERN_WARNING  "%s: Init: FpgaVersion %08x Maj=%i\n",
           MOD_NAME, tprreg->FpgaVersion, dev->major);
 
    tprreg->xbarOut[2] = 1;  // Set LCLS-II timing input
@@ -653,7 +653,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
        INIT_LIST_HEAD(&dev->rxFree->lh);
      }
      else
-       list_add_tail( &dev->rxBuffer[idx]->lh, 
+       list_add_tail( &dev->rxBuffer[idx]->lh,
                       &dev->rxFree->lh );
      tprreg->rxFree[0] = dev->rxBuffer[idx]->dma;
    }
@@ -752,7 +752,7 @@ void tpr_remove(struct pci_dev *pcidev) {
 
 
  // Memory map
-int tpr_mmap(struct file *filp, struct vm_area_struct *vma) 
+int tpr_mmap(struct file *filp, struct vm_area_struct *vma)
 {
    struct shared_tpr *shared = (struct shared_tpr *)filp->private_data;
 
@@ -785,18 +785,18 @@ int tpr_mmap(struct file *filp, struct vm_area_struct *vma)
    vma->vm_ops = &tpr_vmops;
    vma->vm_private_data = shared->parent;
    tpr_vmopen(vma);
-   return 0;  
+   return 0;
 }
 
 
-void tpr_vmopen(struct vm_area_struct *vma) 
+void tpr_vmopen(struct vm_area_struct *vma)
 {
   struct tpr_dev* dev = vma->vm_private_data;
   dev->vmas++;
 }
 
 
-void tpr_vmclose(struct vm_area_struct *vma) 
+void tpr_vmclose(struct vm_area_struct *vma)
 {
   struct tpr_dev* dev = vma->vm_private_data;
   dev->vmas--;
@@ -832,7 +832,7 @@ int allocBar(struct bar_dev* minor, int major, struct pci_dev* pcidev, int bar)
 	  minor->baseHdwr, minor->baseLen);
 
    request_mem_region(minor->baseHdwr, minor->baseLen, MOD_NAME);
-   printk(KERN_WARNING  "%s: Probe: Found card. Bar%d. Maj=%i\n", 
+   printk(KERN_WARNING  "%s: Probe: Found card. Bar%d. Maj=%i\n",
 	  MOD_NAME, bar, major);
 
    // Remap the I/O register block so that it can be safely accessed.
