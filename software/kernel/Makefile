@@ -1,6 +1,5 @@
 PGPCARD_HOME := $(shell pwd)
 PGPCARD_KVER := $(shell uname -r)
-
 ARCH := $(shell uname -m)
 CROSS_COMPILE :=
 KERNELDIR := /lib/modules/$(PGPCARD_KVER)/build
