@@ -19,7 +19,9 @@ target: prom
 #  Add DAQ trigger bits
 #export PRJ_VERSION = CED20018
 #  Add EvrV2TriggerCompl for standby triggers
-export PRJ_VERSION = CED20019
+#export PRJ_VERSION = CED20019
+#  Add timing clockSelect/modeSelect distinction
+export PRJ_VERSION = CED2001A
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
