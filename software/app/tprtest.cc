@@ -175,7 +175,9 @@ void link_test(TprReg& reg, TimingMode tmode, bool lring)
   static const double FrameMax[] = { 362, 929000, 362 };
   unsigned ilcls = unsigned(tmode);
 
+  // clkSel chooses the reference clock and the sfp module
   reg.tpr.clkSel(tmode==LCLS2);
+  // modeSel chooses the protocol
   reg.tpr.modeSel(tmode!=LCLS1);
   reg.tpr.modeSelEn(true);
   reg.tpr.rxPolarity(false);
