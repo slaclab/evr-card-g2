@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2020-05-21
+-- Last update: 2020-11-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -198,6 +198,7 @@ architecture mapping of EvrCardG2Core is
    signal serialNumber : slv(127 downto 0);
    signal evrRecClk    : sl;
    signal evrModeSel   : sl;
+   signal evrClkSel    : sl;
 
    signal heartBeat    : sl;
    signal appTimingBus : TimingBusType;
@@ -399,7 +400,7 @@ begin
          axiReadSlave   => mAxiReadSlaves  (DRP_INDEX_C),
          axiWriteMaster => mAxiWriteMasters(DRP_INDEX_C),
          axiWriteSlave  => mAxiWriteSlaves (DRP_INDEX_C),
-         evrSel     => evrModeSel,
+         evrSel     => evrClkSel,  -- selects the clock and the SFP port
          -- EVR Ports
          evrRefClkP => evrRefClkP,
          evrRefClkN => evrRefClkN,
@@ -477,12 +478,12 @@ begin
        gtTxReset       => open,
        gtLoopback      => open,
        tpgMiniTimingPhy => open,
-       timingClkSel    => evrModeSel,
+       timingClkSel    => evrClkSel,
        --
        appTimingClk    => evrClk,
        appTimingRst    => evrRst,
        appTimingBus    => appTimingBus,
-       appTimingMode   => open,
+       appTimingMode   => evrModeSel,
        --
        axilClk         => axiClk,
        axilRst         => axiRst,
