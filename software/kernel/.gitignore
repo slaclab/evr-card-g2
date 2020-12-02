@@ -1,0 +1,8 @@
+# Kernel compiled products
+*.ko
+*.ko.*
+*.mod.c
+*.o.cmd
+*.order
+.tmp_versions
+Module.symvers

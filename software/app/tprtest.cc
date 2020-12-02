@@ -31,9 +31,9 @@ static void frame_rates        (TprReg&, TimingMode);
 static void frame_capture      (TprReg&, char, TimingMode);
 static void dump_frame         (const uint32_t*);
 static bool parse_frame        (const uint32_t*, uint64_t&, uint64_t&);
-static bool parse_bsa_event    (const uint32_t*, uint64_t&, uint64_t&, 
+static bool parse_bsa_event    (const uint32_t*, uint64_t&, uint64_t&,
                                 uint64_t&, uint64_t&, uint64_t&);
-static bool parse_bsa_control  (const uint32_t*, uint64_t&, uint64_t&, 
+static bool parse_bsa_control  (const uint32_t*, uint64_t&, uint64_t&,
                                 uint64_t&, uint64_t&, uint64_t&);
 static void generate_triggers  (TprReg&, TimingMode);
 
@@ -79,9 +79,9 @@ int main(int argc, char** argv) {
     case 'D':
       triggerWidth = 1;
       triggerDelay = strtoul(optarg,&endptr,0);
-      if (endptr[0]==',') 
+      if (endptr[0]==',')
         triggerWidth = strtoul(endptr+1,&endptr,0);
-      if (endptr[0]==',') 
+      if (endptr[0]==',')
         triggerPolarity = strtoul(endptr+1,&endptr,0);
       break;
     case 'T':
@@ -191,12 +191,12 @@ void link_test(TprReg& reg, TimingMode tmode, bool lring)
   unsigned decErrs = reg.tpr.RxDecErrs;
   unsigned dspErrs = reg.tpr.RxDspErrs;
   double rxClkFreq = double(rxclks1-rxclks0)*16.e-6;
-  printf("RxRecClkFreq: %7.2f  %s\n", 
+  printf("RxRecClkFreq: %7.2f  %s\n",
          rxClkFreq,
          (rxClkFreq > ClkMin[ilcls] &&
           rxClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
   double txClkFreq = double(txclks1-txclks0)*16.e-6;
-  printf("TxRefClkFreq: %7.2f  %s\n", 
+  printf("TxRefClkFreq: %7.2f  %s\n",
          txClkFreq,
          (txClkFreq > ClkMin[ilcls] &&
           txClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
@@ -252,11 +252,11 @@ void frame_rates(TprReg& reg, TimingMode tmode)
   const unsigned nrates=7;
   unsigned ilcls = unsigned(tmode);
   unsigned rates[nrates];
-  static const unsigned rateMin[][7] = { 
+  static const unsigned rateMin[][7] = {
       {    356,   116,   56,  27,  8, 3, 0 },
       { 909999, 69999, 9999, 999, 99, 9, 0 },
       { 499999, 71427, 9999, 999, 99, 9, 0 } };
-  static const unsigned rateMax[][7] = { 
+  static const unsigned rateMax[][7] = {
       {    364,   124,    64,   33,  12,  7, 2, },
       { 910001, 70001, 10001, 1001, 101, 11, 2, },
       { 500001, 71429, 10001, 1001, 101, 11, 2 } };
@@ -288,8 +288,8 @@ void frame_rates(TprReg& reg, TimingMode tmode)
   for(unsigned i=0; i<nrates; i++) {
     unsigned rate = rates[i];
     printf("FixedRate[%i]: %7u  %s\n",
-           i, rate, 
-           (rate > rateMin[ilcls][i] && 
+           i, rate,
+           (rate > rateMin[ilcls][i] &&
             rate < rateMax[ilcls][i]) ? "PASS":"FAIL");
     reg.base.channel[i].control = 0;
   }
@@ -358,9 +358,9 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
         if (pulseIdP) {
           uint64_t pulseIdN = pulseIdP+1;
           if (tmode==LCLS1) pulseIdN = (pulseId&~0x1ffffULL) | (pulseIdN&0x1ffffULL);
-          printf(" 0x%016llx %9u.%09u %s\n", 
-                 (unsigned long long)pulseId, 
-                 unsigned(timeStamp>>32), 
+          printf(" 0x%016llx %9u.%09u %s\n",
+                 (unsigned long long)pulseId,
+                 unsigned(timeStamp>>32),
                  unsigned(timeStamp&0xffffffff),
                  (pulseId==pulseIdN) ? "PASS":"FAIL");
           nframes++;
@@ -369,7 +369,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
       }
       allrp++;
     }
-    if (nframes>=10) 
+    if (nframes>=10)
       break;
     read(fd, buff, 32);
   } while(1);
@@ -383,8 +383,8 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
         (&q.bsaq[bsarp &(MAX_TPR_BSAQ-1)].word[0]);
       if (parse_bsa_control(p, pulseId, timeStamp, init, minor, major)) {
         printf(" 0x%016llx %9u.%09u I%016llx m%016llx M%016llx\n",
-               (unsigned long long)pulseId, 
-               unsigned(timeStamp>>32), 
+               (unsigned long long)pulseId,
+               unsigned(timeStamp>>32),
                unsigned(timeStamp&0xffffffff),
                (unsigned long long)init,
                (unsigned long long)minor,
@@ -392,8 +392,8 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
       }
       if (parse_bsa_event(p, pulseId, timeStamp, active, avgdn, update)) {
         printf(" 0x%016llx %9u.%09u A%016llx D%016llx U%016llx\n",
-               (unsigned long long)pulseId, 
-               unsigned(timeStamp>>32), 
+               (unsigned long long)pulseId,
+               unsigned(timeStamp>>32),
                unsigned(timeStamp&0xffffffff),
                (unsigned long long)active,
                (unsigned long long)avgdn,
@@ -402,7 +402,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
       }
       bsarp++;
     }
-    if (nframes>=10) 
+    if (nframes>=10)
       break;
     read(fd, buff, 32);
   } while(1);
@@ -421,7 +421,7 @@ void dump_frame(const uint32_t* p)
            (p[0]>>0)&0xffff,p[1],m,pl[0],pl[1]);
     for(unsigned i=6; i<20; i++)
       printf(" %08x",p[i]);
-    printf("\n"); 
+    printf("\n");
   }
 }
 
@@ -439,7 +439,7 @@ bool parse_frame(const uint32_t* p,
 }
 
 bool parse_bsa_event(const uint32_t* p,
-                     uint64_t& pulseId, uint64_t& timeStamp, 
+                     uint64_t& pulseId, uint64_t& timeStamp,
                      uint64_t& active, uint64_t& avgdone, uint64_t& update)
 {
   if (((p[0]>>16)&0xf)==2) { // BSAEVNT_TAG
@@ -454,7 +454,7 @@ bool parse_bsa_event(const uint32_t* p,
 }
 
 bool parse_bsa_control(const uint32_t* p,
-                       uint64_t& pulseId, uint64_t& timeStamp, 
+                       uint64_t& pulseId, uint64_t& timeStamp,
                        uint64_t& init, uint64_t& minor, uint64_t& major)
 {
   if (((p[0]>>16)&0xf)==1) { // BSACNTL_TAG
@@ -472,7 +472,7 @@ bool parse_bsa_control(const uint32_t* p,
 void generate_triggers(TprReg& reg, TimingMode tmode)
 {
   unsigned _channel = 0;
-  for(unsigned i=0; i<12; i++) 
+  for(unsigned i=0; i<12; i++)
     reg.base.setupTrigger(i,
                           1<<_channel,
                           triggerPolarity, triggerDelay, triggerWidth+i, 0); // polarity, delay, width, tap
