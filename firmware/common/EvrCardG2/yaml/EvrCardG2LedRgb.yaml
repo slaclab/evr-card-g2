@@ -14,7 +14,7 @@ EvrCardG2LedRgb: &EvrCardG2LedRgb
   class: MMIODev
   configPrio: 1
   description: LED control and status
-  size: 0x20
+  size: 0x40
   children:
     #########################################################  
     EnableRed:
