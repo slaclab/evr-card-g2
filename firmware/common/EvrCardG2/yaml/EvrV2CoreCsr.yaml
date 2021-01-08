@@ -1,0 +1,26 @@
+##############################################################################
+## This file is part of 'LCLS2 Common Carrier Core'.
+## It is subject to the license terms in the LICENSE.txt file found in the 
+## top-level directory of this distribution and at: 
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+## No part of 'LCLS2 Common Carrier Core', including this file, 
+## may be copied, modified, propagated, or distributed except according to 
+## the terms contained in the LICENSE.txt file.
+##############################################################################
+#schemaversion 3.0.0
+#once EvrV2CoreCsr
+#include EvrV2Reg.yaml
+
+EvrV2CoreCsr: &EvrV2CoreCsr
+  size: 0x00010000
+  class: MMIODev
+  configPrio: 1
+  children:
+      EvrV2Reg:
+          <<: *EvrV2Reg
+          at:
+            offset: 0x00000000      
+#      EvrV2Dma:
+#          <<: *EvrV2PcieRxDesc
+#          at:
+#            offset: 0x00000400      
