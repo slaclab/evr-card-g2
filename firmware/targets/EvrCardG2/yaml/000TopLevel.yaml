@@ -1,43 +1,86 @@
 ##############################################################################
-## This file is part of 'LCLS2 Common Carrier Core'.
-## It is subject to the license terms in the LICENSE.txt file found in the 
-## top-level directory of this distribution and at: 
-##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
-## No part of 'LCLS2 Common Carrier Core', including this file, 
-## may be copied, modified, propagated, or distributed except according to 
+## This file is part of 'Firmware for EVR Card Gen 2'.
+## It is subject to the license terms in the LICENSE.txt file found in the
+## top-level directory of this distribution and at:
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+## No part of 'Firmware for EVR Card Gen 2', including this file,
+## may be copied, modified, propagated, or distributed except according to
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
 #schemaversion 3.0.0
-#once
-#include EvrV2Module.yaml
+#once 000TopLevel.yaml
+#include AxiVersion.yaml
+#include AxiMicronP30.yaml
+#include AxiSy56040.yaml
+#include EvrCardG2LedRgb.yaml
+#include EvrV2CoreCsr.yaml
+#include EvrV2CoreChan.yaml
+#include TimingFrameRx.yaml
 
 #MMIO range, will be attached to FPGA
 mmio: &mmio
-  size: 0x100000000 # 4GB of address space
+  size: 0x00100000 # 1MB of address space
   class: MMIODev
   configPrio: 1
   children:
-      EvrV2Module:
-          <<: *EvrV2Module
-          at:
-            offset: 0x00000000      
-            numChannels: 12
-            numTriggers: 12
+    AxiVersion:
+      <<: *AxiVersion
+      at:
+        offset: 0x00010000
 
-NetIODev:
-  ipAddr: 10.0.3.102
-  class: NetIODev
-  configPrio: 1
+    BootMem:
+      <<: *AxiMicronP30
+      at:
+        offset: 0x00020000
+
+    SfpXbar:
+      <<: *AxiSy56040
+      at:
+        offset: 0x00040000
+
+    Led:
+      <<: *EvrCardG2LedRgb
+      at:
+        offset: 0x00050000
+
+    EvrCsr:
+      <<: *EvrV2CoreCsr
+      at:
+        offset: 0x00060000
+
+    EvrChannels:
+      <<: *EvrV2CoreChan
+      at:
+        offset: 0x00080000
+
+    TimingCore:
+      <<: *TimingFrameRx
+      at:
+        offset: 0x000C0000
+
+    #TimingRingBufferRaw:
+    #  <<: *AxiLiteRingBuffer
+    #  at:
+    #    offset: 0x000D0000
+
+    #TimingRingBufferMsg:
+    #  <<: *AxiLiteRingBuffer
+    #  at:
+    #    offset: 0x000E0000
+
+    #GthDrp:
+    #  <<: *AxiLiteToDrp
+    #  at:
+    #    offset: 0x00070000
+
+MemDev: &MemDev
+  size:     0x00100000
+  class:    MemDev
+  fileName: "/dev/tpra"
+  offset:   0x00000000
   children:
-     mmio:
-       <<: *mmio
-       at:
-         SRP:
-           protocolVersion: SRP_UDP_V3
-         UDP:
-           port: 8193
-         RSSI: yes
-         depack:
-           useDepack: yes
-         TDESTMux:
-           TDEST: 0
+    mmio:
+      <<: *mmio
+      at:
+        offset: 0x00000000
+        align: 4
