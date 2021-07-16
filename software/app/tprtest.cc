@@ -407,6 +407,39 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
     read(fd, buff, 32);
   } while(1);
 
+
+  uint64_t active, avgdn, update, init, minor, major;
+  nframes = 0;
+  do {
+    while(bsarp < q.bsawp && nframes<10) {
+      const uint32_t* p = reinterpret_cast<const uint32_t*>
+        (&q.bsaq[bsarp &(MAX_TPR_BSAQ-1)].word[0]);
+      if (parse_bsa_control(p, pulseId, timeStamp, init, minor, major)) {
+        printf(" 0x%016llx %9u.%09u I%016llx m%016llx M%016llx\n",
+               (unsigned long long)pulseId, 
+               unsigned(timeStamp>>32), 
+               unsigned(timeStamp&0xffffffff),
+               (unsigned long long)init,
+               (unsigned long long)minor,
+               (unsigned long long)major);
+      }
+      if (parse_bsa_event(p, pulseId, timeStamp, active, avgdn, update)) {
+        printf(" 0x%016llx %9u.%09u A%016llx D%016llx U%016llx\n",
+               (unsigned long long)pulseId, 
+               unsigned(timeStamp>>32), 
+               unsigned(timeStamp&0xffffffff),
+               (unsigned long long)active,
+               (unsigned long long)avgdn,
+               (unsigned long long)update);
+        nframes++;
+      }
+      bsarp++;
+    }
+    if (nframes>=10) 
+      break;
+    read(fd, buff, 32);
+  } while(1);
+
   munmap(ptr, sizeof(TprQueues));
   close(fd);
 }
