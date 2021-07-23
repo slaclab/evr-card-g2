@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2017-04-23
+-- Last update: 2021-07-23
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -86,7 +86,8 @@ begin
      U_IDELAY1 : IDELAYE2
        generic map ( CINVCTRL_SEL => "TRUE",
                      DELAY_SRC    => "DATAIN",
-                     IDELAY_TYPE  => "VAR_LOAD" )
+                     IDELAY_TYPE  => "VAR_LOAD",
+                     REFCLK_FREQUENCY => 190.0 )
        port map ( CNTVALUEOUT => open,
                   DATAOUT     => trigI(i),
                   C           => refclk,  -- control clock
@@ -103,7 +104,8 @@ begin
      U_IDELAY2 : IDELAYE2
        generic map ( CINVCTRL_SEL => "TRUE",
                      DELAY_SRC    => "DATAIN",
-                     IDELAY_TYPE  => "VAR_LOAD" )
+                     IDELAY_TYPE  => "VAR_LOAD",
+                     REFCLK_FREQUENCY => 190.0 )
        port map ( CNTVALUEOUT => open,
                   DATAOUT     => trigO(i),
                   C           => refclk,  -- control clock
