@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2020-11-10
+-- Last update: 2021-07-26
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -197,7 +197,6 @@ architecture mapping of EvrCardG2Core is
    signal delay_ld     : slv      (11 downto 0);
    signal serialNumber : slv(127 downto 0);
    signal evrRecClk    : sl;
-   signal evrModeSel   : sl;
    signal evrClkSel    : sl;
 
    signal heartBeat    : sl;
@@ -483,7 +482,7 @@ begin
        appTimingClk    => evrClk,
        appTimingRst    => evrRst,
        appTimingBus    => appTimingBus,
-       appTimingMode   => evrModeSel,
+       appTimingMode   => open,
        --
        axilClk         => axiClk,
        axilRst         => axiRst,
@@ -503,7 +502,7 @@ begin
        data            => txData ,
        dataK           => txDataK );
 
-   heartBeat <= appTimingBus.message.fixedRates(6) when evrModeSel='1' else
+   heartBeat <= appTimingBus.message.fixedRates(6) when appTimingBus.modesel='1' else
                 appTimingBus.stream.eventCodes(45);
 
    U_Core : entity work.EvrV2Core
@@ -531,7 +530,7 @@ begin
        -- Trigger and Sync Port
        syncL               => syncL,
        trigOut             => trig,
-       evrModeSel          => evrModeSel,
+       evrModeSel          => appTimingBus.modesel,
        delay_ld            => delay_ld,
        delay_wr            => delay_wr,
        delay_rd            => delay_rd );
