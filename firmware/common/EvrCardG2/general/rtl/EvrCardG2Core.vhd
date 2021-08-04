@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2021-07-26
+-- Last update: 2021-08-04
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -32,6 +32,8 @@ use work.SsiPciePkg.all;
 
 library lcls_timing_core;
 use lcls_timing_core.TimingPkg.all;
+
+library l2si_core;
 
 entity EvrCardG2Core is
    generic (
@@ -178,11 +180,10 @@ architecture mapping of EvrCardG2Core is
 
    signal rxControl   : TimingPhyControlType;
    signal rxStatus    : TimingPhyStatusType := TIMING_PHY_STATUS_INIT_C;
-   signal timingPhy   : TimingPhyType;
+   signal txPhy       : TimingPhyType;
+   signal txPhyId     : slv(31 downto 0) := x"f6000000";
    signal txPhyClk    : sl;
    signal txPhyRst    : sl;
-   signal txDataK     : slv(1 downto 0);
-   signal txData      : slv(15 downto 0);
    
    signal axiClk       : sl;
    signal axiRst       : sl;
@@ -421,8 +422,8 @@ begin
          evrTxClk   => txPhyClk,
          evrTxRst   => txPhyRst,
          txInhibit  => '0',
-         txData     => txData  ,
-         txDataK    => txDataK );
+         txData     => txPhy.data  ,
+         txDataK    => txPhy.dataK );
 
       -----------------         
    -- EVR LED Status
@@ -491,17 +492,31 @@ begin
        axilWriteMaster => mAxiWriteMasters(CORE_INDEX_C),
        axilWriteSlave  => mAxiWriteSlaves (CORE_INDEX_C));
 
-      DaqControlTx_1 : entity work.DaqControlTx
-     port map (
-       txclk           => txPhyClk,
-       txrst           => txPhyRst,
-       rxrst           => evrRst  ,
-       ready           => dmaReady,
-       -- status          => debugIn, + register bus for programmable control
-       --                             + input timing for tag caching
-       data            => txData ,
-       dataK           => txDataK );
+     -- DaqControlTx_1 : entity work.DaqControlTx
+     --port map (
+     --  txclk           => txPhyClk,
+     --  txrst           => txPhyRst,
+     --  rxrst           => evrRst  ,
+     --  ready           => dmaReady,
+     --  -- status          => debugIn, + register bus for programmable control
+     --  --                             + input timing for tag caching
+     --  data            => txData ,
+     --  dataK           => txDataK );
 
+   U_SyncId : entity surf.SynchronizerVector
+     generic map ( WIDTH_G => 24 )
+     port map (
+       clk            => txPhyClk,
+       dataIn         => serialNumber(23 downto 0),
+       dataOut        => txPhyId     (23 downto 0) );
+   
+   U_XpmTimingFb : entity l2si_core.XpmTimingFb
+     port map (
+       clk            => txPhyClk,
+       rst            => txPhyRst,
+       id             => txPhyId,
+       phy            => txPhy );
+   
    heartBeat <= appTimingBus.message.fixedRates(6) when appTimingBus.modesel='1' else
                 appTimingBus.stream.eventCodes(45);
 

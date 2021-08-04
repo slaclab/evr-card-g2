@@ -23,7 +23,9 @@ target: prom
 #  Add timing clockSelect/modeSelect distinction
 #export PRJ_VERSION = CED2001A
 #  Fix modesel and delayTap
-export PRJ_VERSION = CED2001B
+#export PRJ_VERSION = CED2001B
+#  Add L2SI trigger support by default
+export PRJ_VERSION = CED2001C
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1

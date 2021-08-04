@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2020-07-20
+-- Last update: 2021-08-04
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -46,7 +46,7 @@ use l2si_core.XpmExtensionPkg.all;
 entity EvrV2Core is
   generic (
     TPD_G          : time             := 1 ns;
-    GEN_L2SI_G     : boolean          := false;
+    GEN_L2SI_G     : boolean          := true;
     AXIL_BASEADDR0 : slv(31 downto 0) := x"00060000";
     AXIL_BASEADDR1 : slv(31 downto 0) := x"00080000" );
   port (
@@ -444,7 +444,7 @@ begin  -- rtl
       if GEN_L2SI_G and r.strobe(0) = '1' then      --  Add in DAQ event selection
         if channelConfigS(i).rateSel(12 downto 11)="11" then
           xpmEvent := toXpmEventDataType(xpmMessage.partitionWord(conv_integer(channelConfigS(i).rateSel(2 downto 0))));
-          v.eventSel(i) := xpmEvent.valid and xpmEvent.l0Accept;
+          v.eventSel(i) := eventSel(i) or (xpmEvent.valid and xpmEvent.l0Accept);
         end if;
       end if;
       v.dmaSel(i) := v.eventSel(i) and channelConfigS(i).dmaEnabled;
