@@ -444,7 +444,7 @@ begin  -- rtl
       if GEN_L2SI_G and r.strobe(0) = '1' then      --  Add in DAQ event selection
         if channelConfigS(i).rateSel(12 downto 11)="11" then
           xpmEvent := toXpmEventDataType(xpmMessage.partitionWord(conv_integer(channelConfigS(i).rateSel(2 downto 0))));
-          v.eventSel(i) := eventSel(i) or (xpmEvent.valid and xpmEvent.l0Accept);
+          v.eventSel(i) := eventSel_i(i) or (xpmEvent.valid and xpmEvent.l0Accept);
         end if;
       end if;
       v.dmaSel(i) := v.eventSel(i) and channelConfigS(i).dmaEnabled;
