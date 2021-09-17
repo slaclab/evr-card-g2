@@ -1,4 +1,4 @@
-export GIT_BYPASS = 1
+export GIT_BYPASS = 0
 
 # Define target output
 target: prom
@@ -25,7 +25,9 @@ target: prom
 #  Fix modesel and delayTap
 #export PRJ_VERSION = CED2001B
 #  Add L2SI trigger support by default
-export PRJ_VERSION = CED2001C
+#export PRJ_VERSION = CED2001C
+#  Fix rate counting interval
+export PRJ_VERSION = CED2001D
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
