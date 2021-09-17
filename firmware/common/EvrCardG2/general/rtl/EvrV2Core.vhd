@@ -429,7 +429,7 @@ begin  -- rtl
     end if;
   end process pid_fixup;
     
-  comb : process ( r, evrBus, eventSel_i, evrModeSel, channelConfigS, xpmMessage ) is
+  comb : process ( r, evrBus, eventSel_i, evrClkSel, channelConfigS, xpmMessage ) is
     variable v : RegType;
     variable xpmEvent : XpmEventDataType;
   begin
