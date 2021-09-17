@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2021-08-04
+-- Last update: 2021-09-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -546,6 +546,7 @@ begin
        syncL               => syncL,
        trigOut             => trig,
        evrModeSel          => appTimingBus.modesel,
+       evrClkSel           => evrClkSel,
        delay_ld            => delay_ld,
        delay_wr            => delay_wr,
        delay_rd            => delay_rd );

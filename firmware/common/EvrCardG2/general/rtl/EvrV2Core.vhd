@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2021-08-04
+-- Last update: 2021-09-16
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -74,6 +74,7 @@ entity EvrV2Core is
     syncL               : in  sl;
     trigOut             : out slv(11 downto 0);
     evrModeSel          : in  sl;
+    evrClkSel           : in  sl;
     delay_ld            : out slv      (11 downto 0);
     delay_wr            : out Slv6Array(11 downto 0);
     delay_rd            : in  Slv6Array(11 downto 0) );
@@ -456,8 +457,8 @@ begin  -- rtl
       v.eventCount(NCHANNELS_C) := r.eventCount(NCHANNELS_C)+1;
     end if;
 
-    if ((evrModeSel = '0' and r.count = toSlv(118999998,28)) or
-        (evrModeSel = '1' and r.count = toSlv(181999998,28))) then
+    if ((evrClkSel = '0' and r.count = toSlv(118999998,28)) or
+        (evrClkSel = '1' and r.count = toSlv(181999998,28))) then
       v.reset := '1';
     end if;
 
