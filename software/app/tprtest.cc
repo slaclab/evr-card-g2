@@ -329,6 +329,19 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   reg.base.channel[_channel].bsaWidth = 1;
   reg.base.channel[_channel].control = ucontrol | 1;
 
+  //  follow bsa
+
+  char devbsa[16];
+  sprintf(devbsa,"/dev/tpr%cBSA",tprid);
+  int fdbsa = open(dev, O_RDONLY);
+  if (fdbsa<0) {
+    printf("Open failure for dev %s [FAIL]\n",devbsa);
+    perror("Could not open");
+    return;
+  }
+
+  reg.csr.dump();
+
   //  read the captured frames
 
   printf("   %16.16s %8.8s %8.8s\n",
@@ -342,6 +355,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   int64_t bsarp = q.bsawp;
 
   read(fd, buff, 32);
+  read(fdbsa, buff, 32);
   usleep(tmode!=LCLS1 ? 20 : 100000);
   //  disable channel 0
   reg.base.channel[_channel].control = ucontrol;
@@ -406,44 +420,12 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
     }
     if (nframes>=10)
       break;
-    read(fd, buff, 32);
-  } while(1);
-
-
-  uint64_t active, avgdn, update, init, minor, major;
-  nframes = 0;
-  do {
-    while(bsarp < q.bsawp && nframes<10) {
-      const uint32_t* p = reinterpret_cast<const uint32_t*>
-        (&q.bsaq[bsarp &(MAX_TPR_BSAQ-1)].word[0]);
-      if (parse_bsa_control(p, pulseId, timeStamp, init, minor, major)) {
-        printf(" 0x%016llx %9u.%09u I%016llx m%016llx M%016llx\n",
-               (unsigned long long)pulseId, 
-               unsigned(timeStamp>>32), 
-               unsigned(timeStamp&0xffffffff),
-               (unsigned long long)init,
-               (unsigned long long)minor,
-               (unsigned long long)major);
-      }
-      if (parse_bsa_event(p, pulseId, timeStamp, active, avgdn, update)) {
-        printf(" 0x%016llx %9u.%09u A%016llx D%016llx U%016llx\n",
-               (unsigned long long)pulseId, 
-               unsigned(timeStamp>>32), 
-               unsigned(timeStamp&0xffffffff),
-               (unsigned long long)active,
-               (unsigned long long)avgdn,
-               (unsigned long long)update);
-        nframes++;
-      }
-      bsarp++;
-    }
-    if (nframes>=10) 
-      break;
-    read(fd, buff, 32);
+    read(fdbsa, buff, 32);
   } while(1);
 
   munmap(ptr, sizeof(TprQueues));
   close(fd);
+  close(fdbsa);
 }
 
 void dump_frame(const uint32_t* p)
