@@ -353,6 +353,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
 
   int64_t allrp = q.allwp[idx];
   int64_t bsarp = q.bsawp;
+  printf("allrp %llx  q.allwp[%d] %llx\n", allrp, idx, q.allwp[idx]);
 
   read(fd, buff, 32);
   read(fdbsa, buff, 32);
@@ -365,6 +366,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   unsigned nframes=0;
 
   do {
+    printf("allrp %llx  q.allwp[%d] %llx\n", allrp, idx, q.allwp[idx]);
     while(allrp < q.allwp[idx] && nframes<10) {
       const uint32_t* p = reinterpret_cast<const uint32_t*>
         (&q.allq[q.allrp[idx].idx[allrp &(MAX_TPR_ALLQ-1)] &(MAX_TPR_ALLQ-1) ].word[0]);

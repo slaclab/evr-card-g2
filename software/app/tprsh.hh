@@ -13,12 +13,12 @@ namespace Tpr {
 
   class TprEntry {
   public:
-    uint32_t word[MSG_SIZE];
+    volatile uint32_t word[MSG_SIZE];
   };
 
   class TprQIndex {
   public:
-    long long idx[MAX_TPR_ALLQ];
+    volatile long long idx[MAX_TPR_ALLQ];
   };
 
   class TprQueues {
@@ -26,10 +26,10 @@ namespace Tpr {
     TprEntry  allq  [MAX_TPR_ALLQ];
     TprEntry  bsaq  [MAX_TPR_BSAQ];
     TprQIndex allrp [MOD_SHARED]; // indices into allq
-    long long allwp [MOD_SHARED]; // write pointer into allrp
-    long long bsawp;
-    long long gwp;
-    int       fifofull;
+    volatile long long allwp [MOD_SHARED]; // write pointer into allrp
+    volatile long long bsawp;
+    volatile long long gwp;
+    volatile int       fifofull;
   };
 };
 
