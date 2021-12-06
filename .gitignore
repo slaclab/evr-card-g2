@@ -12,6 +12,9 @@
 *.o
 *.so
 *.pyc
+*.bin
+*.ld
+*.dat
 
 # OS files
 .DS_Store
@@ -21,8 +24,23 @@
 .Trashes
 ehthumbs.db
 Thumps.db
+build.info
 
-# Vivado Build
+# Build directories 
 build*
+bin*
+.Xil*
+.obj*
 
-*.bin
+# Only .bit.gz and .mcs.gz should be committed to git
+*.bit
+*.mcs
+*.gz
+*.ltx
+*.hdf
+*.vho
+*.zip
+*.xsa
+*.pdi
+*.bif
+*.elf
