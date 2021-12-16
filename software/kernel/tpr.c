@@ -240,7 +240,7 @@ int tpr_release(struct inode *inode, struct file *filp) {
   if (shared->idx < 0) {                      // Master
       // Nothing to do!
   }
-  else if (shared->minor < 0) {               // BSA
+  else {                                      // Single channel or BSA
     spin_lock(&dev->lock);
     if (shared->prev)
         shared->prev->next = shared->next;
@@ -248,29 +248,34 @@ int tpr_release(struct inode *inode, struct file *filp) {
         dev->bsa = shared->next;
     if (shared->next)
         shared->next->prev = shared->prev;
-    spin_unlock(&dev->lock);
-  }
-  else {                                      // Single channel
-    spin_lock(&dev->lock);
-    if (shared->prev)
-        shared->prev->next = shared->next;
-    else
-        dev->shared[shared->minor] = shared->next;
-    if (shared->next)
-        shared->next->prev = shared->prev;
-    //
-    //  Disable the dma for this channel
-    //
-    if (!dev->shared[shared->minor]) {       // Last one leaving, shut out the lights...
+
+    if (shared->minor >= 0) {                 // Single channel
+      //
+      //  Disable the dma for this channel
+      //
+      if (!dev->shared[shared->minor]) {       // Last one leaving, shut out the lights...
         i = shared->minor;
         reg = (struct TprReg*)shared->parent->bar[0].reg;
         reg->channel[i].control = reg->channel[0].control & ~(1<<2);
         dev->minors = dev->minors & ~(1<<i);
-    }
-    spin_unlock(&dev->lock);
+      }
 #ifdef TPRDEBUG
-    printMinors(dev, shared->minor);
+      printMinors(dev, shared->minor);
 #endif
+    }
+
+    //  Put it back on the freelist
+    shared->prev = NULL;
+    if (dev->freelist) {
+      shared->next = dev->freelist;
+      dev->freelist->prev = shared;
+    }
+    else {
+      shared->next = NULL;
+    }
+    dev->freelist = shared;
+
+    spin_unlock(&dev->lock);
   }
 
   printk("%s: Release: Major %u: irqEnable %u, irqDisable %u, irqCount %u, irqNoReq %u\n",
