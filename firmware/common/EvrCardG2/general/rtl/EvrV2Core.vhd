@@ -551,7 +551,6 @@ begin  -- rtl
       generic map ( REG_OUT_G => true )
       port map ( clk     => evrClk,
                  rst     => evrRst,
-                 refclk  => refClk,
                  config  => triggerConfigS(2*i+1 downto 2*i),
                  trigIn  => dbTrig   (2*i+1 downto 2*i),
                  trigOut => dbTrigOut(2*i+1 downto 2*i) );
