@@ -48,7 +48,7 @@ architecture mapping of EvrV2RefClk is
   end record;
 
   constant REG_INIT_C : RegType := (
-    clk <= '0' );
+    clk => '0' );
 
   signal r   : RegType := REG_INIT_C;
   signal rin : RegType;
