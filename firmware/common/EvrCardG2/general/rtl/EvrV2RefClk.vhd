@@ -68,7 +68,7 @@ begin  -- rtl
     generic map ( INPUT_BUFG_G       => false,
                   NUM_CLOCKS_G       => 1,
                   CLKIN_PERIOD_G     => 5.4,
-                  CLKFBOUT_MULT_F_G  => ite(USE_REG_C, 7, 3.5),
+                  CLKFBOUT_MULT_F_G  => ite(USE_REG_C, 7.0, 3.5),
                   DIVCLK_DIVIDE_G    => 1,
                   CLKOUT0_DIVIDE_G   => 65 )
     port map ( clkIn  => evrClk,
@@ -80,7 +80,7 @@ begin  -- rtl
                   CLKIN_PERIOD_G     => 8.4,
                   CLKFBOUT_MULT_G    => 10,
                   DIVCLK_DIVIDE_G    => 1,
-                  CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 59.5, 119) )
+                  CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 59.5, 119.0) )
     port map ( clkIn  => evrClk,
                clkOut(0) => clko_0 );
 
