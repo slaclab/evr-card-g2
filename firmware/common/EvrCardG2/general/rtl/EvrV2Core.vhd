@@ -522,7 +522,7 @@ begin  -- rtl
                   -- status
                   delay_rd            => delay_rd );
 
-  U_RefClk : entity lcls_timing_core.EvrV2RefClk
+  U_RefClk : entity work.EvrV2RefClk
      generic map ( TPD_G => TPD_G )
      port map (
         evrClk    => evrClk,
