@@ -55,45 +55,36 @@ architecture mapping of EvrV2RefClk is
   
   signal clk70, clko_0, clko_1, clko : sl;
 
-  constant USE_REG_C : boolean := false; -- make 20 MHz clk and register the
-                                         -- output OR make 10 MHz clk
+  constant USE_REG_C : boolean := false;
   
 begin  -- rtl
+
+  --  if USE_REG_C, generate 20 MHz clocks and register flop on each edge
+  --  else generate 10MHz clocks
 
   clko <= clko_0 when evrClkSel = '0' else clko_1;
   
   U_CLK186 : entity surf.ClockManager7
-    generic map ( INPUT_BUFG_G     => false,
-                  NUM_CLOCKS_G     => 1,
-                  CLKIN_PERIOD_G   => 5.4,
-                  CLKFBOUT_MULT_G  => 7,
-                  DIVCLK_DIVIDE_G  => 13,
-                  CLKOUT0_DIVIDE_G => ite(USE_REG_C, 5, 10) )
+    generic map ( INPUT_BUFG_G       => false,
+                  NUM_CLOCKS_G       => 1,
+                  CLKIN_PERIOD_G     => 5.4,
+                  CLKFBOUT_MULT_F_G  => ite(USE_REG_C, 7, 3.5),
+                  DIVCLK_DIVIDE_G    => 1,
+                  CLKOUT0_DIVIDE_G   => 65 )
     port map ( clkIn  => evrClk,
                clkOut(0) => clko_1 );
   
+  U_CLK119 : entity surf.ClockManager7
+    generic map ( INPUT_BUFG_G       => false,
+                  NUM_CLOCKS_G       => 1,
+                  CLKIN_PERIOD_G     => 8.4,
+                  CLKFBOUT_MULT_G    => 10,
+                  DIVCLK_DIVIDE_G    => 1,
+                  CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 59.5, 119) )
+    port map ( clkIn  => evrClk,
+               clkOut(0) => clko_0 );
+
   GEN_20MH : if USE_REG_C generate
-    --  Generate 20 MHz clocks and register flop on each edge
-    U_CLK119 : entity surf.ClockManager7
-      generic map ( INPUT_BUFG_G     => false,
-                    NUM_CLOCKS_G     => 1,
-                    CLKIN_PERIOD_G   => 8.4,
-                    CLKFBOUT_MULT_G  => 10,
-                    DIVCLK_DIVIDE_G  => 17,
-                    CLKOUT0_DIVIDE_G => 1 )
-      port map ( clkIn  => evrClk,
-                 clkOut(0) => clk70 );
-
-    U_CLK70 : entity surf.ClockManager7
-      generic map ( INPUT_BUFG_G     => false,
-                    NUM_CLOCKS_G     => 1,
-                    CLKIN_PERIOD_G   => 14.3,
-                    CLKFBOUT_MULT_G  => 20,
-                    DIVCLK_DIVIDE_G  => 14,
-                    CLKOUT0_DIVIDE_G => 5 )
-      port map ( clkIn  => clk70,
-                 clkOut(0) => clko_0 );
-
     refClkOut <= r.clk;
 
     comb : process(r, evrRst) is
@@ -121,16 +112,6 @@ begin  -- rtl
   NOGEN_REG : if not USE_REG_C generate
     --  Generate 10MHz clocks.  Done.
     refClkOut <= clko;
-
-    U_CLK119 : entity surf.ClockManager7
-      generic map ( INPUT_BUFG_G     => false,
-                    NUM_CLOCKS_G     => 1,
-                    CLKIN_PERIOD_G   => 8.4,
-                    CLKFBOUT_MULT_G  => 10,
-                    DIVCLK_DIVIDE_G  => 17,
-                    CLKOUT0_DIVIDE_G => 7 )
-      port map ( clkIn  => evrClk,
-                 clkOut(0) => clko_0 );
   end generate;
   
 end mapping;
