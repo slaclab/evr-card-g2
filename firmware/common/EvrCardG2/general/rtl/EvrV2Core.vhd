@@ -253,7 +253,12 @@ begin  -- rtl
   delay_wr   <= delay_wrb;
 
   dmaReady <= not dmaCtrl.pause;
-  trigOut <= dbTrigOut;
+
+  --  Only enable the reference clock output option for the last channel
+  --  This option disrupts the reproducibility of the trigger output delay
+  trigOut(NTRIGGERS_C-2 downto 0) <= dbTrigOut(NTRIGGERS_C-2 downto 0);
+  trigOut(NTRIGGERS_C-1) <= dbTrigOut(NTRIGGERS_C-1) when triggerConfig(NTRIGGERS_C-1).clkEn = '0' else
+                            refClk;
 
   -------------------------
   -- AXI-Lite Crossbar Core
@@ -551,7 +556,7 @@ begin  -- rtl
                  trigIn  => dbTrig   (2*i+1 downto 2*i),
                  trigOut => dbTrigOut(2*i+1 downto 2*i) );
   end generate;
-  
+
   --
   --  Add an AxiLiteCrossbar for timing closure
   --
