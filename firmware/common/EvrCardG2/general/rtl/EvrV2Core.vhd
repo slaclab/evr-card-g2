@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2021-09-16
+-- Last update: 2022-03-31
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -202,6 +202,8 @@ architecture mapping of EvrV2Core is
   signal dbTrig     : slv(11 downto 0);
   signal dbTrigOut  : slv(11 downto 0);
   signal dbDmaRxIbMaster : AxiStreamMasterType;
+
+  signal refClk : sl;
   
 begin  -- rtl
 
@@ -515,6 +517,14 @@ begin  -- rtl
                   -- status
                   delay_rd            => delay_rd );
 
+  U_RefClk : entity lcls_timing_core.EvrV2RefClk
+     generic map ( TPD_G => TPD_G )
+     port map (
+        evrClk    => evrClk,
+        evrRst    => evrRst,
+        evrClkSel => evrClkSel,
+        refClkOut => refClk );
+  
   Out_Trigger: for i in 0 to NTRIGGERS_C-1 generate
      U_Trig : entity lcls_timing_core.EvrV2Trigger
         generic map ( TPD_G        => TPD_G,
@@ -536,6 +546,7 @@ begin  -- rtl
       generic map ( REG_OUT_G => true )
       port map ( clk     => evrClk,
                  rst     => evrRst,
+                 refclk  => refClk,
                  config  => triggerConfigS(2*i+1 downto 2*i),
                  trigIn  => dbTrig   (2*i+1 downto 2*i),
                  trigOut => dbTrigOut(2*i+1 downto 2*i) );
