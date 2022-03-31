@@ -27,6 +27,8 @@ target: prom
 #  Add L2SI trigger support by default
 #export PRJ_VERSION = CED2001C
 #  Fix rate counting interval
+#export PRJ_VERSION = CED2001D
+#  Add reference clock output option
 export PRJ_VERSION = CED2001D
 
 # Define target part
