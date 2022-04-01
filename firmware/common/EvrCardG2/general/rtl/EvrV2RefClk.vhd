@@ -72,9 +72,7 @@ begin  -- rtl
                   DIVCLK_DIVIDE_G    => 1,
                   CLKOUT0_DIVIDE_G   => 65 )
     port map ( clkIn     => evrClk,
-               clkOut(0) => clko_1,
-               axilClk   => evrClk );  -- provide axilClk to silence synth
-                                       -- errors for Fvco
+               clkOut(0) => clko_1 );
   
   U_CLK119 : entity surf.ClockManager7
     generic map ( INPUT_BUFG_G       => false,
@@ -84,9 +82,7 @@ begin  -- rtl
                   DIVCLK_DIVIDE_G    => 1,
                   CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 59.5, 119.0) )
     port map ( clkIn     => evrClk,
-               clkOut(0) => clko_0,
-               axilClk   => evrClk );  -- provide axilClk to silency synth
-                                       -- errors for Fvco
+               clkOut(0) => clko_0 );
 
   GEN_20MH : if USE_REG_C generate
     refClkOut <= r.clk;

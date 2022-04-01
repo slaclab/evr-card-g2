@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2020-05-21
+-- Last update: 2022-03-31
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -52,6 +52,7 @@ entity EvrV2Reg is
     -- configuration
     irqEnable           : out sl;
     trigSel             : out sl;
+    refEnable           : out sl;
     dmaFullThr          : out slv(23 downto 0);
     -- status
     irqReq              : in  sl := '0';
@@ -68,7 +69,7 @@ architecture mapping of EvrV2Reg is
     axilWriteSlave : AxiLiteWriteSlaveType;
     irqEnable      : sl;
     countReset     : sl;
-    trigSel        : sl;
+    refEnable      : sl;
     dmaFullThr     : slv(23 downto 0);
   end record;
   constant REG_INIT_C : RegType := (
@@ -76,7 +77,7 @@ architecture mapping of EvrV2Reg is
     axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
     irqEnable      => '0',
     countReset     => '0',
-    trigSel        => '0',
+    refEnable      => '0',
     dmaFullThr     => (others=>'1') );
   signal r   : RegType := REG_INIT_C;
   signal rin : RegType;
@@ -86,7 +87,7 @@ begin  -- mapping
   axilReadSlave  <= r.axilReadSlave;
   axilWriteSlave <= r.axilWriteSlave;
   irqEnable      <= r.irqEnable;
-  trigSel        <= r.trigSel;
+  refEnable      <= r.refEnable;
   rstCount       <= r.countReset;
   dmaFullThr     <= r.dmaFullThr;
 
@@ -124,6 +125,7 @@ begin  -- mapping
     sReg(0) := irqReq;
     axiSlaveWaitTxn(ep, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
     axilSlaveRegisterW(X"010", 0, v.countReset);
+    axilSlaveRegisterW(X"010", 1, v.refEnable);
     axilSlaveRegisterR(X"014", eventCount);
 
     if DMA_ENABLE_G then

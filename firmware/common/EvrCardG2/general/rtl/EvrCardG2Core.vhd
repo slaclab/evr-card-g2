@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2021-09-16
+-- Last update: 2022-03-31
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -204,6 +204,9 @@ architecture mapping of EvrCardG2Core is
    signal appTimingBus : TimingBusType;
 --   signal exptBus      : ExptBusType;
    signal dmaReady     : sl;
+
+   signal refEnable    : sl;
+   signal refClkOut    : sl;
    
 begin
 
@@ -220,12 +223,23 @@ begin
          delay_ld   => delay_ld,
          delay_wr   => delay_wr,
          delay_rd   => delay_rd,
+         refEnable  => refEnable,
+         refClkOut  => refClkOut,
          -- Clock
          evrRecClk  => evrClk,
          -- Trigger Inputs
          trigIn     => trig,
          trigout    => trigOut );
 
+   RefClk_Inst : entity work.EvrV2RefClk
+      generic map (
+         TPD_G   => TPD_G )
+     port map (
+         evrClk    => evrClk,
+         evrRst    => evrRst,
+         evrClkSel => evrClkSel,
+         refClkOut => refClkOut );
+   
    ------------
    -- PCIe Core
    ------------
@@ -492,17 +506,6 @@ begin
        axilWriteMaster => mAxiWriteMasters(CORE_INDEX_C),
        axilWriteSlave  => mAxiWriteSlaves (CORE_INDEX_C));
 
-     -- DaqControlTx_1 : entity work.DaqControlTx
-     --port map (
-     --  txclk           => txPhyClk,
-     --  txrst           => txPhyRst,
-     --  rxrst           => evrRst  ,
-     --  ready           => dmaReady,
-     --  -- status          => debugIn, + register bus for programmable control
-     --  --                             + input timing for tag caching
-     --  data            => txData ,
-     --  dataK           => txDataK );
-
    U_SyncId : entity surf.SynchronizerVector
      generic map ( WIDTH_G => 24 )
      port map (
@@ -545,6 +548,7 @@ begin
        -- Trigger and Sync Port
        syncL               => syncL,
        trigOut             => trig,
+       refEnable           => refEnable,
        evrModeSel          => appTimingBus.modesel,
        evrClkSel           => evrClkSel,
        delay_ld            => delay_ld,
