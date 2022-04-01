@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2021-07-23
+-- Last update: 2022-03-31
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -42,6 +42,8 @@ entity EvrCardG2Trig is
       delay_rd   : out Slv6Array(11 downto 0);
       -- Clock
       evrRecClk  : in  sl;
+      refEnable  : in  sl;
+      refClkOut  : in  sl;
       -- Trigger Inputs
       trigIn     : in  slv(11 downto 0);
       trigout    : out slv(11 downto 0) );
@@ -50,7 +52,7 @@ end EvrCardG2Trig;
 architecture mapping of EvrCardG2Trig is
 
    signal clk190 : sl;
-   signal trigMux, trigI, trigO : slv(11 downto 0);
+   signal trigMux, trigI, trigO, trigQ : slv(11 downto 0);
    signal locked : sl;
    signal clkinsel : sl;
    signal delay_wr0 : Slv5Array(11 downto 0);
@@ -121,9 +123,12 @@ begin
 
       U_OBUF : OBUF
          port map (
-            I => trigO(i),
+            I => trigQ(i),
             O => trigout(i));
 
    end generate OR_TRIG;
 
+   trigQ(trigQ'left-1 downto 0) <= trigO(trigO'left -1 downto 0);
+   trigQ(trigQ'left) <= trigO(trigO'left) when refEnable = '0' else refClkOut;
+   
 end mapping;
