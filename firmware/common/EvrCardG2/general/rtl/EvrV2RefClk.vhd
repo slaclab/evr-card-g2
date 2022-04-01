@@ -29,6 +29,7 @@ use ieee.NUMERIC_STD.all;
 
 library surf;
 use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 entity EvrV2RefClk is
   generic (
@@ -38,6 +39,13 @@ entity EvrV2RefClk is
     evrClk              : in  sl;
     evrRst              : in  sl;
     evrClkSel           : in  sl;
+    -- Axi Lite interface
+    axiClk              : in  sl;
+    axiRst              : in  sl;
+    axiReadMaster       : in  AxiLiteReadMasterType;
+    axiReadSlave        : out AxiLiteReadSlaveType;
+    axiWriteMaster      : in  AxiLiteWriteMasterType;
+    axiWriteSlave       : out AxiLiteWriteSlaveType;
     refClkOut           : out sl );
 end EvrV2RefClk;
 
@@ -53,44 +61,36 @@ architecture mapping of EvrV2RefClk is
   signal r   : RegType := REG_INIT_C;
   signal rin : RegType;
   
-  signal clk70, clko_0, clko_1, clko : sl;
+  signal clk70, clko : sl;
 
   constant USE_REG_C : boolean := false;
   
 begin  -- rtl
 
-  --  if USE_REG_C, generate 20 MHz clocks and register flop on each edge
-  --  else generate 10MHz clocks
-
-  clko <= clko_0 when evrClkSel = '0' else clko_1;
-
-  --  Have to workaround the fact that the FVCO needs to work for both evrclk freq
-  --  to avoid DRC errors
+  --     LCLS-1 mode
+  --       CLKFBOUT_MULT_G    => 10    -- FVCO = 1190 MHz
+  --       CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 59.5, 119.0) -- 20MHz, 10MHz
+  --     LCLS-2 mode
+  --       CLKFBOUT_MULT_G    => 5.25  -- FVCO = 975 MHz
+  --       CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 48.75, 97.5) -- 20MHz, 10MHz
+  --
+  --   Choose a set of parameters that pass DRC for both 119 and 186 MHz clkIn
+  --
   U_CLK186 : entity surf.ClockManager7
     generic map ( INPUT_BUFG_G       => false,
                   NUM_CLOCKS_G       => 1,
                   CLKIN_PERIOD_G     => 5.4,
                   DIVCLK_DIVIDE_G    => 1,
-                  -- CLKFBOUT_MULT_F_G  => ite(USE_REG_C, 7.0, 3.5),  
-                  -- CLKOUT0_DIVIDE_G   => 65 )
-                  CLKFBOUT_MULT_F_G  => ite(USE_REG_C, 7.0, 5.25),  
-                  CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 65.0, 97.5) )
-    port map ( clkIn     => evrClk,
-               clkOut(0) => clko_1 );
-
-  --  Have to workaround the fact that the FVCO needs to work for both evrclk freq
-  --  to avoid DRC errors
-  U_CLK119 : entity surf.ClockManager7
-    generic map ( INPUT_BUFG_G       => false,
-                  NUM_CLOCKS_G       => 1,
-                  CLKIN_PERIOD_G     => 8.4,
-                  DIVCLK_DIVIDE_G    => 1,
-                  -- CLKFBOUT_MULT_G    => 10,
-                  -- CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 59.5, 119.0) )
-                  CLKFBOUT_MULT_F_G  => 7.5,
-                  CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 44.625, 89.25) )
-    port map ( clkIn     => evrClk,
-               clkOut(0) => clko_0 );
+                  CLKFBOUT_MULT_F_G  => 5.25,
+                  CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 48.75, 97.5) )
+    port map ( clkIn           => evrClk,
+               clkOut(0)       => clko,
+               axilClk         => axiClk,
+               axilRst         => axiRst,
+               axilReadMaster  => axiReadMaster,
+               axilReadSlave   => axiReadSlave,
+               axilWriteMaster => axiWriteMaster,
+               axilWriteSlave  => axiWriteSlave );
 
   GEN_20MH : if USE_REG_C generate
     refClkOut <= r.clk;
