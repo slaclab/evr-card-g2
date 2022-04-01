@@ -7,4 +7,4 @@
 ## may be copied, modified, propagated, or distributed except according to 
 ## the terms contained in the LICENSE.txt file.
 ##############################################################################
-reset_msg_config -id {AVAL-46} -default_severity;  # Not an error
+#reset_msg_config -id {AVAL-46} -default_severity;  # Not an error
