@@ -73,6 +73,7 @@ entity EvrV2Core is
     -- Trigger and Sync Port
     syncL               : in  sl;
     trigOut             : out slv(11 downto 0);
+    refEnable           : out sl;
     evrModeSel          : in  sl;
     evrClkSel           : in  sl;
     delay_ld            : out slv      (11 downto 0);
@@ -203,8 +204,6 @@ architecture mapping of EvrV2Core is
   signal dbTrigOut  : slv(11 downto 0);
   signal dbDmaRxIbMaster : AxiStreamMasterType;
 
-  signal refClk : sl;
-  
 begin  -- rtl
 
   dmaRxIbMaster <= dbDmaRxIbMaster;
@@ -254,11 +253,7 @@ begin  -- rtl
 
   dmaReady <= not dmaCtrl.pause;
 
-  --  Only enable the reference clock output option for the last channel
-  --  This option disrupts the reproducibility of the trigger output delay
-  trigOut(NTRIGGERS_C-2 downto 0) <= dbTrigOut(NTRIGGERS_C-2 downto 0);
-  trigOut(NTRIGGERS_C-1) <= dbTrigOut(NTRIGGERS_C-1) when triggerConfig(NTRIGGERS_C-1).clkEn = '0' else
-                            refClk;
+  trigOut <= dbTrigOUt;
 
   -------------------------
   -- AXI-Lite Crossbar Core
@@ -311,6 +306,7 @@ begin  -- rtl
                   -- configuration
                   irqEnable           => irqEnable,
                   trigSel             => open,
+                  refEnable           => refEnable,
                   dmaFullThr          => dmaFullThr(0),
                   -- status
                   irqReq              => irqRequest,
@@ -522,14 +518,6 @@ begin  -- rtl
                   -- status
                   delay_rd            => delay_rd );
 
-  U_RefClk : entity work.EvrV2RefClk
-     generic map ( TPD_G => TPD_G )
-     port map (
-        evrClk    => evrClk,
-        evrRst    => evrRst,
-        evrClkSel => evrClkSel,
-        refClkOut => refClk );
-  
   Out_Trigger: for i in 0 to NTRIGGERS_C-1 generate
      U_Trig : entity lcls_timing_core.EvrV2Trigger
         generic map ( TPD_G        => TPD_G,
