@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2022-03-31
+-- Last update: 2022-04-01
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ architecture mapping of EvrCardG2Core is
    signal axiLiteReadMaster  : AxiLiteReadMasterArray (BAR_SIZE_C-1 downto 0);
    signal axiLiteReadSlave   : AxiLiteReadSlaveArray  (BAR_SIZE_C-1 downto 0);
 
-   constant NUM_AXI_MASTERS_C : natural := 9;
+   constant NUM_AXI_MASTERS_C : natural := 10;
 
    constant VERSION_INDEX_C  : natural := 0;
    constant BOOT_MEM_INDEX_C : natural := 1;
@@ -107,6 +107,7 @@ architecture mapping of EvrCardG2Core is
    constant TPR_INDEX_C      : natural := 6;
    constant CORE_INDEX_C     : natural := 7;
    constant DRP_INDEX_C      : natural := 8;
+   constant MMCM_INDEX_C     : natural := 9;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       VERSION_INDEX_C  => (
@@ -143,7 +144,11 @@ architecture mapping of EvrCardG2Core is
          connectivity  => X"0001"),
       DRP_INDEX_C      => (
          baseAddr      => X"00070000",
-         addrBits      => 16,
+         addrBits      => 15,
+         connectivity  => X"0001"),
+      MMCM_INDEX_C      => (
+         baseAddr      => X"00078000",
+         addrBits      => 15,
          connectivity  => X"0001"));
 
    signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -238,6 +243,14 @@ begin
          evrClk    => evrClk,
          evrRst    => evrRst,
          evrClkSel => evrClkSel,
+         -- Axi Lite interface
+         axiClk         => axiClk,
+         axiRst         => axiRst,
+         axiReadMaster  => mAxiReadMasters (MMCM_INDEX_C),
+         axiReadSlave   => mAxiReadSlaves  (MMCM_INDEX_C),
+         axiWriteMaster => mAxiWriteMasters(MMCM_INDEX_C),
+         axiWriteSlave  => mAxiWriteSlaves (MMCM_INDEX_C),
+         -- 
          refClkOut => refClkOut );
    
    ------------
