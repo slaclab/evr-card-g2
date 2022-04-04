@@ -18,11 +18,117 @@ void XBar::setTpr( XBar::InMode  m ) { outMap[3] = m==XBar::StraightIn  ? 1:3; }
 void XBar::setTpr( XBar::OutMode m ) { outMap[1] = m==XBar::StraightOut ? 3:1; }
 void XBar::dump() const { for(unsigned i=0; i<4; i++) printf("Out[%d]: %d\n",i,outMap[i]); }
 
+void TprCsr::enableRefClk(bool enable) {
+  unsigned v = countReset;
+  if (enable)
+    countReset = v | (1<<1);
+  else
+    countReset = v & ~(1<<1);
+}
+
 void TprCsr::dump() const {
   printf("irqEnable [%p]: %08x\n",&irqEnable,irqEnable);
   printf("irqStatus [%p]: %08x\n",&irqStatus,irqStatus);
   printf("gtxDebug  [%p]: %08x\n",&gtxDebug  ,gtxDebug);
   printf("trigSel   [%p]: %08x\n",&trigMaster,trigMaster);
+}
+
+void ClockManager::dump() const
+{
+  unsigned val[80];
+  for(unsigned i=0; i<80; i++)
+      val[i] = *(reinterpret_cast<const uint32_t*>(this)+i);
+  for(unsigned i=0; i<16; i++)
+    printf("%02x: %04x  %02x: %04x  %02x: %04x  %02x: %04x  %02x: %04x\n",
+           i+ 0,val[i],
+           i+16,val[i+16],
+           i+32,val[i+32],
+           i+48,val[i+48],
+           i+64,val[i+64]);
+  const char* fmt = "%12.12s: %04x\n";
+  printf(fmt,"Power Reg"   ,val[0x28]);
+  printf(fmt,"Clkout0 Reg1",val[0x08]);
+  printf(fmt,"Clkout0 Reg2",val[0x09]);
+  printf(fmt,"Clkout1 Reg1",val[0x0a]);
+  printf(fmt,"Clkout1 Reg2",val[0x0b]);
+  printf(fmt,"Clkout2 Reg1",val[0x0c]);
+  printf(fmt,"Clkout2 Reg2",val[0x0d]);
+  printf(fmt,"Clkout3 Reg1",val[0x0e]);
+  printf(fmt,"Clkout3 Reg2",val[0x0f]);
+  printf(fmt,"Clkout4 Reg1",val[0x10]);
+  printf(fmt,"Clkout4 Reg2",val[0x11]);
+  printf(fmt,"Clkout5 Reg1",val[0x06]);
+  printf(fmt,"Clkout5 Reg2",val[0x07]);
+  printf(fmt,"Clkout6 Reg1",val[0x12]);
+  printf(fmt,"Clkout6 Reg2",val[0x13]);
+  printf(fmt,"DivClk Reg"  ,val[0x16]);
+  printf(fmt,"ClkFbout Reg1",val[0x14]);
+  printf(fmt,"ClkFbout Reg2",val[0x15]);
+  printf(fmt,"Lock Reg1",val[0x18]);
+  printf(fmt,"Lock Reg2",val[0x19]);
+  printf(fmt,"Lock Reg3",val[0x1a]);
+  printf(fmt,"Filter Reg1",val[0x4e]);
+  printf(fmt,"Filter Reg2",val[0x4f]);
+}
+
+void ClockManager::clkSel(bool lcls2)
+{
+    /**  Values recommended from Clocking Wizard 6.0
+  static const uint16_t drp[][3] =
+      { {0x28, 0xffff, 0xffff},  // Power
+        {0x08, 0x1c71, 0x1b6e},  // clkout0 reg1
+        {0x09, 0x7800, 0x0080},  // clkout0 reg2
+        {0x0a, 0x1041, 0x1041},  // clkout1 reg1
+        {0x0b, 0x00c0, 0x00c0},  // clkout1 reg2
+        {0x0c, 0x1041, 0x1041},  // clkout2 reg1
+        {0x0d, 0x00c0, 0x00c0},  // clkout2 reg2
+        {0x0e, 0x1041, 0x1041},  // clkout3 reg1
+        {0x0f, 0x00c0, 0x00c0},  // clkout3 reg2
+        {0x10, 0x1041, 0x1041},  // clkout4 reg1
+        {0x11, 0x00c0, 0x00c0},  // clkout4 reg2
+        {0x06, 0x1041, 0x1041},  // clkout5 reg1
+        {0x07, 0x38c0, 0x00c0},  // clkout5 reg2
+        {0x12, 0x1041, 0x1041},  // clkout6 reg1
+        {0x13, 0x1cc0, 0x14c0},  // clkout6 reg2
+        {0x16, 0x00c4, 0x0083},  // divclk reg 
+        {0x14, 0x171c, 0x12cb},  // clkfbout reg1
+        {0x15, 0x6c00, 0x4c00},  // clkfbout reg2
+        {0x18, 0x00fa, 0x0090},  // lock reg1
+        {0x19, 0x7c01, 0x7c01},  // lock reg2
+        {0x1a, 0x7de9, 0x7de9},  // lock reg3
+        {0x4e, 0x0800, 0x0800},  // filter reg1
+        {0x4f, 0x0800, 0x1800},  // filter reg2
+        {0,0,0} };
+    **/
+    /**  Values I recommend  **/
+  static const uint16_t drp[][3] =
+      { {0x28, 0xffff, 0xffff},  // Power
+        {0x08, 0x1efc, 0x1c30},  // clkout0 reg1
+        {0x09, 0x0080, 0x4800},  // clkout0 reg2
+        {0x0a, 0x1041, 0x1041},  // clkout1 reg1
+        {0x0b, 0x00c0, 0x00c0},  // clkout1 reg2
+        {0x0c, 0x1041, 0x1041},  // clkout2 reg1
+        {0x0d, 0x00c0, 0x00c0},  // clkout2 reg2
+        {0x0e, 0x1041, 0x1041},  // clkout3 reg1
+        {0x0f, 0x00c0, 0x00c0},  // clkout3 reg2
+        {0x10, 0x1041, 0x1041},  // clkout4 reg1
+        {0x11, 0x00c0, 0x00c0},  // clkout4 reg2
+        {0x06, 0x1041, 0x1041},  // clkout5 reg1
+        {0x07, 0x00c0, 0x30c0},  // clkout5 reg2
+        {0x12, 0x1041, 0x1041},  // clkout6 reg1
+        {0x13, 0x00c0, 0x28c0},  // clkout6 reg2
+        {0x16, 0x1041, 0x1041},  // divclk reg 
+        {0x14, 0x1145, 0x1082},  // clkfbout reg1
+        {0x15, 0x0000, 0x2800},  // clkfbout reg2
+        {0x18, 0x01e8, 0x01e8},  // lock reg1
+        {0x19, 0x7001, 0x3801},  // lock reg2
+        {0x1a, 0x71e9, 0x39e9},  // lock reg3
+        {0x4e, 0x0800, 0x0800},  // filter reg1
+        {0x4f, 0x1100, 0x1900},  // filter reg2
+        {0,0,0} };
+       
+  for(unsigned i=0; drp[i][0]!=0; i++)
+    *(reinterpret_cast<uint32_t*>(this)+drp[i][0]) = drp[i][lcls2?2:1];
 }
 
 void TprBase::dump() const {

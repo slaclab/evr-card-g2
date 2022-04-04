@@ -3,7 +3,9 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string>
+#include <math.h>
 
 namespace Tpr {
   //
@@ -58,6 +60,7 @@ namespace Tpr {
   class TprCsr {
   public:
     void setupDma    (unsigned fullThr=0x3f2);
+    void enableRefClk(bool);
     void dump        () const;
   public:
     volatile uint32_t irqEnable;
@@ -70,6 +73,56 @@ namespace Tpr {
     volatile uint32_t reserved_1C;
   };
 
+  class ClockManager {
+  public:
+    void clkSel     (bool lcls2);
+    void dump       () const;
+  public:
+    volatile uint32_t reg[256];
+  private:
+    class ClkReg1 {
+    public:
+      ClkReg1(double div) : phase_mux(0) {
+        low_time  = int(div/2);
+        high_time = int(div-low_time);
+      }
+      void write(uint32_t* p) {
+        rsvd = (*p >>12)&1;
+        printf("Writing %04x to %p\n",*reinterpret_cast<uint32_t*>(this),p);
+        //*p = *reinterpret_cast<uint32_t*>(this);
+      }
+    public:
+      unsigned low_time:6;
+      unsigned high_time:6;
+      unsigned rsvd:1;
+      unsigned phase_mux:3;
+    };
+    class ClkReg2 {
+    public:
+      ClkReg2(double div) : delay_time(0), mx(0) {
+        no_count  = div < 3;
+        edge      = int(div)%2;
+        frac      = int(drem(div,1.0)*8.+0.5);
+        frac_en   = (frac != 0);
+        frac_wf_r = frac_en;
+      }
+      void write(uint32_t* p) {
+        rsvd = (*p >>15)&1;
+        printf("Writing %04x to %p\n",*reinterpret_cast<uint32_t*>(this),p);
+        //*p = *reinterpret_cast<uint32_t*>(this);
+      }
+    public:
+      unsigned delay_time:6;
+      unsigned no_count:1;
+      unsigned edge:1;
+      unsigned mx:2;
+      unsigned frac_wf_r:1;
+      unsigned frac_en:1;
+      unsigned frac:3;
+      unsigned rsvd:1;
+    };
+  };
+  
   class TprBase {
   public:
     enum { NCHANNELS=14 };
@@ -228,24 +281,26 @@ namespace Tpr {
   //
   class TprReg {
   public:
-    uint32_t   reserved_0    [(0x10000)>>2];
-    AxiVersion version;  // 0x00010000
-    uint32_t   reserved_10000[(0x40000-0x20000)>>2];  // boot_mem is here
-    XBar       xbar;     // 0x00040000
-    uint32_t   reserved_30010[(0x60000-0x40010)>>2];
-    TprCsr     csr;      // 0x00060000
-    uint32_t   reserved_60400[(0x400-sizeof(TprCsr))/4];
-    DmaControl dma;      // 0x00060400
-    uint32_t   reserved_80000[(0x1FC00-sizeof(DmaControl))/4];
-    TprBase    base;     // 0x00080000
-    uint32_t   reserved_C0000[(0x40000-sizeof(TprBase))/4];
-    TprCore    tpr;      // 0x000C0000
-    uint32_t   reserved_tpr  [(0x10000-sizeof(TprCore))/4];
-    RingB      ring0;    // 0x000D0000
-    uint32_t   reserved_ring0[(0x10000-sizeof(RingB))/4];
-    RingB      ring1;    // 0x000E0000
-    uint32_t   reserved_ring1[(0x10000-sizeof(RingB))/4];
-    TpgMini    tpg;      // 0x000F0000
+    uint32_t     reserved_0    [(0x10000)>>2];
+    AxiVersion   version;  // 0x00010000
+    uint32_t     reserved_10000[(0x40000-0x20000)>>2];  // boot_mem is here
+    XBar         xbar;     // 0x00040000
+    uint32_t     reserved_30010[(0x60000-0x40010)>>2];
+    TprCsr       csr;      // 0x00060000
+    uint32_t     reserved_60400[(0x400-sizeof(TprCsr))/4];
+    DmaControl   dma;      // 0x00060400
+    uint32_t     reserved_78000[(0x17C00-sizeof(DmaControl))/4];
+    ClockManager refclk;     // 0x00078000
+    uint32_t     reserved_80000[(0x08000-sizeof(ClockManager))/4];
+    TprBase      base;     // 0x00080000
+    uint32_t     reserved_C0000[(0x40000-sizeof(TprBase))/4];
+    TprCore      tpr;      // 0x000C0000
+    uint32_t     reserved_tpr  [(0x10000-sizeof(TprCore))/4];
+    RingB        ring0;    // 0x000D0000
+    uint32_t     reserved_ring0[(0x10000-sizeof(RingB))/4];
+    RingB        ring1;    // 0x000E0000
+    uint32_t     reserved_ring1[(0x10000-sizeof(RingB))/4];
+    TpgMini      tpg;      // 0x000F0000
   };
 };
 

@@ -12,6 +12,7 @@
 #include AxiVersion.yaml
 #include AxiMicronP30.yaml
 #include AxiSy56040.yaml
+#include ClockManager.yaml
 #include EvrCardG2LedRgb.yaml
 #include EvrV2CoreCsr.yaml
 #include EvrV2CoreChan.yaml
@@ -72,6 +73,11 @@ mmio: &mmio
     #  <<: *AxiLiteToDrp
     #  at:
     #    offset: 0x00070000
+
+    RefClk:
+      <<: *ClockManager
+      at:
+        offset: 0x00078000
 
 MemDev: &MemDev
   size:     0x00100000

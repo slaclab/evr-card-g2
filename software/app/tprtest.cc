@@ -36,6 +36,7 @@ static bool parse_bsa_event    (volatile const uint32_t*, uint64_t&, uint64_t&,
 static bool parse_bsa_control  (volatile const uint32_t*, uint64_t&, uint64_t&,
                                 uint64_t&, uint64_t&, uint64_t&);
 static void generate_triggers  (TprReg&, TimingMode);
+static void generate_refclk    (TprReg&, bool, TimingMode);
 
 static void usage(const char* p) {
   printf("Usage: %s [options]\n",p);
@@ -45,6 +46,7 @@ static void usage(const char* p) {
   printf("          -U        : test UED     timing\n");
   printf("          -n        : skip frame capture test\n");
   printf("          -r        : dump ring buffers\n");
+  printf("          -C        : enable 10MHz refclk\n");
   printf("          -D delay[,width[,polarity]]  : trigger parameters\n");
   printf("          -T <sec>  : link test period\n");
 }
@@ -60,9 +62,10 @@ int main(int argc, char** argv) {
   TimingMode tmode = LCLS1;
   bool lFrameTest = true;
   bool lDumpRingb = false;
+  bool refClkEn = false;
   char* endptr;
 
-  while ( (c=getopt( argc, argv, "12Ud:nrT:D:h?")) != EOF ) {
+  while ( (c=getopt( argc, argv, "12Ud:nrT:D:Ch?")) != EOF ) {
     switch(c) {
     case '1': tmode = LCLS1; break;
     case '2': tmode = LCLS2; break;
@@ -75,6 +78,9 @@ int main(int argc, char** argv) {
         printf("%s: option `-r' parsing error\n", argv[0]);
         lUsage = true;
       }
+      break;
+    case 'C':
+      refClkEn = true;
       break;
     case 'D':
       triggerWidth = 1;
@@ -161,6 +167,11 @@ int main(int argc, char** argv) {
       //
       if (triggerWidth)
         generate_triggers(reg, tmode);
+
+      //
+      //  Generate reference clock
+      //
+      generate_refclk(reg, refClkEn, tmode);
     }
   }
 
@@ -508,4 +519,11 @@ void generate_triggers(TprReg& reg, TimingMode tmode)
   reg.base.channel[_channel].control = ucontrol | 1;
 
   reg.base.dump();
+}
+
+void generate_refclk(TprReg& reg, bool enable, TimingMode tmode)
+{
+    reg.refclk.clkSel(tmode!=LCLS1);
+  reg.refclk.dump();
+  reg.csr.enableRefClk(enable);
 }
