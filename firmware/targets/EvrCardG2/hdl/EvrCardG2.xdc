@@ -241,6 +241,9 @@ set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dna
 set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/gtRxResetDone}]
 set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/gtRxResetDone}]
 
+set_false_path -from [get_pins {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/linkUp_reg/C}]
+set_false_path -from [get_pins {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/linkUp_reg/C}]
+
 ###############################
 # FPGA Hardware Configuration #
 ###############################
