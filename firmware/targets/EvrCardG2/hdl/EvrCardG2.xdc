@@ -238,6 +238,8 @@ set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dna
 #    -group [get_clocks -include_generated_clocks {evrClk0}] \
 #    -group [get_clocks -include_generated_clocks {evrClk1}]
 
+set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/gtRxResetDone}]
+set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/gtRxResetDone}]
 
 ###############################
 # FPGA Hardware Configuration #
