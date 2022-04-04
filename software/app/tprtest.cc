@@ -29,13 +29,14 @@ extern int optind;
 static void link_test          (TprReg&, TimingMode, bool lring);
 static void frame_rates        (TprReg&, TimingMode);
 static void frame_capture      (TprReg&, char, TimingMode);
-static void dump_frame         (const uint32_t*);
-static bool parse_frame        (const uint32_t*, uint64_t&, uint64_t&);
-static bool parse_bsa_event    (const uint32_t*, uint64_t&, uint64_t&,
+static void dump_frame         (const volatile uint32_t*);
+static bool parse_frame        (const volatile uint32_t*, uint64_t&, uint64_t&);
+static bool parse_bsa_event    (const volatile uint32_t*, uint64_t&, uint64_t&,
                                 uint64_t&, uint64_t&, uint64_t&);
-static bool parse_bsa_control  (const uint32_t*, uint64_t&, uint64_t&,
+static bool parse_bsa_control  (const volatile uint32_t*, uint64_t&, uint64_t&,
                                 uint64_t&, uint64_t&, uint64_t&);
 static void generate_triggers  (TprReg&, TimingMode);
+static void generate_refclk    (TprReg&, bool, TimingMode);
 
 static void usage(const char* p) {
   printf("Usage: %s [options]\n",p);
@@ -45,6 +46,7 @@ static void usage(const char* p) {
   printf("          -U        : test UED     timing\n");
   printf("          -n        : skip frame capture test\n");
   printf("          -r        : dump ring buffers\n");
+  printf("          -C        : enable 10MHz refclk\n");
   printf("          -D delay[,width[,polarity]]  : trigger parameters\n");
   printf("          -T <sec>  : link test period\n");
 }
@@ -60,9 +62,10 @@ int main(int argc, char** argv) {
   TimingMode tmode = LCLS1;
   bool lFrameTest = true;
   bool lDumpRingb = false;
+  bool refClkEn = false;
   char* endptr;
 
-  while ( (c=getopt( argc, argv, "12Ud:nrT:D:h?")) != EOF ) {
+  while ( (c=getopt( argc, argv, "12Ud:nrT:D:Ch?")) != EOF ) {
     switch(c) {
     case '1': tmode = LCLS1; break;
     case '2': tmode = LCLS2; break;
@@ -75,6 +78,9 @@ int main(int argc, char** argv) {
         printf("%s: option `-r' parsing error\n", argv[0]);
         lUsage = true;
       }
+      break;
+    case 'C':
+      refClkEn = true;
       break;
     case 'D':
       triggerWidth = 1;
@@ -161,6 +167,11 @@ int main(int argc, char** argv) {
       //
       if (triggerWidth)
         generate_triggers(reg, tmode);
+
+      //
+      //  Generate reference clock
+      //
+      generate_refclk(reg, refClkEn, tmode);
     }
   }
 
@@ -368,7 +379,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   do {
     printf("allrp %llx  q.allwp[%d] %llx\n", allrp, idx, q.allwp[idx]);
     while(allrp < q.allwp[idx] && nframes<10) {
-      const uint32_t* p = reinterpret_cast<const uint32_t*>
+      const volatile uint32_t* p = reinterpret_cast<const volatile uint32_t*>
         (&q.allq[q.allrp[idx].idx[allrp &(MAX_TPR_ALLQ-1)] &(MAX_TPR_ALLQ-1) ].word[0]);
       if (verbose)
         dump_frame(p);
@@ -397,7 +408,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   nframes = 0;
   do {
     while(bsarp < q.bsawp && nframes<10) {
-      const uint32_t* p = reinterpret_cast<const uint32_t*>
+      const volatile uint32_t* p = reinterpret_cast<const volatile uint32_t*>
         (&q.bsaq[bsarp &(MAX_TPR_BSAQ-1)].word[0]);
       if (parse_bsa_control(p, pulseId, timeStamp, init, minor, major)) {
         printf(" 0x%016llx %9u.%09u I%016llx m%016llx M%016llx\n",
@@ -430,11 +441,11 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   close(fdbsa);
 }
 
-void dump_frame(const uint32_t* p)
+void dump_frame(const volatile uint32_t* p)
 {
   char m = p[0]&(0x808<<20) ? 'D':' ';
   if (((p[0]>>16)&0xf)==0) {
-    const uint64_t* pl = reinterpret_cast<const uint64_t*>(p+2);
+    const volatile uint64_t* pl = reinterpret_cast<const volatile uint64_t*>(p+2);
     printf("EVENT LCLS%c chmask [x%x] [x%x] %c: %16lx %16lx",
            (p[0]&(1<<22)) ? '1':'2',
            (p[0]>>0)&0xffff,p[1],m,pl[0],pl[1]);
@@ -444,12 +455,12 @@ void dump_frame(const uint32_t* p)
   }
 }
 
-bool parse_frame(const uint32_t* p,
+bool parse_frame(const volatile uint32_t* p,
                  uint64_t& pulseId, uint64_t& timeStamp)
 {
   //  char m = p[0]&(0x808<<20) ? 'D':' ';
   if (((p[0]>>16)&0xf)==0) { // EVENT_TAG
-    const uint64_t* pl = reinterpret_cast<const uint64_t*>(p+2);
+    const volatile uint64_t* pl = reinterpret_cast<const volatile uint64_t*>(p+2);
     pulseId = pl[0];
     timeStamp = pl[1];
     return true;
@@ -457,12 +468,12 @@ bool parse_frame(const uint32_t* p,
   return false;
 }
 
-bool parse_bsa_event(const uint32_t* p,
+bool parse_bsa_event(const volatile uint32_t* p,
                      uint64_t& pulseId, uint64_t& timeStamp,
                      uint64_t& active, uint64_t& avgdone, uint64_t& update)
 {
   if (((p[0]>>16)&0xf)==2) { // BSAEVNT_TAG
-    const uint64_t* pl = reinterpret_cast<const uint64_t*>(p+1);
+    const volatile uint64_t* pl = reinterpret_cast<const volatile uint64_t*>(p+1);
     pulseId   = pl[0];
     active    = pl[1];
     avgdone   = pl[2];
@@ -472,12 +483,12 @@ bool parse_bsa_event(const uint32_t* p,
   return false;
 }
 
-bool parse_bsa_control(const uint32_t* p,
+bool parse_bsa_control(const volatile uint32_t* p,
                        uint64_t& pulseId, uint64_t& timeStamp,
                        uint64_t& init, uint64_t& minor, uint64_t& major)
 {
   if (((p[0]>>16)&0xf)==1) { // BSACNTL_TAG
-    const uint64_t* pl = reinterpret_cast<const uint64_t*>(p+1);
+    const volatile uint64_t* pl = reinterpret_cast<const volatile uint64_t*>(p+1);
     pulseId   = pl[0];
     timeStamp = pl[1];
     init      = pl[2];
@@ -508,4 +519,11 @@ void generate_triggers(TprReg& reg, TimingMode tmode)
   reg.base.channel[_channel].control = ucontrol | 1;
 
   reg.base.dump();
+}
+
+void generate_refclk(TprReg& reg, bool enable, TimingMode tmode)
+{
+    reg.refclk.clkSel(tmode!=LCLS1);
+  reg.refclk.dump();
+  reg.csr.enableRefClk(enable);
 }
