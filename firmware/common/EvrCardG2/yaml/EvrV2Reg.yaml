@@ -67,6 +67,16 @@ EvrV2Reg: &EvrV2Reg
       mode: RW
       description: Count reset
     #########################################################  
+    RefClkEnable:
+      at:
+        offset: 0x10
+      class: IntField
+      name: RefClkEnable
+      sizeBits: 1
+      lsbit: 1
+      mode: RW
+      description: Reference clock enable
+    #########################################################  
     FrameCount:
       at:
         offset: 0x14
