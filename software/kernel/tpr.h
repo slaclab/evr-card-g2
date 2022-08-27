@@ -31,8 +31,8 @@
  */
 struct shared_tpr {
   struct tpr_dev* parent;      /* Set if in use, otherwise NULL */
-  int             idx;         /* The index of this structure in parent->all_shares */
-  int             minor;       /* The index of list containing this structure in parent->shared */
+  int             idx;         /* The index of this structure in parent->all_shares. -1 for master. */
+  int             minor;       /* The index of list containing this structure in parent->shared. -1 for bsa. */
   u32             irqmask;     /* The IRQs this client wants to see. */
   unsigned long   pendingirq;  /* IRQs still to be delivered. */
   wait_queue_head_t waitq;
@@ -61,11 +61,11 @@ struct tpr_dev {
   struct bar_dev    bar[1];
   struct shared_tpr master;
   struct shared_tpr all_shares[OPEN_SHARES];
-  struct shared_tpr *shared[MOD_SHARED];
-  struct shared_tpr *bsa;
+  struct shared_tpr *shared[MOD_SHARED];  /* DLL per minor.  Used to wake waitq's and track when opening the first or closing the last. */
+  struct shared_tpr *bsa;                 /* DLL. Used to wake waitq's. */
   struct tasklet_struct dma_task;
   spinlock_t        lock;
-  struct shared_tpr *freelist;
+  struct shared_tpr *freelist;      /* SLL within all_shares. */
   uint              minors;
   uint              irqEnable;      /* Interrupt handling counters */
   uint              irqDisable;

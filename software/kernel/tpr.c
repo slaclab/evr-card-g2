@@ -32,6 +32,7 @@
 #include "tpr.h"
 
 #undef TPRDEBUG
+//#define TPRDEBUG
 
 #ifdef TPRDEBUG
 #undef KERN_WARNING
@@ -244,23 +245,21 @@ int tpr_release(struct inode *inode, struct file *filp) {
     spin_lock(&dev->lock);
     if (shared->prev)
         shared->prev->next = shared->next;
-    else
-        dev->bsa = shared->next;
     if (shared->next)
         shared->next->prev = shared->prev;
 
-    if (shared->minor >= 0) {                 // Single channel
-      //
-      //  Disable the dma for this channel
-      //
-      if (!dev->shared[shared->minor]) {       // Last one leaving, shut out the lights...
-        i = shared->minor;
-        reg = (struct TprReg*)shared->parent->bar[0].reg;
-        reg->channel[i].control = reg->channel[0].control & ~(1<<2);
-        dev->minors = dev->minors & ~(1<<i);
-      }
+    if (shared->minor < 0)
+        dev->bsa = shared->next;
+    else {                 // Single channel
+        dev->shared[shared->minor] = shared->next;
+        if (!dev->shared[shared->minor]) {       // Last one leaving, shut out the lights...
+          i = shared->minor;
+          reg = (struct TprReg*)shared->parent->bar[0].reg;
+          reg->channel[i].control = reg->channel[0].control & ~(1<<2);
+          dev->minors = dev->minors & ~(1<<i);
+        }
 #ifdef TPRDEBUG
-      printMinors(dev, shared->minor);
+        printMinors(dev, shared->minor);
 #endif
     }
 
@@ -268,7 +267,6 @@ int tpr_release(struct inode *inode, struct file *filp) {
     shared->prev = NULL;
     if (dev->freelist) {
       shared->next = dev->freelist;
-      dev->freelist->prev = shared;
     }
     else {
       shared->next = NULL;
