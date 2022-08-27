@@ -248,10 +248,10 @@ int tpr_release(struct inode *inode, struct file *filp) {
     if (shared->next)
         shared->next->prev = shared->prev;
 
-    if (shared->minor < 0)
-        dev->bsa = shared->next;
-    else {                 // Single channel
-        dev->shared[shared->minor] = shared->next;
+    if (shared->minor < 0) {
+        if(!shared->prev) dev->bsa = shared->next;
+    } else {                 // Single channel
+        if(!shared->prev) dev->shared[shared->minor] = shared->next;
         if (!dev->shared[shared->minor]) {       // Last one leaving, shut out the lights...
           i = shared->minor;
           reg = (struct TprReg*)shared->parent->bar[0].reg;
