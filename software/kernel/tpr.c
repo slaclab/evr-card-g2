@@ -33,6 +33,7 @@
 
 #undef TPRDEBUG
 //#define TPRDEBUG
+#undef TPRDEBUG2
 
 #ifdef TPRDEBUG
 #undef KERN_WARNING
@@ -128,12 +129,11 @@ static struct vm_operations_struct tpr_vmops = {
 static int allocBar(struct bar_dev* minor, int major, struct pci_dev* dev, int bar);
 
 #ifdef TPRDEBUG
-static void printMinors(struct tpr_dev *dev, int minor)
+static void printList(struct shared_tpr *sh)
 {
     struct shared_tpr *shared;
-    printk(KERN_WARNING "%s: Opens on minor %d:\n", MOD_NAME, minor);
-    for (shared = dev->shared[minor]; shared; shared=shared->next)
-        printk(KERN_WARNING "%s         %d\n", MOD_NAME, shared->idx);
+    for (shared = sh; shared && shared->next!=shared; shared=shared->next)
+        printk(KERN_WARNING "%s         %d [%p %p %p]\n", MOD_NAME, shared->idx, shared, shared->next, shared->prev);
 }
 #endif
 
@@ -171,6 +171,8 @@ int tpr_open(struct inode *inode, struct file *filp) {
 
     if (minor < MOD_SHARED) {
         if (!dev->shared[minor]) {  // The first open for this minor device.
+            printk(KERN_WARNING "%s: Open: Enable minor. Maj=%i, Min=%i.\n",
+                   MOD_NAME, dev->major, (unsigned)minor);
             dev->minors = dev->minors | (1<<minor);
             //
             //  Enable the dma for this channel
@@ -189,7 +191,8 @@ int tpr_open(struct inode *inode, struct file *filp) {
         dev->shared[minor] = shared;
         spin_unlock(&dev->lock);
 #ifdef TPRDEBUG
-        printMinors(dev, minor);
+        printk(KERN_WARNING "%s         dev->shared[%d]\n", MOD_NAME, minor);
+        printList(dev->shared[minor]);
 #endif
     }
     else if (minor == MOD_SHARED+1) {
@@ -201,6 +204,11 @@ int tpr_open(struct inode *inode, struct file *filp) {
         shared->prev = NULL;
         dev->bsa = shared;
         spin_unlock(&dev->lock);
+#ifdef TPRDEBUG
+        printk(KERN_WARNING "%s: BSA list. Maj=%i, Min=%i.\n",
+               MOD_NAME, dev->major, (unsigned)shared->minor);
+        printList(dev->bsa);
+#endif
     }
   }
   else if (minor == MOD_SHARED) {      // Control
@@ -250,6 +258,11 @@ int tpr_release(struct inode *inode, struct file *filp) {
 
     if (shared->minor < 0) {
         if(!shared->prev) dev->bsa = shared->next;
+#ifdef TPRDEBUG
+        printk(KERN_WARNING "%s: BSA list. Maj=%i, Min=%i.\n",
+               MOD_NAME, dev->major, (unsigned)shared->minor);
+        printList(dev->bsa);
+#endif
     } else {                 // Single channel
         if(!shared->prev) dev->shared[shared->minor] = shared->next;
         if (!dev->shared[shared->minor]) {       // Last one leaving, shut out the lights...
@@ -257,9 +270,12 @@ int tpr_release(struct inode *inode, struct file *filp) {
           reg = (struct TprReg*)shared->parent->bar[0].reg;
           reg->channel[i].control = reg->channel[0].control & ~(1<<2);
           dev->minors = dev->minors & ~(1<<i);
+          printk(KERN_WARNING "%s: Release: Disable minor. Maj=%i, Min=%i.\n",
+                 MOD_NAME, dev->major, (unsigned)shared->minor);
         }
 #ifdef TPRDEBUG
-        printMinors(dev, shared->minor);
+        printk(KERN_WARNING "%s         dev->shared[%d]\n", MOD_NAME, shared->minor);
+        printList(dev->shared[shared->minor]);
 #endif
     }
 
@@ -318,14 +334,14 @@ ssize_t tpr_read(struct file *filp, char *buffer, size_t count, loff_t *f_pos)
     while (!shared->pendingirq) {
       if (filp->f_flags & O_NONBLOCK)
         return -EAGAIN;
-#ifdef TPRDEBUG
+#ifdef TPRDEBUG2
       printk(KERN_WARNING "%s: sleeping %d for %d\n", MOD_NAME, shared->idx, shared->minor);
 #endif
       if (wait_event_interruptible(shared->waitq, shared->pendingirq))
         return -ERESTARTSYS;
     }
     pendingirq = (__u32) test_and_clear_bit(0, (volatile unsigned long*)&shared->pendingirq);
-#ifdef TPRDEBUG
+#ifdef TPRDEBUG2
     printk(KERN_WARNING "%s: woke up %d for %d, pendingirq=%d\n", MOD_NAME, shared->idx, shared->minor, pendingirq);
 #endif
     if (copy_to_user(buffer, &pendingirq, sizeof(pendingirq))) {
@@ -394,7 +410,7 @@ static void tpr_handle_dma(unsigned long arg)
       mtyp = (dptr[0]>>16)&0xf;
       switch (mtyp) {
       case BSACNTL_TAG:
-#ifdef TPRDEBUG
+#ifdef TPRDEBUG2
           printk(KERN_WARNING "%s: BSA_CTRL %lld\n", MOD_NAME, tprq->bsawp);
 #endif
           dev->dmaBsaCtrl++;
@@ -404,7 +420,7 @@ static void tpr_handle_dma(unsigned long arg)
           dptr += BSACNTL_MSGSZ>>2;
           break;
       case BSAEVNT_TAG:
-#ifdef TPRDEBUG
+#ifdef TPRDEBUG2
           printk(KERN_WARNING "%s: BSA_EVNT %lld\n", MOD_NAME, tprq->bsawp);
 #endif
           dev->dmaBsaChan++;
@@ -414,7 +430,7 @@ static void tpr_handle_dma(unsigned long arg)
           dptr += BSAEVNT_MSGSZ>>2;
           break;
       case EVENT_TAG:
-#ifdef TPRDEBUG
+#ifdef TPRDEBUG2
           printk(KERN_WARNING "%s: EVENT\n", MOD_NAME);
 #endif
           dev->dmaEvent++;
@@ -455,7 +471,7 @@ static void tpr_handle_dma(unsigned long arg)
       struct shared_tpr *shared;
       for (shared = dev->shared[ich]; shared; shared = shared->next) {
         set_bit(0, (volatile unsigned long*)&shared->pendingirq);
-#ifdef TPRDEBUG
+#ifdef TPRDEBUG2
         printk(KERN_WARNING "%s: set pendingirq for %d == %ld\n", MOD_NAME, ich, shared->pendingirq);
 #endif
         wake_up(&shared->waitq);
@@ -467,7 +483,7 @@ static void tpr_handle_dma(unsigned long arg)
       struct shared_tpr *shared;
       for (shared = dev->bsa; shared; shared = shared->next) {
         set_bit(0, (volatile unsigned long*)&shared->pendingirq);
-#ifdef TPRDEBUG
+#ifdef TPRDEBUG2
         printk(KERN_WARNING "%s: set pendingirq for %d == %ld\n", MOD_NAME, ich, shared->pendingirq);
 #endif
         wake_up(&shared->waitq);
