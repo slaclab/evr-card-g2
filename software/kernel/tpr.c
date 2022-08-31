@@ -44,6 +44,13 @@
 #define SA_SHIRQ IRQF_SHARED
 #endif
 
+static __u64 __rdtsc(void);
+static __u64 __rdtsc(void){
+    __u32 lo, hi;
+    __asm__ __volatile__ ("rdtsc" : "=a" (lo), "=d" (hi));
+    return ((__u64)hi << 32) | lo;
+}
+
 // Function prototypes
 int     tpr_open     (struct inode *inode, struct file *filp);
 int     tpr_release  (struct inode *inode, struct file *filp);
@@ -371,6 +378,8 @@ static void tpr_handle_dma(unsigned long arg)
   struct RxBuffer*  next;
   __u32*            dptr;
   __u32             mtyp, ich, mch, wmask=0;
+  __u64             tsc;
+  struct TprEntry  *pEntry;
 
   next = dev->rxPend;
 
@@ -382,6 +391,7 @@ static void tpr_handle_dma(unsigned long arg)
     while( ((dptr[0]>>16)&0xf) != END_TAG ) {
 
       dev->dmaCount++;
+      tsc = __rdtsc();
 
       //  Check if a drop preceded us
       if ( dptr[0] & (0x808<<20)) {
@@ -399,7 +409,9 @@ static void tpr_handle_dma(unsigned long arg)
 #endif
           dev->dmaBsaCtrl++;
           wmask = wmask | (1 << (MOD_SHARED+1));
-          memcpy(&tprq->bsaq[tprq->bsawp & (MAX_TPR_BSAQ-1)], dptr, BSACNTL_MSGSZ);
+          pEntry = &tprq->bsaq[tprq->bsawp & (MAX_TPR_BSAQ-1)];
+          memcpy(pEntry, dptr, BSACNTL_MSGSZ);
+          pEntry->fifo_tsc = tsc;
           tprq->bsawp++;
           dptr += BSACNTL_MSGSZ>>2;
           break;
@@ -409,7 +421,9 @@ static void tpr_handle_dma(unsigned long arg)
 #endif
           dev->dmaBsaChan++;
           wmask = wmask | (1 << (MOD_SHARED+1));
-          memcpy(&tprq->bsaq[tprq->bsawp & (MAX_TPR_BSAQ-1)], dptr, BSAEVNT_MSGSZ);
+          pEntry = &tprq->bsaq[tprq->bsawp & (MAX_TPR_BSAQ-1)];
+          memcpy(pEntry, dptr, BSAEVNT_MSGSZ);
+          pEntry->fifo_tsc = tsc;
           tprq->bsawp++;
           dptr += BSAEVNT_MSGSZ>>2;
           break;
@@ -423,7 +437,9 @@ static void tpr_handle_dma(unsigned long arg)
             printk(KERN_WARNING  "%s: unexpected event dma size %08x(%08x)...truncating.\n", MOD_NAME, EVENT_MSGSZ,(dptr[1]<<2)+8);
             break;
           }
-          memcpy(&tprq->allq[tprq->gwp & (MAX_TPR_ALLQ-1)], dptr, EVENT_MSGSZ);
+          pEntry = &tprq->allq[tprq->gwp & (MAX_TPR_ALLQ-1)];
+          memcpy(pEntry, dptr, EVENT_MSGSZ);
+          pEntry->fifo_tsc = tsc;
           dptr += EVENT_MSGSZ>>2;
           wmask = wmask | mch;
           for( ich=0; mch; ich++) {

@@ -14,6 +14,7 @@ namespace Tpr {
   class TprEntry {
   public:
     volatile uint32_t word[MSG_SIZE];
+    volatile uint64_t fifo_tsc;
   };
 
   class TprQIndex {

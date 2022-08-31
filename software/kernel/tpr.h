@@ -105,6 +105,7 @@ struct tpr_dev gDevices[MAX_PCI_DEVICES];
 
 struct TprEntry {
   u32 word[MSG_SIZE];
+  u64 fifo_tsc;
 };
 
 struct TprQIndex {
