@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2022-04-01
--- Last update: 2021-09-16
+-- Last update: 2022-09-01
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -73,6 +73,10 @@ begin  -- rtl
   --     LCLS-2 mode
   --       CLKFBOUT_MULT_G    => 5.25  -- FVCO = 975 MHz
   --       CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 48.75, 97.5) -- 20MHz, 10MHz
+  --     CBXFEL Gotthard reference
+  --       DIVCLK_DIVIDE_G    => 7,
+  --       CLKFBOUT_MULT_G    => 64.  -- FVCO = 1088 MHz
+  --       CLKOUT0_DIVIDE_F_G => ite(USE_REG_C, 29.75, 59.5) -- 36-4/7MHz, 18-2/7MHz
   --
   --   Choose a set of parameters that pass DRC for both 119 and 186 MHz clkIn
   --

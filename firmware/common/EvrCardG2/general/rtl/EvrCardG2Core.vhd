@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2022-04-01
+-- Last update: 2022-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -537,7 +537,9 @@ begin
                 appTimingBus.stream.eventCodes(45);
 
    U_Core : entity work.EvrV2Core
-     generic map ( TPD_G => TPD_G)
+     generic map ( TPD_G           => TPD_G,
+                   GEN_INT_COUNT_G => true )
+                   
      port map (
        axiClk              => axiClk,
        axiRst              => axiRst,

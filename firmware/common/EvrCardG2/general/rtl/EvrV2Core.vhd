@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2022-03-31
+-- Last update: 2022-08-15
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -47,6 +47,7 @@ entity EvrV2Core is
   generic (
     TPD_G          : time             := 1 ns;
     GEN_L2SI_G     : boolean          := true;
+    GEN_INT_COUNT_G: boolean          := false;
     AXIL_BASEADDR0 : slv(31 downto 0) := x"00060000";
     AXIL_BASEADDR1 : slv(31 downto 0) := x"00080000" );
   port (
@@ -460,15 +461,19 @@ begin  -- rtl
       v.eventCount(NCHANNELS_C) := r.eventCount(NCHANNELS_C)+1;
     end if;
 
-    if ((evrClkSel = '0' and r.count = toSlv(118999998,28)) or
-        (evrClkSel = '1' and r.count = toSlv(181999998,28))) then
-      v.reset := '1';
-    end if;
-
-    if r.reset = '1' then
-      v.count       := (others=>'0');
-      v.eventCount  := (others=>(others=>'0'));
+    if GEN_INT_COUNT_G then
       v.eventCountL := r.eventCount;
+    else
+      if ((evrClkSel = '0' and r.count = toSlv(118999998,28)) or
+          (evrClkSel = '1' and r.count = toSlv(181999998,28))) then
+        v.reset := '1';
+      end if;
+
+      if r.reset = '1' then
+        v.count       := (others=>'0');
+        v.eventCount  := (others=>(others=>'0'));
+        v.eventCountL := r.eventCount;
+      end if;
     end if;
     
     rin <= v;
