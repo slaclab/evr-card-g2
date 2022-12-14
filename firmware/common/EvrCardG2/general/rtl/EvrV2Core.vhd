@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2022-12-13
+-- Last update: 2022-12-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -199,7 +199,8 @@ architecture mapping of EvrV2Core is
     port ( clk : in sl;
            probe0 : in slv(255 downto 0) );
   end component;
-
+  signal trigdebug, trigdebugS : slv(255 downto 0);
+  
   signal dbDmaValid : slv(11 downto 0);
   signal dbTrig     : slv(11 downto 0);
   signal dbTrigOut  : slv(11 downto 0);
@@ -294,7 +295,17 @@ begin  -- rtl
       mAxiWriteSlaves     => mAxiWriteSlaves1,
       mAxiReadMasters     => mAxiReadMasters1,
       mAxiReadSlaves      => mAxiReadSlaves1);   
-  
+
+  U_SyncDebug : entity surf.SynchronizerFifo
+    generic map ( DATA_WIDTH_G => trigdebug'length )
+    port map ( rst    => evrRst,
+               wr_clk => evrClk,
+               wr_en  => trigdebug(1),
+               din    => trigdebug,
+               rd_clk => axiClk,
+               valid  => open,
+               dout   => trigdebugS );
+    
   U_Reg : entity work.EvrV2Reg
     generic map ( TPD_G        => TPD_G,
                   DMA_ENABLE_G => true )
@@ -314,7 +325,8 @@ begin  -- rtl
                   rstCount            => open,
                   partitionAddr       => partitionAddr,
                   eventCount          => eventCountV(NCHANNELS_C),
-                  gtxDebug            => gtxDebugS );
+                  gtxDebug            => gtxDebugS,
+                  trigDebug           => trigdebugS );
     
   U_PciRxDesc : entity work.EvrV2PcieRxDesc
     generic map ( DMA_SIZE_G       => 1 )
@@ -524,19 +536,36 @@ begin  -- rtl
                   delay_rd            => delay_rd );
 
   Out_Trigger: for i in 0 to NTRIGGERS_C-1 generate
-     U_Trig : entity lcls_timing_core.EvrV2Trigger
-        generic map ( TPD_G        => TPD_G,
-                      CHANNELS_C   => NHARDCHANS_C,
-                      TRIG_DEPTH_C => 256,
-                      USE_MASK_G   => false,
-                      DEBUG_C      => (i=11) )
-                      --DEBUG_C      => false )
-        port map (    clk      => evrClk,
-                      rst      => evrRst,
-                      config   => triggerConfigS(i),
-                      arm      => eventSel(NHARDCHANS_C-1 downto 0),
-                      fire     => triggerStrobe,
-                      trigstate=> dbTrig(i) );
+     GEN_NODEBUG : if i/=11 generate
+       U_Trig : entity lcls_timing_core.EvrV2Trigger
+         generic map ( TPD_G        => TPD_G,
+                       CHANNELS_C   => NHARDCHANS_C,
+                       TRIG_DEPTH_C => 256,
+                       USE_MASK_G   => false,
+                       DEBUG_C      => false )
+         port map (    clk      => evrClk,
+                       rst      => evrRst,
+                       config   => triggerConfigS(i),
+                       arm      => eventSel(NHARDCHANS_C-1 downto 0),
+                       fire     => triggerStrobe,
+                       trigstate=> dbTrig(i),
+                       trigdebug=> open );
+     end generate;
+     GEN_DEBUG : if i=11 generate
+       U_Trig : entity lcls_timing_core.EvrV2Trigger
+         generic map ( TPD_G        => TPD_G,
+                       CHANNELS_C   => NHARDCHANS_C,
+                       TRIG_DEPTH_C => 256,
+                       USE_MASK_G   => false,
+                       DEBUG_C      => true )
+         port map (    clk      => evrClk,
+                       rst      => evrRst,
+                       config   => triggerConfigS(i),
+                       arm      => eventSel(NHARDCHANS_C-1 downto 0),
+                       fire     => triggerStrobe,
+                       trigstate=> dbTrig(i),
+                       trigdebug=> trigdebug );
+     end generate;
   end generate Out_Trigger;
 
   Compl_Trigger: for i in 0 to NTRIGGERS_C/2-1 generate

@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2022-03-31
+-- Last update: 2022-12-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -59,7 +59,8 @@ entity EvrV2Reg is
     rstCount            : out sl;
     eventCount          : in  slv(31 downto 0);
     partitionAddr       : in  slv(31 downto 0) := (others=>'0');
-    gtxDebug            : in  slv(7 downto 0) := (others=>'0') );
+    gtxDebug            : in  slv(7 downto 0) := (others=>'0');
+    trigDebug           : in  slv(255 downto 0) );
 end EvrV2Reg;
 
 architecture mapping of EvrV2Reg is
@@ -135,6 +136,10 @@ begin  -- mapping
       axilSlaveRegisterR(X"00C", gtxDebug);
       axilSlaveRegisterW(X"018", 0, v.dmaFullThr);
     end if;
+
+    for i in 0 to 3 loop
+      axilSlaveRegisterR(x"080"+4*i, 0, trigDebug(32*i+31 downto 32*i));
+    end loop;
     
     axilSlaveDefault(AXI_RESP_OK_C);
     rin <= v;

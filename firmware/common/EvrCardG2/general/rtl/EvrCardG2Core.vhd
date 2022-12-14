@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2022-08-15
+-- Last update: 2022-12-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -538,7 +538,7 @@ begin
 
    U_Core : entity work.EvrV2Core
      generic map ( TPD_G           => TPD_G,
-                   GEN_INT_COUNT_G => true )
+                   GEN_INT_COUNT_G => false )
                    
      port map (
        axiClk              => axiClk,
