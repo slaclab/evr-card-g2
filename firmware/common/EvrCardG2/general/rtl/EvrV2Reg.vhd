@@ -137,9 +137,9 @@ begin  -- mapping
       axilSlaveRegisterW(X"018", 0, v.dmaFullThr);
     end if;
 
-    for i in 0 to 3 loop
-      axilSlaveRegisterR(toSlv(128+4*i,12), trigDebug(32*i+31 downto 32*i));
-    end loop;
+    axilSlaveRegisterR(x"020", trigDebug(30 downto  3)); -- fifoDin
+    axilSlaveRegisterR(x"024", trigDebug(86 downto 59)); -- fifoDout
+    axilSlaveRegisterR(x"028", trigDebug(96 downto 88)); -- fifoCount
     
     axilSlaveDefault(AXI_RESP_OK_C);
     rin <= v;
