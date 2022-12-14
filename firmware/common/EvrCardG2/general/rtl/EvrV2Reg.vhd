@@ -138,7 +138,7 @@ begin  -- mapping
     end if;
 
     for i in 0 to 3 loop
-      axilSlaveRegisterR(toSlv(128+4*i,12), 0, trigDebug(32*i+31 downto 32*i));
+      axilSlaveRegisterR(toSlv(128+4*i,12), trigDebug(32*i+31 downto 32*i));
     end loop;
     
     axilSlaveDefault(AXI_RESP_OK_C);
