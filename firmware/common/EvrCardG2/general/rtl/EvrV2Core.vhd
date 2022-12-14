@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2022-08-15
+-- Last update: 2022-12-13
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -529,8 +529,8 @@ begin  -- rtl
                       CHANNELS_C   => NHARDCHANS_C,
                       TRIG_DEPTH_C => 256,
                       USE_MASK_G   => false,
-                      --DEBUG_C    => (i<1) )
-                      DEBUG_C      => false )
+                      DEBUG_C      => (i=11) )
+                      --DEBUG_C      => false )
         port map (    clk      => evrClk,
                       rst      => evrRst,
                       config   => triggerConfigS(i),
