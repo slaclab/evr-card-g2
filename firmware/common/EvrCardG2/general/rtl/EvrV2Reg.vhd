@@ -99,7 +99,7 @@ begin  -- mapping
     end if;
   end process;
 
-  process (r,axilReadMaster,axilWriteMaster,axiRst,gtxDebug,eventCount,irqReq,partitionAddr)
+  process (r,axilReadMaster,axilWriteMaster,axiRst,gtxDebug,eventCount,irqReq,partitionAddr,trigDebug)
     variable v  : RegType;
     variable ep : AxiLiteEndPointType;
     variable sReg : slv(0 downto 0);
