@@ -33,7 +33,7 @@ int main (int argc, char **argv) {
    int fd;
    void volatile *mapStart;
    string filePath;
-   string devName = argv[1];
+   string devName;
 
    // Check the number of arguments
    if ( argc != 3 ) {
@@ -44,6 +44,7 @@ int main (int argc, char **argv) {
    filePath = argv[2];
 
 	// Open the PCIe device
+  cout << "Opening " << devName << endl;
    if ( (fd = open(devName.c_str(), (O_RDWR|O_SYNC)) ) <= 0 ) {
       cout << "Error opening " << devName << endl;
       close(fd);
@@ -64,16 +65,17 @@ int main (int argc, char **argv) {
 }
 
 
-int PromLoad (volatile void *mapStart, string filePath) {
-
-   EvrCardG2Prom *prom;
-
+int PromLoad (volatile void *mapStart, string filePath)
+{
+//  cout << "mapStart = 0x" << hex << mapStart << endl;
    if(mapStart == MAP_FAILED){
       cout << "Error: mmap() = " << dec << mapStart << endl;
       return(1);
    }
 
+   cout << "Creating EvrCardG2Prom" << endl;
    // Create the EvrCardG2Prom object
+   EvrCardG2Prom *prom;
    prom = new EvrCardG2Prom(mapStart,filePath);
 
    // Check if the .mcs file exists
@@ -83,8 +85,16 @@ int PromLoad (volatile void *mapStart, string filePath) {
       return(1);
    }
 
+   uint32_t	promSize = prom->getPromSize(filePath);
+   cout << "promSize = 0x" << hex << promSize << endl;
+#if 0
+   // Get & Set the FPGA's PROM code size
+   prom->setPromSize(promSize);
+#endif
+
    // Check if the PCIe device is a generation 2 card
    if(!prom->checkFirmwareVersion()){
+      cout << "checkFirmwareVersion Error: Not a gen 2 card!" << endl;
       delete prom;
       return(1);
    }

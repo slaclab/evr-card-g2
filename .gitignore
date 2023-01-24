@@ -26,3 +26,5 @@ Thumps.db
 build*
 
 *.bin
+*.log
+*.out
