@@ -42,9 +42,13 @@ using namespace std;
 #define CONFIG_REG      0xFD4F
 
 // Constructor
-EvrCardG2Prom::EvrCardG2Prom (void volatile *mapStart, string pathToFile ) {
+EvrCardG2Prom::EvrCardG2Prom (void volatile *mapStart, string pathToFile )
+{
    // Set the file path
    filePath = pathToFile;
+
+   // Default PROM size without user data
+   promSize_      = PROM_SIZE;
 
    // Setup the register Mapping
    mapVersion = (void volatile *)((uint64_t)mapStart+0x10000);// Firmware version
@@ -59,6 +63,22 @@ EvrCardG2Prom::EvrCardG2Prom (void volatile *mapStart, string pathToFile ) {
 
 // Deconstructor
 EvrCardG2Prom::~EvrCardG2Prom ( ) {
+}
+
+void EvrCardG2Prom::setPromSize (uint32_t promSize) {
+   promSize_ = promSize;
+}
+
+uint32_t EvrCardG2Prom::getPromSize (string pathToFile) {
+   McsRead mcsReader;
+   uint32_t retVar;
+   printf("Current PROM Size = 0x%08x\n", promSize_);
+   mcsReader.open(pathToFile);
+   printf("Calculating PROM file (.mcs) Memory Address size ...\n");
+   retVar = mcsReader.addrSize();
+   printf("Calculated PROM Size = 0x%08x\n", retVar);
+   mcsReader.close();
+   return retVar;
 }
 
 //! Check for a valid firmware version  (true=valid firmware version)
@@ -109,11 +129,11 @@ void EvrCardG2Prom::rebootReminder ( ) {
 void EvrCardG2Prom::eraseBootProm ( ) {
 
    uint32_t address = 0;
-   double size = double(PROM_SIZE);
+   double size = double(promSize_);
 
    cout << "*******************************************************************" << endl;
    cout << "Starting Erasing ..." << endl;
-   while(address<=PROM_SIZE) {
+   while(address<=promSize_) {
       // Print the status to screen
       cout << hex << "Erasing PROM from 0x" << address << " to 0x" << (address+PROM_BLOCK_SIZE-1);
       cout << setprecision(3) << " ( " << ((double(address))/size)*100 << " percent done )" << endl;
@@ -142,7 +162,7 @@ bool EvrCardG2Prom::bufferedWriteBootProm ( ) {
    uint16_t bufData[256];
    uint16_t bufSize = 0;
 
-   double size = double(PROM_SIZE);
+   double size = double(promSize_);
    double percentage;
    double skim = 5.0;
    bool   toggle = false;
@@ -220,7 +240,7 @@ bool EvrCardG2Prom::verifyBootProm ( ) {
 
    uint32_t address = 0;
    uint16_t promData,fileData;
-   double size = double(PROM_SIZE);
+   double size = double(promSize_);
    double percentage;
    double skim = 5.0;
    bool   toggle = false;
@@ -426,6 +446,7 @@ uint32_t EvrCardG2Prom::genReqWord(uint16_t cmd, uint16_t data) {
 
 //! Generic FLASH write Command
 void EvrCardG2Prom::writeToFlash(uint32_t address, uint16_t cmd, uint16_t data) {
+//   cout << "writeToFlash( 0x"<<hex<<address << ", 0x" << cmd << ", 0x" << data << ")" << endl;
    // Set the data bus
    *((uint32_t*)mapData) = genReqWord(cmd,data);
 

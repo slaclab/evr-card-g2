@@ -43,6 +43,10 @@ class EvrCardG2Prom {
       //! Deconstructor
       ~EvrCardG2Prom ( );
 
+      void setPromSize (uint32_t promSize);
+
+      uint32_t getPromSize (string pathToFile);
+
       //! Check for a valid firmware version
       bool checkFirmwareVersion ( );
 
@@ -63,7 +67,8 @@ class EvrCardG2Prom {
 
    private:
       // Local Variables
-      string filePath;
+      string   filePath;
+      uint32_t promSize_;
       void volatile *mapVersion;
       void volatile *mapBuild;
       void volatile *mapData;
