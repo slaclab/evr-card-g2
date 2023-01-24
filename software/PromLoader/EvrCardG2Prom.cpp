@@ -88,6 +88,9 @@ bool EvrCardG2Prom::checkFirmwareVersion ( ) {
    uint32_t i;
    uint32_t BuildStamp[64];
 
+   if(EvrCardGen==GEN2_MASK){
+      cout << "Found Gen 2 EVR card!" << endl;
+   }
    cout << "*******************************************************************" << endl;
    cout << "Current Firmware Version on the FPGA: 0x" << hex << firmwareVersion << endl;
    for (i=0; i < 64; i++) {
@@ -95,14 +98,13 @@ bool EvrCardG2Prom::checkFirmwareVersion ( ) {
    }
    cout << "Current BuildStamp: "   << string((char *)BuildStamp)  << endl;
 
-   return true;
+//   return true;
    if(EvrCardGen!=GEN2_MASK){
    cout << "*******************************************************************" << endl;
       cout << "Error: Not a generation 2 EVR card" << endl;
       return false;
-   } else {
-      return true;
    }
+   return true;
 }
 
 //! Check if file exist (true=exists)
