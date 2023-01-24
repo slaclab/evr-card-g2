@@ -1,9 +1,14 @@
 # Variables
+CROSS_COMPILE ?=
 BITENV := $(shell getconf LONG_BIT)
 CC     := $(CROSS_COMPILE)g++
-CFLAGS := -Wall -m$(BITENV) -I$(PWD) -lpthread -lrt -lm
+SRC_DIR ?= $(PWD)
+CFLAGS := -Wall -m$(BITENV) -I$(SRC_DIR) -lpthread -lrt -lm
 
-all:
+
+all: MemoryMapTest DatbuffTest PromLoad PromVerify
+
+old_targets:
 	$(CC) $(CFLAGS) MemoryMapTest.cpp -o MemoryMapTest
 	$(CC) $(CFLAGS) DatbuffTest.cpp   -o DatbuffTest
 	$(CC) -c $(CFLAGS) McsRead.cpp -o McsRead.o
@@ -12,10 +17,18 @@ all:
 	$(CC) $(CFLAGS) McsRead.o EvrCardG2Prom.o PromVerify.cpp -o PromVerify
 	$(CC) $(CFLAGS) McsRead.o EvrCardG2Prom.o PromVersion.cpp -o PromVersion
 
+SUFFIXES: .cpp .o
+
+%.o : $(SRC_DIR)/%.cpp
+	$(CC) -c $(CFLAGS) -MD -o $@ $<
+
+MemoryMapTest DatbuffTest PromLoad PromVerify: McsRead.o EvrCardG2Prom.o
+MemoryMapTest DatbuffTest PromLoad PromVerify: %: $(SRC_DIR)/%.cpp
+	$(CC) McsRead.o EvrCardG2Prom.o -o $@ $< 
+
 clean:
+	rm -f *.o
 	rm -f MemoryMapTest
 	rm -f DatbuffTest
-	rm -f McsRead.o
-	rm -f EvrCardG2Prom.o
 	rm -f PromLoad
 	rm -f PromVerify
