@@ -10,6 +10,7 @@ all:
 	$(CC) -c $(CFLAGS) EvrCardG2Prom.cpp -o EvrCardG2Prom.o
 	$(CC) $(CFLAGS) McsRead.o EvrCardG2Prom.o PromLoad.cpp   -o PromLoad
 	$(CC) $(CFLAGS) McsRead.o EvrCardG2Prom.o PromVerify.cpp -o PromVerify
+	$(CC) $(CFLAGS) McsRead.o EvrCardG2Prom.o PromVersion.cpp -o PromVersion
 
 clean:
 	rm -f MemoryMapTest
