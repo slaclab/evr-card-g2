@@ -3,3 +3,6 @@ DatbuffTest
 MemoryMapTest
 PromLoad
 PromVerify
+PromVersion
+*.log
+*.o

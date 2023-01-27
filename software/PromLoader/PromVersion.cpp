@@ -22,26 +22,22 @@
 #include <unistd.h>
 
 #include "EvrCardG2Prom.h"
-#include "PromLoad.h"
+extern int PromVersion(volatile void *mapStart);
 
 using namespace std;
-
-#define PAGE_SIZE sysconf(_SC_PAGE_SIZE)
 
 int main (int argc, char **argv) {
 
    int fd;
    void volatile *mapStart;
-   string filePath;
    string devName;
 
    // Check the number of arguments
-   if ( argc != 3 ) {
-      cout << "Usage: ./PromLoad device filePath" << endl;
+   if ( argc != 2 ) {
+      cout << "Usage: ./PromVersion device" << endl;
       return(0);
    }
    devName  = argv[1];
-   filePath = argv[2];
 
 	// Open the PCIe device
   cout << "Opening " << devName << endl;
@@ -59,13 +55,13 @@ int main (int argc, char **argv) {
       return(1);
    }
 
-   int status = PromLoad( mapStart, filePath );
+   int status = PromVersion( mapStart );
    close(fd);
    return(status);
 }
 
 
-int PromLoad (volatile void *mapStart, string filePath)
+int PromVersion(volatile void *mapStart)
 {
 //  cout << "mapStart = 0x" << hex << mapStart << endl;
    if(mapStart == MAP_FAILED){
@@ -76,21 +72,7 @@ int PromLoad (volatile void *mapStart, string filePath)
    cout << "Creating EvrCardG2Prom" << endl;
    // Create the EvrCardG2Prom object
    EvrCardG2Prom *prom;
-   prom = new EvrCardG2Prom(mapStart,filePath);
-
-   // Check if the .mcs file exists
-   if(!prom->fileExist()){
-      cout << "Error opening: " << filePath << endl;
-      delete prom;
-      return(1);
-   }
-
-   uint32_t	promSize = prom->getPromSize(filePath);
-   cout << "promSize = 0x" << hex << promSize << endl;
-#if 0
-   // Get & Set the FPGA's PROM code size
-   prom->setPromSize(promSize);
-#endif
+   prom = new EvrCardG2Prom(mapStart,"NoImage");
 
    // Check if the PCIe device is a generation 2 card
    if(!prom->checkFirmwareVersion()){
@@ -98,32 +80,6 @@ int PromLoad (volatile void *mapStart, string filePath)
       delete prom;
       return(1);
    }
-
-   // Erase the PROM
-   prom->eraseBootProm();
-
-   // Write the .mcs file to the PROM
-   if(!prom->bufferedWriteBootProm()) {
-      cout << "Error in prom->bufferedWriteBootProm() function" << endl;
-      delete prom;
-      return(1);
-   }
-
-   // Compare the .mcs file with the PROM
-   if(!prom->verifyBootProm()) {
-      cout << "Error in prom->verifyBootProm() function" << endl;
-      delete prom;
-      return(1);
-   }
-
-   // Display Reminder
-   prom->rebootReminder();
-
-   // Mapping the reboot register
-   void volatile *reboot = (void volatile *)((uint64_t)mapStart+0x1001C);
-
-   // Reboot the FGPA
-   *((uint32_t*)reboot) = 0x1;
 
 	// Close all the devices
    delete prom;

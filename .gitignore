@@ -9,6 +9,7 @@
 *.class
 *.dll
 *.exe
+*.d
 *.o
 *.so
 *.pyc
@@ -26,3 +27,5 @@ Thumps.db
 build*
 
 *.bin
+*.log
+*.out
