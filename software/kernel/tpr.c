@@ -94,7 +94,9 @@ void    tpr_vmclose  (struct vm_area_struct *vma);
 // vm_operations_struct.fault callback function has a different signature
 // starting at kernel version 4.11. In this new version the struct vm_area_struct
 // in defined as part of the struct vm_fault.
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
+vm_fault_t tpr_vmfault  (struct vm_fault *vmf);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int     tpr_vmfault  (struct vm_fault *vmf);
 #else
 int     tpr_vmfault  (struct vm_area_struct *vma, struct vm_fault *vmf);
@@ -867,7 +869,9 @@ void tpr_vmclose(struct vm_area_struct *vma)
 // vm_operations_struct.fault callback function has a different signature
 // starting at kernel version 4.11. In this new version the struct vm_area_struct
 // in defined as part of the struct vm_fault.
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
+vm_fault_t tpr_vmfault(struct vm_fault* vmf)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int tpr_vmfault(struct vm_fault* vmf)
 #else
 int tpr_vmfault(struct vm_area_struct* vma,
