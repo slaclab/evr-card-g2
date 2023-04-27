@@ -52,6 +52,7 @@ entity EvrCardG2Core is
       flashWe    : out   sl;
       flashAdv   : out   sl;
       flashWait  : in    sl;
+      promVersion: in    sl;
       -- Crossbar Ports
       xBarSin    : out   slv(1 downto 0);
       xBarSout   : out   slv(1 downto 0);
@@ -213,7 +214,11 @@ architecture mapping of EvrCardG2Core is
    signal refEnable    : sl;
    signal refClkOut    : sl;
    
+   signal userValues : Slv32Array(0 to 63) := (others => x"00000000");
+
 begin
+
+   userValues(0)(0) <= promVersion;
 
    testPoint <= pciLinkUp;
 
@@ -326,6 +331,8 @@ begin
          BUFR_CLK_DIV_G  => 4,
          EN_DEVICE_DNA_G => true)   
       port map (
+         -- Optional: user values
+         userValues     => userValues,
          -- Serial Number outputs
          dnaValueOut    => serialNumber,
          -- AXI-Lite Register Interface

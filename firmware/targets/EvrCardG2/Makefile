@@ -3,6 +3,9 @@ export GIT_BYPASS = 0
 # Define target output
 target: prom
 
+# Define RELEASE variable
+export RELEASE = all
+
 # Define Firmware Version Number
 #export PRJ_VERSION = CED20015
 #  EvrV2BsaChannel tags with channel mask rather than channel int
@@ -29,7 +32,9 @@ target: prom
 #  Fix rate counting interval
 #export PRJ_VERSION = CED2001D
 #  Add reference clock output option
-export PRJ_VERSION = CED2001D
+#export PRJ_VERSION = CED2001E
+#  Add "PROM_VERSION" pull down resistor to FPGA.K21 pin
+export PRJ_VERSION = CED2001E
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1

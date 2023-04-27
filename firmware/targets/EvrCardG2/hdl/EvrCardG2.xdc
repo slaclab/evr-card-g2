@@ -9,6 +9,8 @@
 ##############################################################################
 # I/O Port Mapping
 
+set_property -dict { PACKAGE_PIN K21 IOSTANDARD LVCMOS25 PULLUP true } [get_ports { promVersion }]
+
 set_property -dict { PACKAGE_PIN B24 IOSTANDARD LVCMOS25 } [get_ports { flashData[0] }]
 set_property -dict { PACKAGE_PIN A25 IOSTANDARD LVCMOS25 } [get_ports { flashData[1] }]
 set_property -dict { PACKAGE_PIN B22 IOSTANDARD LVCMOS25 } [get_ports { flashData[2] }]
