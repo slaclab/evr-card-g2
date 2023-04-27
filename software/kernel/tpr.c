@@ -41,6 +41,14 @@
 #define HAVE_UNLOCKED_IOCTL 1
 #endif
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+  /* 'ioremap_nocache' was deprecated in kernels >= 5.6, so instead we use 'ioremap' which
+  is no-cache by default since kernels 2.6.25. */
+#    define IOREMAP_NO_CACHE(address, size) ioremap(address, size)
+#else /* KERNEL_VERSION < 2.6.25 */
+#    define IOREMAP_NO_CACHE(address, size) ioremap_nocache(address, size)
+#endif
+
 #undef TPRDEBUG
 //#define TPRDEBUG
 #undef TPRDEBUG2
@@ -901,7 +909,7 @@ int allocBar(struct bar_dev* minor, int major, struct pci_dev* pcidev, int bar)
 	  MOD_NAME, bar, major);
 
    // Remap the I/O register block so that it can be safely accessed.
-   minor->reg = ioremap_nocache(minor->baseHdwr, minor->baseLen);
+   minor->reg = IOREMAP_NO_CACHE(minor->baseHdwr, minor->baseLen);
    if (! minor->reg ) {
      printk(KERN_WARNING "%s: Init: Could not remap memory Maj=%i.\n", MOD_NAME,major);
      return (ERROR);
