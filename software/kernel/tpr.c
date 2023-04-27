@@ -786,7 +786,7 @@ void tpr_remove(struct pci_dev *pcidev) {
      //  Free the rx buffer memory.
      for ( idx=0; idx < NUMBER_OF_RX_BUFFERS; idx++ ) {
        if (dev->rxBuffer[idx]->dma != 0) {
-         dma_free_coherent( pcidev->dev, BUF_SIZE, dev->rxBuffer[idx]->buffer, dev->rxBuffer[idx]->dma);
+         dma_free_coherent( &pcidev->dev, BUF_SIZE, dev->rxBuffer[idx]->buffer, dev->rxBuffer[idx]->dma);
          if (dev->rxBuffer[idx]) {
            vfree(dev->rxBuffer[idx]);
          }
