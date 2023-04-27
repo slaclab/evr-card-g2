@@ -13,6 +13,8 @@
 *.o
 *.so
 *.pyc
+*.cmd
+*.mod
 
 # OS files
 .DS_Store
