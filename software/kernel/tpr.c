@@ -701,7 +701,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
 
    for ( idx=0; idx < NUMBER_OF_RX_BUFFERS; idx++ ) {
      dev->rxBuffer[idx] = (struct RxBuffer *) vmalloc(sizeof(struct RxBuffer ));
-     if ((dev->rxBuffer[idx]->buffer = pci_alloc_consistent(pcidev, BUF_SIZE, &(dev->rxBuffer[idx]->dma))) == NULL ) {
+     if ((dev->rxBuffer[idx]->buffer = dma_alloc_coherent(&pcidev->dev, BUF_SIZE, &(dev->rxBuffer[idx]->dma),GFP_DMA32|GFP_KERNEL)) == NULL ) {
        printk(KERN_WARNING "%s: Init: unable to allocate rx buffer [%d/%d]. Maj=%i\n",
               MOD_NAME, idx, NUMBER_OF_RX_BUFFERS, dev->major);
        break;
@@ -786,7 +786,7 @@ void tpr_remove(struct pci_dev *pcidev) {
      //  Free the rx buffer memory.
      for ( idx=0; idx < NUMBER_OF_RX_BUFFERS; idx++ ) {
        if (dev->rxBuffer[idx]->dma != 0) {
-         pci_free_consistent( pcidev, BUF_SIZE, dev->rxBuffer[idx]->buffer, dev->rxBuffer[idx]->dma);
+         dma_free_coherent( pcidev->dev, BUF_SIZE, dev->rxBuffer[idx]->buffer, dev->rxBuffer[idx]->dma);
          if (dev->rxBuffer[idx]) {
            vfree(dev->rxBuffer[idx]);
          }
