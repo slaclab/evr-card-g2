@@ -34,7 +34,9 @@ export RELEASE = all
 #  Add reference clock output option
 #export PRJ_VERSION = CED2001E
 #  Add "PROM_VERSION" pull down resistor to FPGA.K21 pin
-export PRJ_VERSION = CED2001E
+#export PRJ_VERSION = CED2001F
+#  BITSTREAM.CONFIG.BPI_SYNC_MODE Disable because Type2 only supported for PC28 PROM. Not supported for MT28 PROM
+export PRJ_VERSION = CED2001F
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
