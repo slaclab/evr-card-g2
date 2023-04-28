@@ -10,6 +10,7 @@ ExecStartPost=
 ExecStop=/etc/systemd/system/tpr.d/tpr.init.d stop
 KillMode=process
 IgnoreSIGPIPE=no
+RemainAfterExit=yes
 StandardOutput=syslog
 StandardError=inherit
 
