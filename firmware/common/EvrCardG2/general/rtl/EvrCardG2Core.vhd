@@ -347,7 +347,7 @@ begin
    --------------------
    -- Boot Flash Module
    --------------------
-   AxiMicronP30Core_Inst : entity surf.AxiMicronP30Core
+   AxiMicronP30Core_Inst : entity work.BpiPromCore
       generic map (
          TPD_G          => TPD_G,
          AXI_CLK_FREQ_G => AXI_CLK_FREQ_C)  -- units of Hz
