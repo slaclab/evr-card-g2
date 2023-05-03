@@ -1,0 +1,60 @@
+##############################################################################
+## This file is part of 'Firmware for EVR Card Gen 2'.
+## It is subject to the license terms in the LICENSE.txt file found in the
+## top-level directory of this distribution and at:
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+## No part of 'Firmware for EVR Card Gen 2', including this file,
+## may be copied, modified, propagated, or distributed except according to
+## the terms contained in the LICENSE.txt file.
+##############################################################################
+#schemaversion 3.0.0
+#once 000TopLevel.yaml
+#include AxiVersion.yaml
+#include AxiMicronP30.yaml
+#include AxiSy56040.yaml
+#include ClockManager.yaml
+#include EvrCardG2LedRgb.yaml
+#include EvgAsyncControl.yaml
+
+#MMIO range, will be attached to FPGA
+mmio: &mmio
+  size: 0x00100000 # 1MB of address space
+  class: MMIODev
+  configPrio: 1
+  children:
+    AxiVersion:
+      <<: *AxiVersion
+      at:
+        offset: 0x00010000
+
+    BootMem:
+      <<: *AxiMicronP30
+      at:
+        offset: 0x00020000
+
+    SfpXbar:
+      <<: *AxiSy56040
+      at:
+        offset: 0x00040000
+
+    Led:
+      <<: *EvrCardG2LedRgb
+      at:
+        offset: 0x00050000
+
+    EvgAsyncControl:
+      <<: *EvgAsyncControl
+      at:
+        offset: 0x00060000
+
+MemDev: &MemDev
+  size:     0x00100000
+  class:    MemDev
+  fileName: "/dev/tpra"
+  offset:   0x00000000
+  children:
+    mmio:
+      <<: *mmio
+      at:
+        offset: 0x00000000
+        align: 4

@@ -1,0 +1,67 @@
+##############################################################################
+## This file is part of 'LCLS2 Common Carrier Core'.
+## It is subject to the license terms in the LICENSE.txt file found in the 
+## top-level directory of this distribution and at: 
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+## No part of 'LCLS2 Common Carrier Core', including this file, 
+## may be copied, modified, propagated, or distributed except according to 
+## the terms contained in the LICENSE.txt file.
+##############################################################################
+#schemaversion 3.0.0
+#once EvgAsyncControl
+
+EvgAsyncControl: &EvgAsyncControl
+  size: 0x00010000
+  class: MMIODev
+  configPrio: 1
+  children:
+    #########################################################  
+    pllReset:
+      at:
+        offset: 0x00
+      class: IntField
+      name: pllReset
+      sizeBits: 1
+      lsbit: 0
+      mode: RW
+      description: Reset PLL
+    #########################################################  
+    phyReset:
+      at:
+        offset: 0x04
+      class: IntField
+      name: phyReset
+      sizeBits: 1
+      lsbit: 0
+      mode: RW
+      description: Reset PHY
+    #########################################################  
+    timeStampWr:
+      at:
+        offset: 0x08
+      class: IntField
+      name: timeStampWr
+      sizeBits: 64
+      lsbit: 0
+      mode: RW
+      description: Set TimeStamp
+    #########################################################  
+    timeStampRd:
+      at:
+        offset: 0x10
+      class: IntField
+      name: timeStampRd
+      sizeBits: 64
+      lsbit: 0
+      mode: RO
+      description: TimeStamp Readback
+    #########################################################  
+    eventCodes:
+      at:
+        offset: 0x20
+      class: IntField
+      name: eventCodes
+      sizeBits: 256
+      lsbit: 0
+      mode: RW
+      description: EventCodes to generate
