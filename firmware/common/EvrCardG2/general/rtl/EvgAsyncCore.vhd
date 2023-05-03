@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2023-05-03
--- Last update: 2022-04-01
+-- Last update: 2023-05-03
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -491,7 +491,7 @@ begin
        axilReadMaster     => mAxiReadMasters (CSR_INDEX_C),
        axilReadSlave      => mAxiReadSlaves  (CSR_INDEX_C),
        axilWriteMaster    => mAxiWriteMasters(CSR_INDEX_C),
-       axilWriteSlave     => mAxiWriteSlaves (CSR_INDEX_C) );
+       axilWriteSlave     => mAxiWriteSlaves (CSR_INDEX_C),
        --
        pllReset           => txPhy.control.pllReset,
        phyReset           => txPhy.control.reset,

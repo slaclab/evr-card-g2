@@ -75,7 +75,7 @@ architecture mapping of EvgAsyncControl is
     phyReset       : sl;
     timeStampWr    : slv(63 downto 0);
     timeStampWrEn  : slv( 3 downto 0);
-    eventCodes     : slv(255 downto 0)
+    eventCodes     : slv(255 downto 0);
   end record;
 
   constant REG_INIT_C : RegType := (
