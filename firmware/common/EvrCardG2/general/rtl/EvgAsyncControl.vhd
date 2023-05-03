@@ -53,10 +53,10 @@ entity EvgAsyncControl is
     -- AXI-Lite and IRQ Interface
     axiClk              : in  sl;
     axiRst              : in  sl;
-    axilWriteMaster     : in  AxiLiteWriteMasterArray(1 downto 0);
-    axilWriteSlave      : out AxiLiteWriteSlaveArray (1 downto 0);
-    axilReadMaster      : in  AxiLiteReadMasterArray (1 downto 0);
-    axilReadSlave       : out AxiLiteReadSlaveArray  (1 downto 0);
+    axilWriteMaster     : in  AxiLiteWriteMasterType;
+    axilWriteSlave      : out AxiLiteWriteSlaveType;
+    axilReadMaster      : in  AxiLiteReadMasterType;
+    axilReadSlave       : out AxiLiteReadSlaveType;
     -- Registers
     pllReset            : out sl;
     phyReset            : out sl;
