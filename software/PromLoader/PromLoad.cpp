@@ -120,7 +120,7 @@ int PromLoad (volatile void *mapStart, string filePath)
    prom->rebootReminder();
 
    // Mapping the reboot register
-   void volatile *reboot = (void volatile *)((uint64_t)mapStart+0x1001C);
+   void volatile *reboot = (void volatile *)((uint64_t)mapStart+0x10104);
 
    // Reboot the FGPA
    *((uint32_t*)reboot) = 0x1;
