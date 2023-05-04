@@ -15,16 +15,11 @@ Targets:
     ImageDir: targets/EvrCardG2/images
     Extensions:
       - mcs
-  LegacyEvrCardG2:
-    ImageDir: targets/LegacyEvrCardG2/images
-    Extensions:
-      - mcs
 
 Releases:
   all:
     Primary: True
     Targets:
       - EvrCardG2
-      - LegacyEvrCardG2
     Types:
       - FW_ONLY
