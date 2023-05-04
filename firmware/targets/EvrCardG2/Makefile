@@ -36,9 +36,10 @@ export RELEASE = all
 #  Add "PROM_VERSION" pull down resistor to FPGA.K21 pin
 #export PRJ_VERSION = CED2001F
 #  BITSTREAM.CONFIG.BPI_SYNC_MODE Disable because Type2 only supported for PC28 PROM. Not supported for MT28 PROM
-#export PRJ_VERSION = CED20020
+#export PRJ_VERSION = CED20030
 #  Custom PROM firmware for bypassing the CMD writes (required for MT28 PROM's Data Polling Register)
-export PRJ_VERSION = CED20020
+#  Also skipping to CED20030 due to "legacy" target having CED20025/CED20026 values with respect to software version checking in the PromLoader
+export PRJ_VERSION = CED20030
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
