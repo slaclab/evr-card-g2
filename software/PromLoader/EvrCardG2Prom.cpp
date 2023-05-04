@@ -113,7 +113,7 @@ bool EvrCardG2Prom::checkFirmwareVersion ( ) {
       return false;
    }
 
-   if(firmwareVersion<0xCED2001E) {
+   if(firmwareVersion<0xCED20030) {
       // PROM type = Legacy (TRUE)
       promType_ = true;
    } else {
@@ -187,6 +187,10 @@ void EvrCardG2Prom::eraseBootProm ( ) {
       // CLEAR ALL NONVOLATILE PROTECTION BITS (80h/30h)
       writeToFlash(0x555,0,0x80);
       writeToFlash(0x000,0,0x30);
+      sleep(2); // Clear nonvolatile protection bit time (max) = 1100 ms
+      // EXIT LOCK REGISTER (90h/00h)
+      writeToFlash(0x000,0,0x90);
+      writeToFlash(0x000,0,0x00);
       usleep(1);
       // CHIP ERASE (80/10h)
       writeToFlash(0x555,0,0xAA);
@@ -195,10 +199,12 @@ void EvrCardG2Prom::eraseBootProm ( ) {
       writeToFlash(0x555,0,0xAA);
       writeToFlash(0x2AA,0,0x55);
       writeToFlash(0x555,0,0x10);
-      // Typical timeout for full chip erase = 66 seconds
-      for (int i=0; i<11; i++) {
+
+      // Typical timeout for full chip erase = 66s
+      // Maximum timeout for full chip erase = 528s
+      for (int i=0; i<20; i++) {
          // Print the status to screen
-         cout << hex << "Erasing PROM: " << round(100.0*float(6*i)/60.0) << " percent done " << endl;
+         cout << hex << "Erasing PROM: " << round(100.0*float(3*i)/60.0) << " percent done " << endl;
          sleep(6);
       }
    }
@@ -493,19 +499,6 @@ void EvrCardG2Prom::bufferedProgramCommand(uint32_t *address, uint16_t *data, ui
 
    } else {
 
-      // ENTER NONVOLATILE PROTECTION COMMAND SET (C0h)
-      writeToFlash(0x555,0,0xAA);
-      writeToFlash(0x2AA,0,0x55);
-      writeToFlash(0x555,0,0xC0);
-      usleep(1);
-      // CLEAR ALL NONVOLATILE PROTECTION BITS (80h/30h)
-      writeToFlash(0x555,0,0x80);
-      writeToFlash(0x000,0,0x30);
-      usleep(1);
-      // EXIT LOCK REGISTER (90h/00h)
-      writeToFlash(0x000,0,0x90);
-      writeToFlash(0x000,0,0x00);
-      usleep(1);
       // WRITE TO BUFFER PROGRAM (25h)
       writeToFlash(0x555,0,0xAA);
       writeToFlash(0x2AA,0,0x55);
@@ -516,10 +509,11 @@ void EvrCardG2Prom::bufferedProgramCommand(uint32_t *address, uint16_t *data, ui
       // Loop through the buffer data
       for (i=0; i<size; i++) {
          writeToFlash(address[i],0,data[i]);
-         usleep(1);
       }
+      usleep(1);
+
       // WRITE TO BUFFER PROGRAM CONFIRM (29h)
-      writeToFlash(address[size-1]+1,0,0x29);
+      writeToFlash(address[0],0,0x29);
 
       // Typical timeout for buffer program = 512μs
       // Maximum timeout for buffer program = 2048μs
