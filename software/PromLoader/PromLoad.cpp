@@ -119,12 +119,6 @@ int PromLoad (volatile void *mapStart, string filePath)
    // Display Reminder
    prom->rebootReminder();
 
-   // Mapping the reboot register
-   void volatile *reboot = (void volatile *)((uint64_t)mapStart+0x1001C);
-
-   // Reboot the FGPA
-   *((uint32_t*)reboot) = 0x1;
-
 	// Close all the devices
    delete prom;
    return(0);

@@ -3,6 +3,9 @@ export GIT_BYPASS = 0
 # Define target output
 target: prom
 
+# Define RELEASE variable
+export RELEASE = all
+
 # Define Firmware Version Number
 #export PRJ_VERSION = CED20015
 #  EvrV2BsaChannel tags with channel mask rather than channel int
@@ -29,7 +32,14 @@ target: prom
 #  Fix rate counting interval
 #export PRJ_VERSION = CED2001D
 #  Add reference clock output option
-export PRJ_VERSION = CED2001D
+#export PRJ_VERSION = CED2001E
+#  Add "PROM_VERSION" pull down resistor to FPGA.K21 pin
+#export PRJ_VERSION = CED2001F
+#  BITSTREAM.CONFIG.BPI_SYNC_MODE Disable because Type2 only supported for PC28 PROM. Not supported for MT28 PROM
+#export PRJ_VERSION = CED20030
+#  Custom PROM firmware for bypassing the CMD writes (required for MT28 PROM's Data Polling Register)
+#  Also skipping to CED20030 due to "legacy" target having CED20025/CED20026 values with respect to software version checking in the PromLoader
+export PRJ_VERSION = CED20030
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1

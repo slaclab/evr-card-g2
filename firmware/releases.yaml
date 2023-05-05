@@ -1,0 +1,25 @@
+#-----------------------------------------------------------------------------
+# This file is part of the 'LCLS2 Timing Core'. It is subject to
+# the license terms in the LICENSE.txt file found in the top-level directory
+# of this distribution and at:
+#    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+# No part of the 'LCLS2 Timing Core', including this file, may be
+# copied, modified, propagated, or distributed except according to the terms
+# contained in the LICENSE.txt file.
+#-----------------------------------------------------------------------------
+
+GitBase: ..
+
+Targets:
+  EvrCardG2:
+    ImageDir: targets/EvrCardG2/images
+    Extensions:
+      - mcs
+
+Releases:
+  all:
+    Primary: True
+    Targets:
+      - EvrCardG2
+    Types:
+      - FW_ONLY

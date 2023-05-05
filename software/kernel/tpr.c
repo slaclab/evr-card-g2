@@ -31,6 +31,24 @@
 #include <linux/vmalloc.h>
 #include "tpr.h"
 
+/**
+ * HAVE_UNLOCKED_IOCTL has been dropped in kernel version 5.9.
+ * There is a chance that the removal might be ported back to 5.x.
+ * So if HAVE_UNLOCKED_IOCTL is not defined in kernel v5, we define it.
+ * This also allows backward-compatibility with kernel < 2.6.11.
+ */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0) && !defined(HAVE_UNLOCKED_IOCTL)
+#define HAVE_UNLOCKED_IOCTL 1
+#endif
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 25)
+  /* 'ioremap_nocache' was deprecated in kernels >= 5.6, so instead we use 'ioremap' which
+  is no-cache by default since kernels 2.6.25. */
+#    define IOREMAP_NO_CACHE(address, size) ioremap(address, size)
+#else /* KERNEL_VERSION < 2.6.25 */
+#    define IOREMAP_NO_CACHE(address, size) ioremap_nocache(address, size)
+#endif
+
 #undef TPRDEBUG
 //#define TPRDEBUG
 #undef TPRDEBUG2
@@ -76,7 +94,9 @@ void    tpr_vmclose  (struct vm_area_struct *vma);
 // vm_operations_struct.fault callback function has a different signature
 // starting at kernel version 4.11. In this new version the struct vm_area_struct
 // in defined as part of the struct vm_fault.
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
+vm_fault_t tpr_vmfault  (struct vm_fault *vmf);
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int     tpr_vmfault  (struct vm_fault *vmf);
 #else
 int     tpr_vmfault  (struct vm_area_struct *vma, struct vm_fault *vmf);
@@ -683,7 +703,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
 
    for ( idx=0; idx < NUMBER_OF_RX_BUFFERS; idx++ ) {
      dev->rxBuffer[idx] = (struct RxBuffer *) vmalloc(sizeof(struct RxBuffer ));
-     if ((dev->rxBuffer[idx]->buffer = pci_alloc_consistent(pcidev, BUF_SIZE, &(dev->rxBuffer[idx]->dma))) == NULL ) {
+     if ((dev->rxBuffer[idx]->buffer = dma_alloc_coherent(&pcidev->dev, BUF_SIZE, &(dev->rxBuffer[idx]->dma),GFP_DMA32|GFP_KERNEL)) == NULL ) {
        printk(KERN_WARNING "%s: Init: unable to allocate rx buffer [%d/%d]. Maj=%i\n",
               MOD_NAME, idx, NUMBER_OF_RX_BUFFERS, dev->major);
        break;
@@ -768,7 +788,7 @@ void tpr_remove(struct pci_dev *pcidev) {
      //  Free the rx buffer memory.
      for ( idx=0; idx < NUMBER_OF_RX_BUFFERS; idx++ ) {
        if (dev->rxBuffer[idx]->dma != 0) {
-         pci_free_consistent( pcidev, BUF_SIZE, dev->rxBuffer[idx]->buffer, dev->rxBuffer[idx]->dma);
+         dma_free_coherent( &pcidev->dev, BUF_SIZE, dev->rxBuffer[idx]->buffer, dev->rxBuffer[idx]->dma);
          if (dev->rxBuffer[idx]) {
            vfree(dev->rxBuffer[idx]);
          }
@@ -849,7 +869,9 @@ void tpr_vmclose(struct vm_area_struct *vma)
 // vm_operations_struct.fault callback function has a different signature
 // starting at kernel version 4.11. In this new version the struct vm_area_struct
 // in defined as part of the struct vm_fault.
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 17, 0)
+vm_fault_t tpr_vmfault(struct vm_fault* vmf)
+#elif LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
 int tpr_vmfault(struct vm_fault* vmf)
 #else
 int tpr_vmfault(struct vm_area_struct* vma,
@@ -891,7 +913,7 @@ int allocBar(struct bar_dev* minor, int major, struct pci_dev* pcidev, int bar)
 	  MOD_NAME, bar, major);
 
    // Remap the I/O register block so that it can be safely accessed.
-   minor->reg = ioremap_nocache(minor->baseHdwr, minor->baseLen);
+   minor->reg = IOREMAP_NO_CACHE(minor->baseHdwr, minor->baseLen);
    if (! minor->reg ) {
      printk(KERN_WARNING "%s: Init: Could not remap memory Maj=%i.\n", MOD_NAME,major);
      return (ERROR);

@@ -13,6 +13,8 @@
 *.o
 *.so
 *.pyc
+*.cmd
+*.mod
 
 # OS files
 .DS_Store
@@ -25,7 +27,14 @@ Thumps.db
 
 # Vivado Build
 build*
+.Xil*
 
+*.str
+*.jou
 *.bin
 *.log
 *.out
+*.gz
+*.xsa
+*.mcs
+*.bit
