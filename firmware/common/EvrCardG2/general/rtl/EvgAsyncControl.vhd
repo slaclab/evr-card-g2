@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2023-05-03
+-- Last update: 2023-05-05
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -60,6 +60,8 @@ entity EvgAsyncControl is
     -- Registers
     pllReset            : out sl;
     phyReset            : out sl;
+    trigger             : out sl;
+    triggerCnt          : in  slv(15 downto 0);
     timeStampWr         : out slv(63 downto 0);
     timeStampWrEn       : out sl;
     timeStampRd         : in  slv(63 downto 0);
@@ -73,8 +75,10 @@ architecture mapping of EvgAsyncControl is
     axilWriteSlave : AxiLiteWriteSlaveType;
     pllReset       : sl;
     phyReset       : sl;
+    timeStampRd    : slv(63 downto 0);
     timeStampWr    : slv(63 downto 0);
     timeStampWrEn  : slv( 3 downto 0);
+    trigger        : slv( 3 downto 0);
     eventCodes     : slv(255 downto 0);
   end record;
 
@@ -83,8 +87,10 @@ architecture mapping of EvgAsyncControl is
     axilWriteSlave => AXI_LITE_WRITE_SLAVE_INIT_C,
     pllReset       => '0',
     phyReset       => '0',
+    timeStampRd    => (others=>'0'),
     timeStampWr    => (others=>'0'),
     timeStampWrEn  => (others=>'0'),
+    trigger        => (others=>'0'),
     eventCodes     => toSlv(2,256) );
 
    signal r   : RegType := REG_INIT_C;
@@ -92,24 +98,44 @@ architecture mapping of EvgAsyncControl is
 
 begin
 
-   comb : process (axilRst, axilReadMaster, axilWriteMaster, eventCodes, r)
+   comb : process (axiRst, axilReadMaster, axilWriteMaster, timeStampRd, triggerCnt, r)
       variable v      : RegType;
       variable axilEp : AxiLiteEndpointType;
+      variable wrEn   : sl;
+      variable rdEn   : sl;
+      variable trig   : sl;
    begin
       -- Latch the current value
       v := r;
       v.timeStampWrEn := r.timeStampWrEn(2 downto 0) & '0';
+      v.trigger       := r.trigger      (2 downto 0) & '0';
       
       -- Determine the transaction type
       axiSlaveWaitTxn(axilEp, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
 
+      wrEn := '0';
+      rdEn := '0';
+      trig := '0';
+      axiWrDetect(axilEp, x"00C", wrEn);
+      axiRdDetect(axilEp, x"010", rdEn);
+      axiWrDetect(axilEp, x"018", trig );
+
+      v.timeStampWrEn(0) := wrEn;
+
+      if trig = '1' then
+        v.trigger     := (others=>'1');
+      end if;
+      
+      if rdEn = '1' then
+        v.timeStampRd := timeStampRd;
+      end if;
+
       axiSlaveRegister (axilEp, x"000", 0, v.pllReset );
       axiSlaveRegister (axilEp, x"004", 0, v.phyReset );
       axiSlaveRegister (axilEp, x"008", 0, v.timeStampWr );
-      axiSlaveRegisterR(axilEp, x"010", 0, timeStampRd );
+      axiSlaveRegisterR(axilEp, x"010", 0, v.timeStampRd );
+      axiSlaveRegisterR(axilEp, x"018", 0, triggerCnt );
       axiSlaveRegister (axilEp, x"020", 0, v.eventCodes );
-
-      axiWrDetect(axilEp, x"00C", v.timeStampWrEn(0));
 
       -- Close the transaction
       axiSlaveDefault(axilEp, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_OK_C);
@@ -121,6 +147,7 @@ begin
       phyReset       <= r.phyReset;
       timeStampWr    <= r.timeStampWr;
       timeStampWrEn  <= r.timeStampWrEn(3);
+      trigger        <= r.trigger(3);
       eventCodes     <= r.eventCodes;
 
       -- Reset
@@ -140,4 +167,4 @@ begin
       end if;
    end process seq;
 
-end architecture rtl;
+end architecture mapping;

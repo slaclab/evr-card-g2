@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2023-05-03
--- Last update: 2023-05-03
+-- Last update: 2023-05-05
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 library ieee;
 use ieee.std_logic_1164.all;
+use ieee.std_logic_unsigned.all;
 
 
 library surf;
@@ -96,7 +97,7 @@ architecture mapping of EvgAsyncCore is
    signal axiLiteReadMaster  : AxiLiteReadMasterArray (BAR_SIZE_C-1 downto 0);
    signal axiLiteReadSlave   : AxiLiteReadSlaveArray  (BAR_SIZE_C-1 downto 0);
 
-   constant NUM_AXI_MASTERS_C : natural := 7;
+   constant NUM_AXI_MASTERS_C : natural := 8;
 
    constant VERSION_INDEX_C  : natural := 0;
    constant BOOT_MEM_INDEX_C : natural := 1;
@@ -105,6 +106,7 @@ architecture mapping of EvgAsyncCore is
    constant LED_INDEX_C      : natural := 4;
    constant CSR_INDEX_C      : natural := 5;
    constant DRP_INDEX_C      : natural := 6;
+   constant RINGB_INDEX_C    : natural := 7;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       VERSION_INDEX_C  => (
@@ -134,6 +136,10 @@ architecture mapping of EvgAsyncCore is
       DRP_INDEX_C      => (
          baseAddr      => X"00070000",
          addrBits      => 15,
+         connectivity  => X"0001"),
+      RINGB_INDEX_C     => (
+         baseAddr      => X"00080000",
+         addrBits      => 16,
          connectivity  => X"0001"));
 
    signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -173,21 +179,30 @@ architecture mapping of EvgAsyncCore is
    signal irqReq       : slv(BAR_SIZE_C-1 downto 0);
    signal serialNumber : slv(127 downto 0);
    signal evrClkSel    : sl;
-
+   signal trigger      : sl;
+   signal swTrigger    : sl;
+   signal fiducial     : sl;
+   signal fiducialCnt  : slv(15 downto 0);
+   
    signal heartBeat    : sl;
    signal dmaReady     : sl;
+   signal epicsTime    : slv(63 downto 0);
    signal timeStampWr  : slv(63 downto 0);
    signal timeStampRd  : slv(63 downto 0);
    signal timeStampWrEn: sl;
    signal eventCodes   : slv(255 downto 0);
    signal dataBuff     : TimingDataBuffType := TIMING_DATA_BUFF_INIT_C;
-   
+
    type RegType is record
      pulseId  : slv(31 downto 0);
+     txCount  : slv( 7 downto 0);
+     txValid  : sl;
    end record;
 
    constant REG_INIT_C : RegType := (
-     pulseId  => (others=>'0') );
+     pulseId  => (others=>'0'),
+     txCount  => (others=>'0'),
+     txValid  => '0' );
 
    signal r    : RegType := REG_INIT_C;
    signal r_in : RegType;
@@ -198,9 +213,6 @@ begin
    trigOut(trigOut'left downto 1) <= (others=>'0');
    trigOut(0) <= syncL;
 
-   mAxiReadSlaves  (MMCM_INDEX_C) <= AXI_LITE_READ_SLAVE_EMPTY_OK_C;
-   mAxiWriteSlaves (MMCM_INDEX_C) <= AXI_LITE_WRITE_SLAVE_EMPTY_OK_C;
-   
    ------------
    -- PCIe Core
    ------------
@@ -443,16 +455,52 @@ begin
        data      => txPhy.data,
        dataK     => txPhy.dataK );
 
+   U_AxiLiteRingBuffer : entity surf.AxiLiteRingBuffer
+     generic map (
+       TPD_G            => TPD_G,
+       MEMORY_TYPE_G    => "block",
+       REG_EN_G         => true,
+       DATA_WIDTH_G     => 18,
+       RAM_ADDR_WIDTH_G => 13)
+     port map (
+       dataClk                 => txPhyClk,
+       dataRst                 => txPhyRst,
+       dataValid               => r.txValid,
+       dataValue(15 downto 0)  => txPhy.data,
+       dataValue(17 downto 16) => txPhy.dataK,
+       axilClk                 => axiClk,
+       axilRst                 => axiRst,
+       axilReadMaster          => mAxiReadMasters (RINGB_INDEX_C),
+       axilReadSlave           => mAxiReadSlaves  (RINGB_INDEX_C),
+       axilWriteMaster         => mAxiWriteMasters(RINGB_INDEX_C),
+       axilWriteSlave          => mAxiWriteSlaves (RINGB_INDEX_C));
+
+   trigger <= swTrigger or not syncL;
+   
    U_Fiducial : entity surf.SynchronizerOneShot
      generic map (
-       TPD_G         => TPD_G,
-       IN_POLARITY_G => '0' )
+       TPD_G         => TPD_G )
      port map (
        clk     => txPhyClk,
        rst     => txPhyRst,
-       dataIn  => syncL,
+       dataIn  => trigger,
        dataOut => fiducial );
-     
+
+   U_FiducialCnt : entity surf.SynchronizerOneShotCnt
+     generic map (
+       TPD_G         => TPD_G,
+       COMMON_CLK_G  => true )
+     port map (
+       wrClk   => axiClk,
+       wrRst   => axiRst,
+       dataIn  => trigger,
+       rdClk   => axiClk,
+       rdRst   => axiRst,
+       rollOverEn => '1',
+       cntRst     => '0',
+       dataOut => open,
+       cntOut  => fiducialCnt);
+
    txPhy.control.inhibit     <= '0';
    txPhy.control.polarity    <= '0';
    txPhy.control.bufferByRst <= '0';
@@ -462,8 +510,8 @@ begin
    dmaRxIbMasters(0) <= AXI_STREAM_MASTER_INIT_C;
    dmaReady          <= '0';
 
-   irqEnable <= '0';
-   irqReq    <= '0';
+   irqEnable(0) <= '0';
+   irqReq   (0) <= '0';
 
   U_ClockTime : entity lcls_timing_core.ClockTime
     generic map (
@@ -486,8 +534,8 @@ begin
        TPD_G            => TPD_G )
      port map (
        -- AXI-Lite and IRQ Interface
-       axilClk            => axiClk,
-       axilRst            => axiRst,
+       axiClk             => axiClk,
+       axiRst             => axiRst,
        axilReadMaster     => mAxiReadMasters (CSR_INDEX_C),
        axilReadSlave      => mAxiReadSlaves  (CSR_INDEX_C),
        axilWriteMaster    => mAxiWriteMasters(CSR_INDEX_C),
@@ -495,6 +543,8 @@ begin
        --
        pllReset           => txPhy.control.pllReset,
        phyReset           => txPhy.control.reset,
+       trigger            => swTrigger,
+       triggerCnt         => fiducialCnt,
        timeStampWr        => timeStampWr,
        timeStampWrEn      => timeStampWrEn,
        timeStampRd        => timeStampRd,
@@ -508,6 +558,7 @@ begin
      variable v : RegType;
    begin
      v := r;
+     v.txValid := '0';
 
      if fiducial = '1' then
        if r.pulseId=x"0001FFDF" then
@@ -515,8 +566,14 @@ begin
        else
          v.pulseId := r.pulseId+1;
        end if;
+       v.txCount := (others=>'0');
      end if;
-         
+
+     if r.txCount /= x"FF" then
+       v.txCount := r.txCount+1;
+       v.txValid := '1';
+     end if;
+     
      if txPhyRst='1' then
        v := REG_INIT_C;
      end if;
