@@ -4,7 +4,7 @@ export GIT_BYPASS = 1
 target: prom
 
 # Define Firmware Version Number
-export PRJ_VERSION = 01000000
+export PRJ_VERSION = 02000000
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
