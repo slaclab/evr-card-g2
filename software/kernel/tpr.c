@@ -35,6 +35,9 @@
 //#define TPRDEBUG
 #undef TPRDEBUG2
 
+// This is missing?
+#define HAVE_UNLOCKED_IOCTL
+
 #ifdef TPRDEBUG
 #undef KERN_WARNING
 #define KERN_WARNING KERN_ALERT
@@ -76,8 +79,9 @@ void    tpr_vmclose  (struct vm_area_struct *vma);
 // vm_operations_struct.fault callback function has a different signature
 // starting at kernel version 4.11. In this new version the struct vm_area_struct
 // in defined as part of the struct vm_fault.
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-int     tpr_vmfault  (struct vm_fault *vmf);
+//#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if 1
+unsigned int     tpr_vmfault  (struct vm_fault *vmf);
 #else
 int     tpr_vmfault  (struct vm_area_struct *vma, struct vm_fault *vmf);
 #endif
@@ -849,14 +853,16 @@ void tpr_vmclose(struct vm_area_struct *vma)
 // vm_operations_struct.fault callback function has a different signature
 // starting at kernel version 4.11. In this new version the struct vm_area_struct
 // in defined as part of the struct vm_fault.
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
-int tpr_vmfault(struct vm_fault* vmf)
+//#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if 1
+unsigned int tpr_vmfault(struct vm_fault* vmf)
 #else
 int tpr_vmfault(struct vm_area_struct* vma,
                 struct vm_fault* vmf)
 #endif
 {
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+  //#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#if 1
   struct tpr_dev* dev = (struct tpr_dev *) vmf->vma->vm_private_data;
 #else
   struct tpr_dev* dev = vma->vm_private_data;
@@ -891,7 +897,7 @@ int allocBar(struct bar_dev* minor, int major, struct pci_dev* pcidev, int bar)
 	  MOD_NAME, bar, major);
 
    // Remap the I/O register block so that it can be safely accessed.
-   minor->reg = ioremap_nocache(minor->baseHdwr, minor->baseLen);
+   minor->reg = ioremap_cache(minor->baseHdwr, minor->baseLen);
    if (! minor->reg ) {
      printk(KERN_WARNING "%s: Init: Could not remap memory Maj=%i.\n", MOD_NAME,major);
      return (ERROR);
