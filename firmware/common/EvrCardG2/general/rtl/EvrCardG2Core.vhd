@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2022-04-01
+-- Last update: 2023-06-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -485,6 +485,7 @@ begin
          ledBlueL        => ledBlueL (0));           
 
 --   rxStatus.resetDone    <= not evrRst;
+   rxStatus.locked       <= rxLinkUp;
    rxStatus.resetDone    <= rxLinkUp;
    
    ------------------------------------------------------------------------------------------------
