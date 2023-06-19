@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2022-03-31
+-- Last update: 2023-06-19
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -445,10 +445,10 @@ begin  -- rtl
     
     for i in 0 to NCHANNELS_C-1 loop
       v.eventSel(i) := eventSel_i(i);
-      if GEN_L2SI_G and r.strobe(0) = '1' then      --  Add in DAQ event selection
+      if GEN_L2SI_G and evrBus.strobe = '1' then      --  Add in DAQ event selection
         if channelConfigS(i).rateSel(12 downto 11)="11" then
           xpmEvent := toXpmEventDataType(xpmMessage.partitionWord(conv_integer(channelConfigS(i).rateSel(2 downto 0))));
-          v.eventSel(i) := eventSel_i(i) or (xpmEvent.valid and xpmEvent.l0Accept);
+          v.eventSel(i) := xpmEvent.valid and xpmEvent.l0Accept;
         end if;
       end if;
       v.dmaSel(i) := v.eventSel(i) and channelConfigS(i).dmaEnabled;
@@ -459,7 +459,7 @@ begin  -- rtl
     if evrBus.strobe = '1' then
       v.eventCount(NCHANNELS_C) := r.eventCount(NCHANNELS_C)+1;
     end if;
-
+    
     if ((evrClkSel = '0' and r.count = toSlv(118999998,28)) or
         (evrClkSel = '1' and r.count = toSlv(181999998,28))) then
       v.reset := '1';

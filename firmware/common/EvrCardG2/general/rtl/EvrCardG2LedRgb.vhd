@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2017-03-03
+-- Last update: 2023-06-14
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -115,7 +115,7 @@ begin
       generic map (
          TPD_G => TPD_G)          
       port map (
-         clk     => evrClk,
+         clk     => axilClk,
          dataIn  => strobe,
          dataOut => state(2));       
 
