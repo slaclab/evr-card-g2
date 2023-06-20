@@ -39,7 +39,9 @@ export RELEASE = all
 #export PRJ_VERSION = CED20030
 #  Custom PROM firmware for bypassing the CMD writes (required for MT28 PROM's Data Polling Register)
 #  Also skipping to CED20030 due to "legacy" target having CED20025/CED20026 values with respect to software version checking in the PromLoader
-export PRJ_VERSION = CED20030
+#export PRJ_VERSION = CED20031
+#  Add in TimingExtension decoding of L2SI DAQ for triggering.
+export PRJ_VERSION = CED20031
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
