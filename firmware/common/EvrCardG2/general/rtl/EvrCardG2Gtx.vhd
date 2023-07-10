@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-10
--- Last update: 2020-02-03
+-- Last update: 2023-06-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -59,6 +59,7 @@ entity EvrCardG2Gtx is
       rxDataK    : out slv(1 downto 0);
       evrTxClk   : out sl;
       evrTxRst   : out sl;
+      loopback   : in  slv(2 downto 0) := (others=>'0');
       txInhibit  : in  sl := '1';
       txData     : in  slv(15 downto 0) := (others=>'0');
       txDataK    : in  slv(1 downto 0)  := (others=>'0');
@@ -301,7 +302,7 @@ begin
          txCharIsKIn      => txDataK,
          txBufStatusOut   => open,
          -- Misc.
-         loopbackIn       => (others => '0'),
+         loopbackIn       => loopback,
          txPowerDown      => (others => txInhibit),
          rxPowerDown      => (others => '0'),
          -- DRP Interface (drpClk Domain)      

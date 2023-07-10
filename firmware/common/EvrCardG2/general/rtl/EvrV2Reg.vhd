@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2022-03-31
+-- Last update: 2023-07-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -39,8 +39,9 @@ use lcls_timing_core.EvrV2Pkg.all;
 
 entity EvrV2Reg is
   generic (
-    TPD_G        : time    := 1 ns;
-    DMA_ENABLE_G : boolean := false );
+    TPD_G            : time    := 1 ns;
+    DMA_ENABLE_G     : boolean := false;
+    DMA_FULL_WIDTH_G : integer := 24);
   port (
     -- AXI-Lite and IRQ Interface
     axiClk              : in  sl;
@@ -53,13 +54,14 @@ entity EvrV2Reg is
     irqEnable           : out sl;
     trigSel             : out sl;
     refEnable           : out sl;
-    dmaFullThr          : out slv(23 downto 0);
+    dmaFullThr          : out slv(DMA_FULL_WIDTH_G-1 downto 0);
     -- status
     irqReq              : in  sl := '0';
     rstCount            : out sl;
     eventCount          : in  slv(31 downto 0);
     partitionAddr       : in  slv(31 downto 0) := (others=>'0');
-    gtxDebug            : in  slv(7 downto 0) := (others=>'0') );
+    gtxDebug            : in  slv(7 downto 0) := (others=>'0');
+    dmaDrops            : in  slv(23 downto 0) := (others=>'0') );
 end EvrV2Reg;
 
 architecture mapping of EvrV2Reg is
@@ -70,7 +72,7 @@ architecture mapping of EvrV2Reg is
     irqEnable      : sl;
     countReset     : sl;
     refEnable      : sl;
-    dmaFullThr     : slv(23 downto 0);
+    dmaFullThr     : slv(dmaFullThr'range);
   end record;
   constant REG_INIT_C : RegType := (
     axilReadSlave  => AXI_LITE_READ_SLAVE_INIT_C,
@@ -78,7 +80,7 @@ architecture mapping of EvrV2Reg is
     irqEnable      => '0',
     countReset     => '0',
     refEnable      => '0',
-    dmaFullThr     => (others=>'1') );
+    dmaFullThr     => toSlv(-256,dmaFullThr'length) );
   signal r   : RegType := REG_INIT_C;
   signal rin : RegType;
 
@@ -134,6 +136,7 @@ begin  -- mapping
       axilSlaveRegisterR(X"008", partitionAddr);
       axilSlaveRegisterR(X"00C", gtxDebug);
       axilSlaveRegisterW(X"018", 0, v.dmaFullThr);
+      axilSlaveRegisterR(X"01C", dmaDrops);
     end if;
     
     axilSlaveDefault(AXI_RESP_OK_C);

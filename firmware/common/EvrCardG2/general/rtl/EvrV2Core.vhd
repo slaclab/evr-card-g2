@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2023-06-20
+-- Last update: 2023-07-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -180,8 +180,8 @@ architecture mapping of EvrV2Core is
   
   signal irqRequest : sl;
 
-  signal dmaFullThr     : Slv24Array (0 downto 0);
-  signal dmaFullThrS    : Slv24Array (0 downto 0);
+  signal dmaFullThr, dmaFullThrS : slv(9 downto 0);
+  signal dmaDrops  , dmaDropsS   : slv(23 downto 0);
 
   signal partitionAddr  : slv(31 downto 0) := (others=>'0');
   signal modeSel        : sl;
@@ -203,10 +203,12 @@ architecture mapping of EvrV2Core is
   signal dbTrig     : slv(11 downto 0);
   signal dbTrigOut  : slv(11 downto 0);
   signal dbDmaRxIbMaster : AxiStreamMasterType;
-
+  signal evrBus_strobe : sl;
+  
 begin  -- rtl
 
   dmaRxIbMaster <= dbDmaRxIbMaster;
+  evrBus_strobe <= evrBus.strobe and evrBus.valid;
   
   GEN_DBUG : if DEBUG_C generate
     GEN_DMAV : for i in 0 to 11 generate
@@ -295,8 +297,9 @@ begin  -- rtl
       mAxiReadSlaves      => mAxiReadSlaves1);   
   
   U_Reg : entity work.EvrV2Reg
-    generic map ( TPD_G        => TPD_G,
-                  DMA_ENABLE_G => true )
+    generic map ( TPD_G             => TPD_G,
+                  DMA_ENABLE_G      => true,
+                  DMA_FULL_WIDTH_G  => dmaFullThr'length )
     port map (    axiClk              => axiClk,
                   axiRst              => axiRst,
                   axilWriteMaster     => mAxiWriteMasters0 (CSR_INDEX_C),
@@ -307,13 +310,14 @@ begin  -- rtl
                   irqEnable           => irqEnable,
                   trigSel             => open,
                   refEnable           => refEnable,
-                  dmaFullThr          => dmaFullThr(0),
+                  dmaFullThr          => dmaFullThr,
                   -- status
                   irqReq              => irqRequest,
                   rstCount            => open,
                   partitionAddr       => partitionAddr,
                   eventCount          => eventCountV(NCHANNELS_C),
-                  gtxDebug            => gtxDebugS );
+                  gtxDebug            => gtxDebugS,
+                  dmaDrops            => dmaDropsS);
     
   U_PciRxDesc : entity work.EvrV2PcieRxDesc
     generic map ( DMA_SIZE_G       => 1 )
@@ -331,13 +335,13 @@ begin  -- rtl
   U_PciRxDma : entity work.EvrV2PcieRxDma
     generic map ( TPD_G                 => TPD_G,
                   SAXIS_MASTER_CONFIG_G => SAXIS_MASTER_CONFIG_C,
-                  FIFO_ADDR_WIDTH_G     => 10 )
+                  FIFO_ADDR_WIDTH_G     => dmaFullThrS'length )
     port map (    sAxisClk       => evrClk,
                   sAxisRst       => evrRst,
                   sAxisMaster    => dmaMaster,
                   sAxisSlave     => dmaSlave,
                   sAxisCtrl      => dmaCtrl,
-                  sAxisPauseThr  => dmaFullThrS(0)(9 downto 0),
+                  sAxisPauseThr  => dmaFullThrS,
                   pciClk         => pciClk,
                   pciRst         => pciRst,
                   dmaIbMaster    => dbDmaRxIbMaster,
@@ -356,7 +360,8 @@ begin  -- rtl
                   dmaCntl    => dmaCtrl,
                   dmaData    => dmaData,
                   dmaMaster  => dmaMaster,
-                  dmaSlave   => dmaSlave );
+                  dmaSlave   => dmaSlave,
+                  dmaDrops   => dmaDrops);
   
   U_BsaControl : entity work.EvrV2BsaControl
     generic map ( TPD_G      => TPD_G )
@@ -411,7 +416,7 @@ begin  -- rtl
     generic map ( TPD_G      => TPD_G,
                   CHANNELS_C => dmaSel'length )
     port map (    clk        => evrClk,
-                  rst        => evrBus.strobe,
+                  rst        => evrBus_strobe,
                   strobe     => r.strobe(NHARDCHANS_C*STROBE_INTERVAL_C+30),
                   eventSel   => dmaSel,
                   eventData  => timingMsg,
@@ -427,9 +432,9 @@ begin  -- rtl
   pid_fixup : process (timingMsg_i) is
   begin
     timingMsg <= timingMsg_i;
-    if timingMsg_i.pulseId(63)='1' then
-      timingMsg.pulseId <= timingMsg_i.timeStamp;
-    end if;
+    --if timingMsg_i.pulseId(63)='1' then
+    --  timingMsg.pulseId <= timingMsg_i.timeStamp;
+    --end if;
   end process pid_fixup;
     
   comb : process ( r, evrBus, eventSel_i, evrClkSel, channelConfigS, xpmMessage ) is
@@ -440,12 +445,12 @@ begin  -- rtl
 
     v.reset  := '0';
     v.count  := r.count+1;
-    v.strobei := evrBus.strobe;
+    v.strobei := evrBus.strobe and evrBus.valid;
     v.strobe := r.strobe(r.strobe'left-1 downto 0) & r.strobei;
     
     for i in 0 to NCHANNELS_C-1 loop
       v.eventSel(i) := eventSel_i(i);
-      if GEN_L2SI_G and evrBus.strobe = '1' then      --  Add in DAQ event selection
+      if GEN_L2SI_G and v.strobei = '1' then      --  Add in DAQ event selection
         if channelConfigS(i).rateSel(12 downto 11)="11" then
           xpmEvent := toXpmEventDataType(xpmMessage.partitionWord(conv_integer(channelConfigS(i).rateSel(2 downto 0))));
           v.eventSel(i) := xpmEvent.valid and xpmEvent.l0Accept;
@@ -456,7 +461,7 @@ begin  -- rtl
         v.eventCount(i) := r.eventCount(i)+1;
       end if;
     end loop;
-    if evrBus.strobe = '1' then
+    if v.strobei = '1' then
       v.eventCount(NCHANNELS_C) := r.eventCount(NCHANNELS_C)+1;
     end if;
     
@@ -500,7 +505,7 @@ begin  -- rtl
   end generate;
   
   triggerStrobe <= r.strobe(r.strobe'left) when modeSel='0' else
-                   evrBus.strobe;
+                   evrBus_strobe;
   
   U_TReg  : entity lcls_timing_core.EvrV2TrigReg
     generic map ( TPD_G      => TPD_G,
@@ -617,11 +622,19 @@ begin  -- rtl
 
   Sync_dmaFullThr : entity surf.SynchronizerVector
     generic map ( TPD_G   => TPD_G,
-                  WIDTH_G => 24 )
+                  WIDTH_G => dmaFullThr'length )
     port map (    clk     => evrClk,
                   rst     => evrRst,
-                  dataIn  => dmaFullThr (0),
-                  dataOut => dmaFullThrS(0) );
+                  dataIn  => dmaFullThr ,
+                  dataOut => dmaFullThrS );
+
+  Sync_dmaDrops : entity surf.SynchronizerVector
+    generic map ( TPD_G   => TPD_G,
+                  WIDTH_G => dmaDrops'length )
+    port map (    clk     => axiClk,
+                  rst     => axiRst,
+                  dataIn  => dmaDrops,
+                  dataOut => dmaDropsS );
 
   GEN_PARTADDR : if GEN_L2SI_G generate
 

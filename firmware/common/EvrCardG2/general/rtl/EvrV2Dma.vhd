@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-05-05
+-- Last update: 2023-07-10
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -48,7 +48,8 @@ entity EvrV2Dma is
     dmaCntl    :  in AxiStreamCtrlType;
     dmaData    :  in EvrV2DmaDataArray   (CHANNELS_C-1 downto 0);
     dmaMaster  : out AxiStreamMasterType;
-    dmaSlave   :  in AxiStreamSlaveType );
+    dmaSlave   :  in AxiStreamSlaveType;
+    dmaDrops   : out slv(23 downto 0));
 end EvrV2Dma;
 
 architecture mapping of EvrV2Dma is
