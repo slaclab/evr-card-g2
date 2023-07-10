@@ -132,6 +132,7 @@ architecture mapping of EvrV2Core is
   type RegType is record
     strobei     : sl;
     strobe      : slv       (198 downto 0);
+    trigStrobe  : sl;
     count       : slv       ( 27 downto 0);
     reset       : sl;
     eventSel    : slv       (NCHANNELS_C downto 0);
@@ -143,6 +144,7 @@ architecture mapping of EvrV2Core is
   constant REG_INIT_C : RegType := (
     strobei     => '0',
     strobe      => (others=>'0'),
+    trigStrobe  => '0',
     count       => (others=>'0'),
     reset       => '1',
     eventSel    => (others=>'0'),
@@ -209,6 +211,8 @@ begin  -- rtl
 
   dmaRxIbMaster <= dbDmaRxIbMaster;
   evrBus_strobe <= evrBus.strobe and evrBus.valid;
+--  evrBus_strobe <= r.strobei;
+  triggerStrobe <= r.trigStrobe;
   
   GEN_DBUG : if DEBUG_C generate
     GEN_DMAV : for i in 0 to 11 generate
@@ -447,6 +451,12 @@ begin  -- rtl
     v.count  := r.count+1;
     v.strobei := evrBus.strobe and evrBus.valid;
     v.strobe := r.strobe(r.strobe'left-1 downto 0) & r.strobei;
+
+    if modeSel='0' then
+      v.trigStrobe := v.strobe(r.strobe'left);
+    else
+      v.trigStrobe := v.strobei;
+    end if;
     
     for i in 0 to NCHANNELS_C-1 loop
       v.eventSel(i) := eventSel_i(i);
@@ -504,8 +514,8 @@ begin  -- rtl
                     dataOut  => eventCountV  (i)(19 downto 0) );
   end generate;
   
-  triggerStrobe <= r.strobe(r.strobe'left) when modeSel='0' else
-                   evrBus_strobe;
+  --triggerStrobe <= r.strobe(r.strobe'left) when modeSel='0' else
+  --                 evrBus_strobe;
   
   U_TReg  : entity lcls_timing_core.EvrV2TrigReg
     generic map ( TPD_G      => TPD_G,
