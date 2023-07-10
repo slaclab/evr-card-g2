@@ -41,8 +41,9 @@ export RELEASE = all
 #  Also skipping to CED20030 due to "legacy" target having CED20025/CED20026 values with respect to software version checking in the PromLoader
 #export PRJ_VERSION = CED20031
 #  Add in TimingExtension decoding of L2SI DAQ for triggering.
-export PRJ_VERSION = CED20031
-
+#export PRJ_VERSION = CED20032
+#  Validate evrBus.strobe with evrBus.valid.  Add DMA drop counter.
+export PRJ_VERSION = CED20032
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
 
