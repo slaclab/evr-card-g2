@@ -32,6 +32,7 @@ void TprCsr::dump() const {
   printf("gtxDebug  [%p]: %08x\n",&gtxDebug  ,gtxDebug);
   printf("trigSel   [%p]: %08x\n",&trigMaster,trigMaster);
   printf("dmaFullThr[%p]: %08x\n",&dmaFullThr,dmaFullThr);
+  printf("dmaDrops  [%p]: %08x\n",&dmaDrops  ,dmaDrops);
 }
 
 void ClockManager::dump() const

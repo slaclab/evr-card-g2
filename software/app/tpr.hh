@@ -70,7 +70,7 @@ namespace Tpr {
     volatile uint32_t countReset;
     volatile uint32_t trigMaster;
     volatile uint32_t dmaFullThr;
-    volatile uint32_t reserved_1C;
+    volatile uint32_t dmaDrops;
   };
 
   class ClockManager {
