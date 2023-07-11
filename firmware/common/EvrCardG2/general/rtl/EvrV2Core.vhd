@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2023-07-10
+-- Last update: 2023-07-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -210,9 +210,10 @@ architecture mapping of EvrV2Core is
 begin  -- rtl
 
   dmaRxIbMaster <= dbDmaRxIbMaster;
-  evrBus_strobe <= evrBus.strobe and evrBus.valid;
---  evrBus_strobe <= r.strobei;
+  evrBus_strobe <= evrBus.strobe;
   triggerStrobe <= r.trigStrobe;
+  --triggerStrobe <= r.strobe(r.strobe'left) when modeSel='0' else
+  --                 evrBus_strobe;
   
   GEN_DBUG : if DEBUG_C generate
     GEN_DMAV : for i in 0 to 11 generate
@@ -449,7 +450,7 @@ begin  -- rtl
 
     v.reset  := '0';
     v.count  := r.count+1;
-    v.strobei := evrBus.strobe and evrBus.valid;
+    v.strobei := evrBus.strobe;
     v.strobe := r.strobe(r.strobe'left-1 downto 0) & r.strobei;
 
     if modeSel='0' then
@@ -513,9 +514,6 @@ begin  -- rtl
                     dataIn   => r.eventCountL(i),
                     dataOut  => eventCountV  (i)(19 downto 0) );
   end generate;
-  
-  --triggerStrobe <= r.strobe(r.strobe'left) when modeSel='0' else
-  --                 evrBus_strobe;
   
   U_TReg  : entity lcls_timing_core.EvrV2TrigReg
     generic map ( TPD_G      => TPD_G,
