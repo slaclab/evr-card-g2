@@ -276,7 +276,7 @@ void frame_rates(TprReg& reg, TimingMode tmode)
 
   for(unsigned i=0; i<nrates; i++) {
     if (ilcls) // FixedRate
-      reg.base.channel[i].evtSel  = (1<<30) | i;
+      reg.base.channel[i].evtSel  = (1<<30) | (6-i);
     else {
       switch(i) {
       case 0:
@@ -333,7 +333,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
 
   reg.base.dump();
 
-  unsigned urate   = tmode!=LCLS1 ? 0 : (1<<11) | (0x3f<<3); // max rate
+  unsigned urate   = tmode!=LCLS1 ? 6 : (1<<11) | (0x3f<<3); // max rate
   unsigned destsel = 1<<17; // BEAM - DONT CARE
   reg.base.channel[_channel].evtSel = (destsel<<13) | (urate<<0);
   reg.base.channel[_channel].bsaDelay = 0;
