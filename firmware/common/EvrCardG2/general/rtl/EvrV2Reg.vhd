@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2023-07-10
+-- Last update: 2023-07-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ entity EvrV2Reg is
     rstCount            : out sl;
     eventCount          : in  slv(31 downto 0);
     partitionAddr       : in  slv(31 downto 0) := (others=>'0');
-    gtxDebug            : in  slv(7 downto 0) := (others=>'0');
+    dmaCount            : in  slv(23 downto 0) := (others=>'0');
     dmaDrops            : in  slv(23 downto 0) := (others=>'0') );
 end EvrV2Reg;
 
@@ -80,7 +80,7 @@ architecture mapping of EvrV2Reg is
     irqEnable      => '0',
     countReset     => '0',
     refEnable      => '0',
-    dmaFullThr     => toSlv(-256,dmaFullThr'length) );
+    dmaFullThr     => toSlv(2**dmaFullThr'length-256,dmaFullThr'length) );
   signal r   : RegType := REG_INIT_C;
   signal rin : RegType;
 
@@ -100,43 +100,25 @@ begin  -- mapping
     end if;
   end process;
 
-  process (r,axilReadMaster,axilWriteMaster,axiRst,gtxDebug,eventCount,irqReq,partitionAddr,dmaDrops)
+  process (r,axilReadMaster,axilWriteMaster,axiRst,eventCount,irqReq,partitionAddr,dmaCount,dmaDrops)
     variable v  : RegType;
     variable ep : AxiLiteEndPointType;
     variable sReg : slv(0 downto 0);
-
-    procedure axilSlaveRegisterR (addr : in slv; reg : in slv) is
-    begin
-      axiSlaveRegisterR(ep, addr, 0, reg);
-    end procedure;
-    procedure axilSlaveRegisterW (addr : in slv; offset : in integer; reg : inout slv) is
-    begin
-      axiSlaveRegister(ep, addr, offset, reg);
-    end procedure;
-    procedure axilSlaveRegisterW (addr : in slv; offset : in integer; reg : inout sl) is
-    begin
-      axiSlaveRegister(ep, addr, offset, reg);
-    end procedure;
-    procedure axilSlaveDefault (
-      axilResp : in slv(1 downto 0)) is
-    begin
-      axiSlaveDefault(ep, v.axilWriteSlave, v.axilReadSlave, axilResp);
-    end procedure;
   begin  -- process
     v  := r;
     sReg(0) := irqReq;
     axiSlaveWaitTxn(ep, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
-    axilSlaveRegisterW(X"010", 0, v.countReset);
-    axilSlaveRegisterW(X"010", 1, v.refEnable);
-    axilSlaveRegisterR(X"014", eventCount);
+    axiSlaveRegister (ep, X"010", 0, v.countReset);
+    axiSlaveRegister (ep, X"010", 1, v.refEnable);
+    axiSlaveRegisterR(ep, X"014", 0, eventCount);
 
     if DMA_ENABLE_G then
-      axilSlaveRegisterW(X"000", 0, v.irqEnable);
-      axilSlaveRegisterR(X"004", sReg);
-      axilSlaveRegisterR(X"008", partitionAddr);
-      axilSlaveRegisterR(X"00C", gtxDebug);
-      axilSlaveRegisterW(X"018", 0, v.dmaFullThr);
-      axilSlaveRegisterR(X"01C", dmaDrops);
+      axiSlaveRegister (ep, X"000", 0, v.irqEnable);
+      axiSlaveRegisterR(ep, X"004", 0, sReg);
+      axiSlaveRegisterR(ep, X"008", 0, partitionAddr);
+      axiSlaveRegisterR(ep, X"00C", 0, dmaCount);
+      axiSlaveRegister (ep, X"018", 0, v.dmaFullThr);
+      axiSlaveRegisterR(ep, X"01C", 0, dmaDrops);
     end if;
     
     axilSlaveDefault(AXI_RESP_OK_C);

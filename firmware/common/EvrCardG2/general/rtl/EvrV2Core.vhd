@@ -184,7 +184,8 @@ architecture mapping of EvrV2Core is
 
   signal dmaFullThr, dmaFullThrS : slv(9 downto 0);
   signal dmaDrops  , dmaDropsS   : slv(23 downto 0);
-
+  signal dmaCount  , dmaCountS   : slv(23 downto 0);
+  
   signal partitionAddr  : slv(31 downto 0) := (others=>'0');
   signal modeSel        : sl;
   signal delay_wrb      : Slv6Array(11 downto 0) := (others=>(others=>'0'));
@@ -321,7 +322,7 @@ begin  -- rtl
                   rstCount            => open,
                   partitionAddr       => partitionAddr,
                   eventCount          => eventCountV(NCHANNELS_C),
-                  gtxDebug            => gtxDebugS,
+                  dmaCount            => dmaCountS,
                   dmaDrops            => dmaDropsS);
     
   U_PciRxDesc : entity work.EvrV2PcieRxDesc
@@ -366,6 +367,7 @@ begin  -- rtl
                   dmaData    => dmaData,
                   dmaMaster  => dmaMaster,
                   dmaSlave   => dmaSlave,
+                  dmaCount   => dmaCount,
                   dmaDrops   => dmaDrops);
   
   U_BsaControl : entity work.EvrV2BsaControl
@@ -643,6 +645,14 @@ begin  -- rtl
                   rst     => axiRst,
                   dataIn  => dmaDrops,
                   dataOut => dmaDropsS );
+
+  Sync_dmaCount : entity surf.SynchronizerVector
+    generic map ( TPD_G   => TPD_G,
+                  WIDTH_G => dmaCount'length )
+    port map (    clk     => axiClk,
+                  rst     => axiRst,
+                  dataIn  => dmaCount,
+                  dataOut => dmaCountS );
 
   GEN_PARTADDR : if GEN_L2SI_G generate
 

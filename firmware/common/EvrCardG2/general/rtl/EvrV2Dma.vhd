@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2023-07-10
+-- Last update: 2023-07-11
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -49,6 +49,7 @@ entity EvrV2Dma is
     dmaData    :  in EvrV2DmaDataArray   (CHANNELS_C-1 downto 0);
     dmaMaster  : out AxiStreamMasterType;
     dmaSlave   :  in AxiStreamSlaveType;
+    dmaCount   : out slv(23 downto 0);
     dmaDrops   : out slv(23 downto 0));
 end EvrV2Dma;
 
@@ -58,6 +59,8 @@ architecture mapping of EvrV2Dma is
     idle    : sl;
     paused  : sl;
     dropped  : sl;
+    dmaCnt   : slv(23 downto 0);
+    dropCnt  : slv(23 downto 0);
     smaster : AxiStreamMasterType;
   end record;
 
@@ -65,6 +68,8 @@ architecture mapping of EvrV2Dma is
     idle    => '1',
     paused  => '0',
     dropped => '0',
+    dmaCnt  => (others=>'0'),
+    dropCnt => (others=>'0'),
     smaster => AXI_STREAM_MASTER_INIT_C );
 
   signal r   : RegType := REG_TYPE_INIT_C;
@@ -113,10 +118,15 @@ begin  -- mapping
         v.smaster.tValid := '1';
         v.smaster.tLast  := '1';
         v.smaster.tData(dmaData(0).tData'range) := EVRV2_END_TAG & x"FFFF";
+        v.dmaCnt         := r.dmaCnt+1;
       end if;
       v.paused := dmaCntl.pause;
+
+      if r.dropped = '1' then
+        v.dropCnt := r.dropCnt+1;
+      end if;
     end if;
-    
+
     rin <= v;
   end process;
 
