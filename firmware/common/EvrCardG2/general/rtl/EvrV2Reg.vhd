@@ -121,7 +121,7 @@ begin  -- mapping
       axiSlaveRegisterR(ep, X"01C", 0, dmaDrops);
     end if;
     
-    axilSlaveDefault(AXI_RESP_OK_C);
+    axiSlaveDefault(ep, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_OK_C);
     rin <= v;
   end process;
 
