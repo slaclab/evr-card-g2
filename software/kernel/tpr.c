@@ -471,6 +471,7 @@ static void tpr_handle_dma(unsigned long arg)
           mch = (dptr[0]>>0)&((1<<MOD_SHARED)-1);
           if (((dptr[1]<<2)+8)!=EVENT_MSGSZ) {
             printk(KERN_WARNING  "%s: unexpected event dma size %08x(%08x)...truncating.\n", MOD_NAME, EVENT_MSGSZ,(dptr[1]<<2)+8);
+            dptr[0] = END_TAG << 16;  // terminate
             break;
           }
           pEntry = &tprq->allq[tprq->gwp & (MAX_TPR_ALLQ-1)];
@@ -489,6 +490,7 @@ static void tpr_handle_dma(unsigned long arg)
           break;
       default:
           printk(KERN_WARNING  "%s: handle unknown msg %08x:%08x\n", MOD_NAME, dptr[0], dptr[1]);
+          dptr[0] = END_TAG << 16;  // terminate
           break;
       }
     }
