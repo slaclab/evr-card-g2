@@ -91,6 +91,7 @@ begin  -- mapping
   irqEnable      <= r.irqEnable;
   refEnable      <= r.refEnable;
   rstCount       <= r.countReset;
+  dmaCount       <= r.dmaCnt;
   dmaFullThr     <= r.dmaFullThr;
 
   process (axiClk)
