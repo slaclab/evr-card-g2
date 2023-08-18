@@ -243,23 +243,27 @@ begin
       INTERVAL_G    => 1666,
       COUNT_WIDTH_G => refMarkIntErr'length )
     port map (
-      clk    => itimingClk(0),
-      rst    => itimingRst(0),
-      mark   => refMark,
-      err    => refMarkIntErr );
+      clk     => itimingClk(0),
+      rst     => itimingRst(0),
+      mark    => refMark,
+      axilClk => axilClk,
+      axilRst => axilRst,
+      errCnt  => refMarkIntErr );
   
   U_INT_CHECK1 : entity work.IntervalCheck
     generic map (
       INTERVAL_G    => 2600,
       COUNT_WIDTH_G => testMarkIntErr'length )
     port map (
-      clk    => itimingClk(1),
-      rst    => itimingRst(1),
-      mark   => testMark,
-      err    => testMarkIntErr );
+      clk     => itimingClk(1),
+      rst     => itimingRst(1),
+      mark    => testMark,
+      axilClk => axilClk,
+      axilRst => axilRst,
+      errCnt  => testMarkIntErr );
 
   U_CLKFREQ0 : entity surf.SyncClockFreq
-    generic map ( REFCLK_FREQ_G  => 156.25E+6,
+    generic map ( REF_CLK_FREQ_G => 156.25E+6,
                   REFRESH_RATE_G => 1.0,
                   COMMON_CLK_G   => true,
                   CNT_WIDTH_G    => 28 )
@@ -269,7 +273,7 @@ begin
                refClk     => axilClk );
   
   U_CLKFREQ1 : entity surf.SyncClockFreq
-    generic map ( REFCLK_FREQ_G  => 156.25E+6,
+    generic map ( REF_CLK_FREQ_G => 156.25E+6,
                   REFRESH_RATE_G => 1.0,
                   COMMON_CLK_G   => true,
                   CNT_WIDTH_G    => 28 )
@@ -350,10 +354,10 @@ begin
     axiSlaveRegister (regCon, x"34", 0, v.loopback(1));
     axiSlaveRegister (regCon, x"38", 0, v.rxmode);
     axiSlaveRegister (regCon, x"3C", 0, v.nctrigdelay);
-    axiSlaveRegister (regCon, x"40", 0, refMarkIntErr);
-    axiSlaveRegister (regCon, x"44", 0, testMarkIntErr);
-    axiSlaveRegister (regCon, x"48", 0, refClkRate);
-    axiSlaveRegister (regCon, x"4C", 0, testClkRate);
+    axiSlaveRegisterR(regCon, x"40", 0, refMarkIntErr);
+    axiSlaveRegisterR(regCon, x"44", 0, testMarkIntErr);
+    axiSlaveRegisterR(regCon, x"48", 0, refClkRate);
+    axiSlaveRegisterR(regCon, x"4C", 0, testClkRate);
     
     -- Closeout the transaction
     axiSlaveDefault(regCon, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_OK_C);

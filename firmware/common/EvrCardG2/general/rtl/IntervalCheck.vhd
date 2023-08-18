@@ -33,7 +33,7 @@ library unisim;
 use unisim.vcomponents.all;
 
 entity IntervalCheck is
-  generic ( INTERVAL_G    : integer := 4,
+  generic ( INTERVAL_G    : integer := 4;
             COUNT_WIDTH_G : integer := 20 );
   port (
     clk         : in  sl;
@@ -57,8 +57,8 @@ architecture rtl of IntervalCheck is
     count  => (others=>'0'),
     err    => '0');
   
-  signal r   : RegType := REG_INIT_C;
-  signal rin : RegType;
+  signal r    : RegType := REG_INIT_C;
+  signal r_in : RegType;
   
 begin
 
@@ -70,7 +70,7 @@ begin
     v.err := '0';
 
     if r.count = INTERVAL_G-1 then
-      v.count := 0;
+      v.count := (others=>'0');
     else
       v.count := r.count+1;
     end if;
@@ -79,7 +79,7 @@ begin
       if r.count /= INTERVAL_G-1 then
         v.err := '1';
       end if;
-      v.count := 0;
+      v.count := (others=>'0');
     end if;
 
     if rst='1' then
@@ -97,7 +97,7 @@ begin
   end process seq;
 
   S_Mark : entity surf.SynchronizerOneShotCnt
-    generic map ( CNT_WIDTH_G => CNT_WIDTH_G )
+    generic map ( CNT_WIDTH_G => COUNT_WIDTH_G )
     port map ( wrClk   => clk,
                wrRst   => rst,
                dataIn  => r.err,
