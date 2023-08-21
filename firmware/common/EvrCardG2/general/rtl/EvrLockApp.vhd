@@ -310,7 +310,7 @@ begin
     v.mark := '0';
 
     if timingBus(0).strobe = '1' then
-      if (timingBus(0).stream.eventCodes(15)='1') then
+      if (timingBus(0).stream.eventCodes(1)='1') then
         v.mark  := '1';
       end if;
     end if;
