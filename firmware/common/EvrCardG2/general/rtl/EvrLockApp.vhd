@@ -90,21 +90,35 @@ architecture mapping of EvrLockApp is
   signal r   : RegType := REG_INIT_C;
   signal rin : RegType;
 
-  type RRegType is record
+  type R0RegType is record
+    mark       : sl;
+    oneHz      : sl;
+  end record;
+
+  constant R0REG_INIT_C : R0RegType := (
+    mark       => '0',
+    oneHz      => '0');
+  
+  signal r0   : R0RegType := R0REG_INIT_C;
+  signal r0in : R0RegType;
+
+  type R1RegType is record
+    mark       : sl;
     count      : slv(16 downto 0);
     latch      : slv(16 downto 0);
   end record;
 
-  constant RREG_INIT_C : RRegType := (
+  constant R1REG_INIT_C : R1RegType := (
+    mark       => '0',
     count      => (others=>'0'),
     latch      => (others=>'0') );
   
-  signal rr   : RRegType := RREG_INIT_C;
-  signal rrin : RRegType;
+  signal r1   : R1RegType := R1REG_INIT_C;
+  signal r1in : R1RegType;
 
   signal refMark  , testMark   : sl;
   signal ref1Hz   , test1Hz    : sl;
-  signal testMarkO, testMarkS  : sl;
+  signal testMarkS             : sl;
   signal test1HzF, test1HzS    : sl;
   signal fid360                : sl;
   signal test1HzCnt            : slv(16 downto 0);
@@ -139,9 +153,9 @@ begin
   itimingRst  <= timingRst;
 
   refMark <= fiducial0 when r.rxmode="11" else
-             (timingBus(0).stream.eventCodes(1) and timingBus(0).strobe);
+             r0.mark;
   test1Hz <= test1HzF when r.rxmode="11" else
-             (timingBus(0).stream.eventCodes(10) and timingBus(0).strobe);
+             r0.oneHz;
   
   U_FID360 : entity lcls_timing_core.Divider
     generic map ( Width => 9 )
@@ -152,21 +166,11 @@ begin
                divisor  => toSlv(360,9),
                trigO    => test1HzF );
 
-  --  Need to stretch testMark before CDC
-  testMark <= timingBus(1).message.fixedRates(5) and
-              timingBus(1).strobe;
-
-  U_TEST_MARK : entity surf.OneShot
-    generic map ( PULSE_BIT_WIDTH_G => 2 )
-    port map ( clk        => itimingClk(1),
-               rst        => itimingRst(1),
-               pulseWidth => "11",
-               trigIn     => testMark,
-               pulseOut   => testMarkO);
-    
+  testMark <= rr.mark;
+  
   U_SYNC_TESTS : entity surf.SynchronizerOneShot
     port map ( clk     => itimingClk(0),
-               dataIn  => testMarkO,
+               dataIn  => testMark,
                dataOut => testMarkS );
   
   U_PD : entity work.PhaseDetector
@@ -294,18 +298,46 @@ begin
                locClk     => axilClk,
                refClk     => axilClk );
   
-  r1comb : process( rr, itimingRst, timingBus, test1HzS ) is
-    variable v   : RRegType;
+  r0comb : process( r0, itimingRst, timingBus ) is
+    variable v   : R0RegType;
   begin
-    v := rr;
+    v := r0;
+    v.mark := '0';
 
+    if timingBus(0).strobe = '1' then
+      if (timingBus(0).stream.eventCodes(15)='1') then
+        v.mark  := '1';
+      end if;
+    end if;
+      
+    if itimingRst(0) = '1' then
+      v := R0REG_INIT_C;
+    end if;
+
+    r0in <= v;
+  end process r0comb;
+
+  r0seq: process( itimingClk )
+  begin
+    if rising_edge(itimingClk(0)) then
+      r0 <= r0in;
+    end if;
+  end process r0seq;
+
+  r1comb : process( r1, itimingRst, timingBus, test1HzS ) is
+    variable v   : R1RegType;
+  begin
+    v := r1;
+    v.mark := '0';
+    
     if timingBus(1).strobe = '1' then
       if (timingBus(1).message.acRates(5) = '1' and
           timingBus(1).message.acTimeSlot = "001") then
-        v.latch := rr.count;
+        v.latch := r1.count;
       end if;
       if (timingBus(1).message.fixedRates(5)='1') then
-        v.count := rr.count+1;
+        v.mark  := '1';
+        v.count := r1.count+1;
       end if;
     end if;
       
@@ -314,16 +346,16 @@ begin
     end if;
 
     if itimingRst(1) = '1' then
-      v := RREG_INIT_C;
+      v := R1REG_INIT_C;
     end if;
 
-    rrin <= v;
+    r1in <= v;
   end process r1comb;
 
   r1seq: process( itimingClk )
   begin
     if rising_edge(itimingClk(1)) then
-      rr <= rrin;
+      r1 <= r1in;
     end if;
   end process r1seq;
 
