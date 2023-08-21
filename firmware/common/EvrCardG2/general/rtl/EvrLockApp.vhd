@@ -157,6 +157,11 @@ begin
   test1Hz <= test1HzF when r.rxmode="11" else
              r0.oneHz;
   
+  U_SYNC_ONEHZ : entity surf.SynchronizerOneShot
+    port map ( clk     => itimingClk(1),
+               dataIn  => test1Hz,
+               dataOut => test1HzS );
+  
   U_FID360 : entity lcls_timing_core.Divider
     generic map ( Width => 9 )
     port map ( sysClk   => itimingClk(0),
@@ -166,7 +171,7 @@ begin
                divisor  => toSlv(360,9),
                trigO    => test1HzF );
 
-  testMark <= rr.mark;
+  testMark <= r1.mark;
   
   U_SYNC_TESTS : entity surf.SynchronizerOneShot
     port map ( clk     => itimingClk(0),
@@ -362,7 +367,7 @@ begin
   U_Test1HzCnt : entity surf.SynchronizerVector
     generic map ( WIDTH_G => test1HzCnt'length )
     port map ( clk     => axilClk,
-               dataIn  => rr.latch,
+               dataIn  => r1.latch,
                dataOut => test1HzCnt );
   
   comb: process( r, axilRst, axilWriteMaster, axilReadMaster,
