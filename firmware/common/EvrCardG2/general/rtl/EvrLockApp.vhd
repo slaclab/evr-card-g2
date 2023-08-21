@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2023-06-14
--- Last update: 2023-08-17
+-- Last update: 2023-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -69,6 +69,7 @@ architecture mapping of EvrLockApp is
   type RegType is record
     psen           : sl;
     psincdec       : sl;
+    ack            : sl;
     loopback       : Slv3Array(1 downto 0);
     rxmode         : slv(1 downto 0);
     nctrigdelay    : slv(nctrigdelay'range);
@@ -79,6 +80,7 @@ architecture mapping of EvrLockApp is
   constant REG_INIT_C : RegType := (
     psen           => '0',
     psincdec       => '0',
+    ack            => '0',
     loopback       => (others=>"000"),
     rxmode         => "00",
     nctrigdelay    => (others=>'0'),
@@ -102,7 +104,7 @@ architecture mapping of EvrLockApp is
 
   signal refMark  , testMark   : sl;
   signal ref1Hz   , test1Hz    : sl;
-  signal testMarkS             : sl;
+  signal testMarkO, testMarkS  : sl;
   signal test1HzF, test1HzS    : sl;
   signal fid360                : sl;
   signal test1HzCnt            : slv(16 downto 0);
@@ -149,13 +151,22 @@ begin
                clear    => '1',
                divisor  => toSlv(360,9),
                trigO    => test1HzF );
-  
+
+  --  Need to stretch testMark before CDC
   testMark <= timingBus(1).message.fixedRates(5) and
               timingBus(1).strobe;
 
+  U_TEST_MARK : entity surf.OneShot
+    generic map ( PULSE_BIT_WIDTH => 2 )
+    port map ( clk        => itimingClk(1),
+               rst        => itimingRst(1),
+               pulseWidth => "11",
+               trigIn     => testMark,
+               pulseOut   => testMarkO);
+    
   U_SYNC_TESTS : entity surf.SynchronizerOneShot
     port map ( clk     => itimingClk(0),
-               dataIn  => testMark,
+               dataIn  => testMarkO,
                dataOut => testMarkS );
   
   U_PD : entity work.PhaseDetector
@@ -178,6 +189,7 @@ begin
                  testDelay  => x"4",
                  clks       => clks,
                  ready      => ready,
+                 ack        => r.ack,
                  phase      => phase,
                  phaseN     => phasen,
                  valid      => valid );
@@ -263,7 +275,7 @@ begin
       errCnt  => testMarkIntErr );
 
   U_CLKFREQ0 : entity surf.SyncClockFreq
-    generic map ( REF_CLK_FREQ_G => 156.25E+6,
+    generic map ( REF_CLK_FREQ_G => 125.0E+6,
                   REFRESH_RATE_G => 1.0,
                   COMMON_CLK_G   => true,
                   CNT_WIDTH_G    => 28 )
@@ -273,7 +285,7 @@ begin
                refClk     => axilClk );
   
   U_CLKFREQ1 : entity surf.SyncClockFreq
-    generic map ( REF_CLK_FREQ_G => 156.25E+6,
+    generic map ( REF_CLK_FREQ_G => 125.0E+6,
                   REFRESH_RATE_G => 1.0,
                   COMMON_CLK_G   => true,
                   CNT_WIDTH_G    => 28 )
@@ -331,12 +343,14 @@ begin
     variable v        : RegType;
   begin
     v := r;
+    v.ack  := '0';
     v.psen := '0';
     
     -- Determine the transaction type
     axiSlaveWaitTxn(regCon, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
 
     axiSlaveRegisterR(regCon, x"00", 0, ready);
+    axiWrDetect(regCon, x"00", v.ack);
     axiSlaveRegisterR(regCon, x"04", 0, phase);
     axiSlaveRegisterR(regCon, x"08", 0, phasen);
     axiSlaveRegisterR(regCon, x"0C", 0, valid);

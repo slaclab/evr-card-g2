@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-12-14
--- Last update: 2023-06-19
+-- Last update: 2023-08-21
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -55,6 +55,7 @@ entity PhaseDetector is
     testDelay      : in  slv( 3 downto 0);
     clks           : out slv(CKWID_G-1 downto 0);
     ready          : out sl;
+    ack            : in  sl := '0';
     phase          : out slv(WIDTH_G-1 downto 0);
     phasen         : out slv(WIDTH_G-1 downto 0);
     valid          : out slv(WIDTH_G-1 downto 0) );
@@ -266,7 +267,7 @@ begin
                dataIn  => refMark,
                dataOut => refMarkS );
   
-  comb : process ( r, q, latch, early, late, earlyn, laten, valido, refMarkS ) is
+  comb : process ( r, q, latch, early, late, earlyn, laten, valido, refMarkS, ack ) is
     variable v : RegType;
     variable w : RegType;
   begin
@@ -297,8 +298,11 @@ begin
     if v.ready = '0' and valido = '1' and refMarkS = '1' then
       v.ready := '1';
     end if;
-    
-    w.ready := '0';
+
+    if ack = '1' then
+      w.ready := '0';
+    end if;
+
     if r.valid(r.valid'left) = '1' and refMarkS = '1' then
       v := REG_INIT_C;
       w := r;

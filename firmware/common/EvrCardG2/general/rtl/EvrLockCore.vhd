@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2023-06-27
+-- Last update: 2023-08-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -224,7 +224,7 @@ architecture mapping of EvrLockCore is
    -- RX_MODE = "LOOP" txData goes into TimingCore (bypass GTX)
    -- RX_MODE = "SIM"  simulated fiducial is fed directly into phase detector
    constant RX_MODE : string := "REAL";
-   signal rx_mode_v : slv(1 downto 0);
+   signal rx_mode_v : slv(1 downto 0) := "00";
    
 begin
 
@@ -242,45 +242,51 @@ begin
       irxDecErr <= rxDecErr(1) & "00";
     end if;
 
-    irxData (1) <= rxData (1);
-    irxDataK(1) <= rxDataK(1);
-    if rx_mode_v(1) = '0' then
-      irxData (0)  <= rxData (0);
-      irxDataK(0)  <= rxDataK(0);
-    else
-      irxData (0)  <= txData (0);
-      irxDataK(0)  <= txDataK(0);
-    end if;
+    --irxData (1) <= rxData (1);
+    --irxDataK(1) <= rxDataK(1);
+    --if rx_mode_v(1) = '0' then
+    --  irxData (0)  <= rxData (0);
+    --  irxDataK(0)  <= rxDataK(0);
+    --else
+    --  irxData (0)  <= txData (0);
+    --  irxDataK(0)  <= txDataK(0);
+    --end if;
   end process RX_MODE_P;
 
-  U_IRXCLK0_MUX : entity work.EvrClkMux
-    generic map ( CLKIN_PERIOD_G => 8.4,
-                  CLK_MULT_F_G   => 6.0 )
-    port map ( clkSel  => rx_mode_v(1),
-               clkIn0  => evrClk(0),
-               clkIn1  => mmcmClk(2),
-               rstIn0  => evrRst(0),
-               rstIn1  => mmcmrst(2),
-               clkOut  => irxClk(0),
-               rstOut  => irxRst(0) );
+  --U_IRXCLK0_MUX : entity work.EvrClkMux
+  --  generic map ( CLKIN_PERIOD_G => 8.4,
+  --                CLK_MULT_F_G   => 6.0 )
+  --  port map ( clkSel  => rx_mode_v(1),
+  --             clkIn0  => evrClk(0),
+  --             clkIn1  => mmcmClk(2),
+  --             rstIn0  => evrRst(0),
+  --             rstIn1  => mmcmrst(2),
+  --             clkOut  => irxClk(0),
+  --             rstOut  => irxRst(0) );
   
-  irxClk(1) <= evrClk(1);
-  irxRst(1) <= evrRst(1);
+  --irxClk(1) <= evrClk(1);
+  --irxRst(1) <= evrRst(1);
+  irxClk   <= evrClk;
+  irxRst   <= evrRst;
+  irxData  <= rxData;
+  irxDataK <= rxDataK;
   
-  U_ITXCLK0_MUX : entity work.EvrClkMux
-    generic map ( CLKIN_PERIOD_G => 8.4,
-                  CLK_MULT_F_G   => 6.0 )
-    port map ( clkSel  => rx_mode_v(0),
-               clkIn0  => evrClk(0),
-               clkIn1  => mmcmClk(2),
-               rstIn0  => evrRst(0),
-               rstIn1  => mmcmrst(2),
-               clkOut  => itxClk(0),
-               rstOut  => itxRst(0) );
+  --U_ITXCLK0_MUX : entity work.EvrClkMux
+  --  generic map ( CLKIN_PERIOD_G => 8.4,
+  --                CLK_MULT_F_G   => 6.0 )
+  --  port map ( clkSel  => rx_mode_v(0),
+  --             clkIn0  => evrClk(0),
+  --             clkIn1  => mmcmClk(2),
+  --             rstIn0  => evrRst(0),
+  --             rstIn1  => mmcmrst(2),
+  --             clkOut  => itxClk(0),
+  --             rstOut  => itxRst(0) );
 
-  itxClk(1) <= evrTxClk(1);
-  itxRst(1) <= evrTxRst(1);
-
+  --itxClk(1) <= evrTxClk(1);
+  --itxRst(1) <= evrTxRst(1);
+  itxClk <= evrTxClk;
+  itxRst <= evrTxRst;
+  
    userValues(0)(0) <= promVersion;
    tpgConfig.FixedRateDivisors  <= (x"00000",
                                     x"00000",
@@ -714,7 +720,7 @@ begin
          psclk           => psclk,
          psen            => psen,
          psincdec        => psincdec,
-         rxmode          => rx_mode_v,
+--         rxmode          => rx_mode_v,
        
          axilClk         => axiClk,
          axilRst         => axiRst,
