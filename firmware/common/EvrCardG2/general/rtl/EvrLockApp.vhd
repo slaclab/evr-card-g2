@@ -157,7 +157,7 @@ begin
               timingBus(1).strobe;
 
   U_TEST_MARK : entity surf.OneShot
-    generic map ( PULSE_BIT_WIDTH => 2 )
+    generic map ( PULSE_BIT_WIDTH_G => 2 )
     port map ( clk        => itimingClk(1),
                rst        => itimingRst(1),
                pulseWidth => "11",
