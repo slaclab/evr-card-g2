@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-04-22
+-- Last update: 2023-09-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -38,12 +38,12 @@ use lcls_timing_core.EvrV2Pkg.all;
 entity EvrV2EventDma is
   generic (
     TPD_G      : time    := 1 ns;
-    CHANNELS_C : integer := 1 );
+    CHANNELS_G : integer := 1 );
   port (
     clk        :  in sl;
     rst        :  in sl;
     strobe     :  in sl;
-    eventSel   :  in slv(CHANNELS_C-1 downto 0);
+    eventSel   :  in slv(CHANNELS_G-1 downto 0);
     eventData  :  in TimingMessageType;
     dmaData    : out EvrV2DmaDataType );
 end EvrV2EventDma;

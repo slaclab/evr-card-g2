@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2017-11-28
+-- Last update: 2023-09-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -44,8 +44,8 @@ use UNISIM.vcomponents.all;
 entity EvrV2BsaChannelDSP is
   generic (
     TPD_G : time := 1ns;
-    CHAN_C  : integer := 0;
-    DEBUG_C : boolean := false );
+    CHAN_G  : integer := 0;
+    DEBUG_G : boolean := false );
   port (
     evrClk        : in  sl;
     evrRst        : in  sl;
@@ -156,7 +156,7 @@ architecture mapping of EvrV2BsaChannelDSP is
   
 begin  -- mapping
 
-  GEN_DBUG : if DEBUG_C generate
+  GEN_DBUG : if DEBUG_G generate
     r_state <= "00" when r.state = IDLE_S else
                "01" when r.state = DELAY_S else
                "10";
@@ -382,7 +382,7 @@ begin  -- mapping
     case r.rstate is
       when TAG_S =>
         v.dmaData.tData         := EVRV2_BSA_CHANNEL_TAG & toSlv(0,16);
-        v.dmaData.tData(CHAN_C) := '1';
+        v.dmaData.tData(CHAN_G) := '1';
         v.rstate := PIDL_S;
       when PIDL_S =>
         v.dmaData.tData  := r.pulseId(31 downto 0);

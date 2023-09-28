@@ -1,4 +1,4 @@
-export GIT_BYPASS = 0
+export GIT_BYPASS = 1
 
 # Define target output
 target: prom
@@ -43,7 +43,9 @@ export RELEASE = all
 #  Add in TimingExtension decoding of L2SI DAQ for triggering.
 #export PRJ_VERSION = CED20032
 #  Validate evrBus.strobe with evrBus.valid.  Add DMA drop counter.
-export PRJ_VERSION = CED20032
+#  Match L2SI DAQ generated trigger timestamps to others
+#  Auto compensate L2SI DAQ trigger delays for L0Delay
+export PRJ_VERSION = CED20033
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
 

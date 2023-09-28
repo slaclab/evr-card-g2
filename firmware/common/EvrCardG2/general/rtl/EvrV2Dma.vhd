@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2023-07-11
+-- Last update: 2023-09-27
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -39,14 +39,14 @@ use lcls_timing_core.EvrV2Pkg.all;
 entity EvrV2Dma is
   generic (
     TPD_G         : time    := 1 ns;
-    CHANNELS_C    : integer := 1;
-    AXIS_CONFIG_C : AxiStreamConfigType );
+    CHANNELS_G    : integer := 1;
+    AXIS_CONFIG_G : AxiStreamConfigType );
   port (
     clk        :  in sl;
     strobe     :  in sl;
     modeSel    :  in sl;
     dmaCntl    :  in AxiStreamCtrlType;
-    dmaData    :  in EvrV2DmaDataArray   (CHANNELS_C-1 downto 0);
+    dmaData    :  in EvrV2DmaDataArray   (CHANNELS_G-1 downto 0);
     dmaMaster  : out AxiStreamMasterType;
     dmaSlave   :  in AxiStreamSlaveType;
     dmaCount   : out slv(23 downto 0);
@@ -70,7 +70,7 @@ architecture mapping of EvrV2Dma is
     dropped => '0',
     dmaCnt  => (others=>'0'),
     dropCnt => (others=>'0'),
-    smaster => AXI_STREAM_MASTER_INIT_C );
+    smaster => axiStreamMasterInit(AXIS_CONFIG_G) );
 
   signal r   : RegType := REG_TYPE_INIT_C;
   signal rin : RegType;
@@ -88,7 +88,7 @@ begin  -- mapping
     v.smaster.tLast  := '0';
     v.smaster.tData  := (others=>'0');
     v.smaster.tUser  := (others=>'0');
-    for i in 0 to CHANNELS_C-1 loop
+    for i in 0 to CHANNELS_G-1 loop
       if dmaData(i).tValid='1' then
         if r.paused = '1' then
           v.dropped := '1';
@@ -105,7 +105,7 @@ begin  -- mapping
               v.smaster.tData(EVRV2_DROP_TAG_BIT+16) := '1';
               v.dropped := '0';
             end if;
-            ssiSetUserSof(AXIS_CONFIG_C, v.smaster, '1');
+            ssiSetUserSof(AXIS_CONFIG_G, v.smaster, '1');
             v.idle := '0';
           end if;
         end if;
