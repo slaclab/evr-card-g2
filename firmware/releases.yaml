@@ -16,10 +16,16 @@ Targets:
     Extensions:
       - mcs
 
+  EvrLock:
+    ImageDir: targets/EvrLock/images
+    Extensions:
+      - mcs
+
 Releases:
   all:
     Primary: True
     Targets:
       - EvrCardG2
+      - EvrLock
     Types:
       - FW_ONLY
