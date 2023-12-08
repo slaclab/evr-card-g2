@@ -1,0 +1,12 @@
+This target is for the LINAC Locking project.  The board receives both NC and
+SC timing.  It generates hard-coded triggers for
+  0-3 : 71kHz SC trigger
+  4   : 360Hz AC SC trigger
+  5   : 60Hz TS1 SC trigger
+  6   : 1Hz TS1 SC trigger
+  7   : 360Hz AC NC trigger
+  8   : 60Hz TS1 NC trigger
+  9   : 1Hz TS1 NC trigger
+The board measures the relative time difference between the 360Hz NC fiducial
+and the next 71kHz SC rate marker.  This is used for initial alignment and
+bucket jump monitoring in the locked timing systems.
