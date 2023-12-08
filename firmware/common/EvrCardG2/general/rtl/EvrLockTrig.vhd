@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2023-06-14
--- Last update: 2023-06-26
+-- Last update: 2023-12-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -58,7 +58,7 @@ architecture mapping of EvrLockTrig is
   signal ncin : NCRegType;
 
   type SCRegType is record
-    trigOut        : slv(3 downto 0);
+    trigOut        : slv(6 downto 0);
   end record;
 
   constant SCREG_INIT_C : SCRegType := (
@@ -69,8 +69,25 @@ architecture mapping of EvrLockTrig is
 
 begin
 
-  trigOut <= toSlv(0,5) & nc.trigOut & sc.trigOut;
-  
+  trigOut(11 downto 10) <= (others=>'0');
+
+  GEN_SCTRIG : for i in 0 to 6 generate
+    U_TRIG : entity surf.OneShot
+      port map ( clk  => timingClk(1),
+                 rst  => timingRst(1),
+                 pulseWidth => toSlv(2,4),
+                 trigIn     => sc.trigOut(i),
+                 pulseOut   => trigOut(i) );
+  end generate GEN_SCTRIG;
+
+  GEN_NCTRIG : for i in 0 to 2 generate
+    U_TRIG : entity surf.OneShot
+      port map ( clk  => timingClk(0),
+                 rst  => timingRst(0),
+                 pulseWidth => toSlv(2,4),
+                 trigIn     => nc.trigOut(i),
+                 pulseOut   => trigOut(i+7) );
+  end generate GEN_NCTRIG;
 
   nccomb : process( nc, timingRst, timingBus, ncDelay ) is
     variable v   : NCRegType;
@@ -121,18 +138,19 @@ begin
     v.trigOut := (others=>'0');
     
     if timingBus(1).strobe = '1' then
-      if timingBus(1).message.acRates(0) = '1' then
-        v.trigOut(0) := '1';
-        if timingBus(1).message.acTimeSlot = "001" then
-          v.trigOut(1) := '1';
-        end if;
-      end if;
-      if (timingBus(1).message.acRates(5) = '1' and
-          timingBus(1).message.acTimeSlot = "001") then
-        v.trigOut(2) := '1';
-      end if;
       if timingBus(1).message.fixedRates(5) = '1' then
-        v.trigOut(3) := '1';
+        v.trigOut(3 downto 0) := (others=>'1');
+      end if;
+      if (timingBus(1).message.acRates(4) = '1') then
+        v.trigOut(4) := '1';
+      end if;
+      if (timingBus(1).message.acRates(4) = '1' and
+          timingBus(1).message.acTimeSlot = "001") then
+        v.trigOut(5) := '1';
+      end if;
+      if (timingBus(1).message.acRates(0) = '1' and
+          timingBus(1).message.acTimeSlot = "001") then
+        v.trigOut(6) := '1';
       end if;
     end if;
       

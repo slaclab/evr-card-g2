@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2023-06-14
--- Last update: 2023-09-27
+-- Last update: 2023-12-08
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -170,18 +170,26 @@ begin
    channelConfigS(1).destSel <= resize(x"20000",19);
    channelConfigS(1).dmaEnabled <= '1';
 
-   triggerConfigS(0).enabled <= '1';
-   triggerConfigS(0).delay <= toSlv(40000,28);
-   triggerConfigS(0).width <= toSlv(100,28);
-   triggerConfigS(0).channel  <= toSlv(0,4);
-   triggerConfigS(0).channels <= toSlv(1,16);
+   process is
+   begin
+     triggerConfigS(0).enabled <= '1';
+     triggerConfigS(0).delay <= toSlv(40000,28);
+     triggerConfigS(0).width <= toSlv(100,28);
+     triggerConfigS(0).channel  <= toSlv(0,4);
+     triggerConfigS(0).channels <= toSlv(1,16);
 
-   triggerConfigS(1).enabled <= '1';
-   triggerConfigS(1).delay <= toSlv(40000,28);
-   triggerConfigS(1).width <= toSlv(100,28);
-   triggerConfigS(1).channel  <= toSlv(1,4);
-   triggerConfigS(1).channels <= toSlv(2,16);
+     triggerConfigS(1).enabled <= '1';
+     triggerConfigS(1).delay <= toSlv(40000,28);
+     triggerConfigS(1).width <= toSlv(100,28);
+     triggerConfigS(1).channel  <= toSlv(1,4);
+     triggerConfigS(1).channels <= toSlv(2,16);
 
+     wait for 100 us;
+     triggerConfigS(1).delay <= toSlv(4000,28);
+
+     wait;
+   end process;
+       
    triggerStrobe <= r.trigStrobe;
    
    process is
@@ -305,22 +313,22 @@ begin
                 axisMaster => dmaMaster,
                 axisSlave  => dmaSlave );
    
-  U_Dma : entity work.EvrV2DmaModule
-    generic map ( CHANNELS_G    => ReadoutChannels+3,
-                  AXIS_CONFIG_G => SAXIS_MASTER_CONFIG_C )
-    port map (    clk        => evrClk,
-                  rst        => evrRst,
-                  timingMsg  => evrBus.message,
-                  xpmMsg     => xpmMessage,
-                  strobe     => r.strobe(2),
-                  config     => channelConfigS,
-                  dmaSel     => dmaSel,
-                  modeSel    => modeSel,
-                  dmaCtrl    => dmaCtrl,
-                  dmaMaster  => dmaMaster,
-                  dmaSlave   => dmaSlave,
-                  dmaCount   => dmaCount,
-                  dmaDrops   => dmaDrops);
+  -- U_Dma : entity work.EvrV2DmaModule
+  --   generic map ( CHANNELS_G    => ReadoutChannels+3,
+  --                 AXIS_CONFIG_G => SAXIS_MASTER_CONFIG_C )
+  --   port map (    clk        => evrClk,
+  --                 rst        => evrRst,
+  --                 timingMsg  => evrBus.message,
+  --                 xpmMsg     => xpmMessage,
+  --                 strobe     => r.strobe(2),
+  --                 config     => channelConfigS,
+  --                 dmaSel     => dmaSel,
+  --                 modeSel    => modeSel,
+  --                 dmaCtrl    => dmaCtrl,
+  --                 dmaMaster  => dmaMaster,
+  --                 dmaSlave   => dmaSlave,
+  --                 dmaCount   => dmaCount,
+  --                 dmaDrops   => dmaDrops);
     
   Loop_EventSel: for i in 0 to NCHANNELS_C-1 generate
     U_EventSel : entity lcls_timing_core.EvrV2EventSelect
@@ -445,5 +453,16 @@ begin
       r <= rin;
     end if;
   end process seq;
-   
+
+     U_Trig : entity work.EvrLockTrig
+       port map (
+         timingClk(0) => '0',
+         timingClk(1) => evrClk,
+         timingRst(0) => '0',
+         timingRst(1) => evrRst,
+         timingBus(0) => TIMING_BUS_INIT_C,
+         timingBus(1) => evrBus,
+         ncDelay      => (others=>'0'),
+         trigOut      => open );
+     
 end top_level;
