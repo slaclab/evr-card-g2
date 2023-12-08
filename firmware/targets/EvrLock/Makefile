@@ -41,6 +41,8 @@ export RELEASE = all
 #  Internal parallel loopback for NC timing
 #export PRJ_VERSION = CED20031
 #  Remove test modes, fix CDC
+#export PRJ_VERSION = CED20032
+#  Add SC and NC triggers: 4x71kHz SC, 360H/60H/1H SC, 360H/60H/1H NC
 export PRJ_VERSION = CED20032
 
 # Define target part
