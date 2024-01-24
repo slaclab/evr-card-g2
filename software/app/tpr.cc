@@ -29,7 +29,8 @@ void TprCsr::enableRefClk(bool enable) {
 void TprCsr::dump() const {
   printf("irqEnable [%p]: %08x\n",&irqEnable,irqEnable);
   printf("irqStatus [%p]: %08x\n",&irqStatus,irqStatus);
-  printf("gtxDebug  [%p]: %08x\n",&gtxDebug  ,gtxDebug);
+  printf("partAddr  [%p]: %08x\n",&partitionAddr ,partitionAddr);
+  printf("dmaCount  [%p]: %08x\n",&dmaCount ,dmaCount);
   printf("trigSel   [%p]: %08x\n",&trigMaster,trigMaster);
   printf("dmaFullThr[%p]: %08x\n",&dmaFullThr,dmaFullThr);
   printf("dmaDrops  [%p]: %08x\n",&dmaDrops  ,dmaDrops);

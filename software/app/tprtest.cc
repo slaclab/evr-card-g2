@@ -49,6 +49,7 @@ static void usage(const char* p) {
   printf("          -C        : enable 10MHz refclk\n");
   printf("          -D delay[,width[,polarity]]  : trigger parameters\n");
   printf("          -T <sec>  : link test period\n");
+  printf("          -v        : verbose\n");
 }
 
 int main(int argc, char** argv) {
@@ -65,13 +66,14 @@ int main(int argc, char** argv) {
   bool refClkEn = false;
   char* endptr;
 
-  while ( (c=getopt( argc, argv, "12Ud:nrT:D:Ch?")) != EOF ) {
+  while ( (c=getopt( argc, argv, "12Ud:nrT:D:Cvh?")) != EOF ) {
     switch(c) {
     case '1': tmode = LCLS1; break;
     case '2': tmode = LCLS2; break;
     case 'U': tmode = UED  ; break;
     case 'n': lFrameTest = false; break;
     case 'r': lDumpRingb = true; break;
+    case 'v': verbose = true; break;
     case 'd':
       tprid  = optarg[0];
       if (strlen(optarg) != 1) {
@@ -292,7 +294,7 @@ void frame_rates(TprReg& reg, TimingMode tmode)
     }
     reg.base.channel[i].control = 1;
   }
-
+  
   usleep(2000000);
 
   for(unsigned i=0; i<nrates; i++)
@@ -310,7 +312,7 @@ void frame_rates(TprReg& reg, TimingMode tmode)
 
 void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
 {
-  int idx=11;
+  int idx=0;
   char dev[16];
   sprintf(dev,"/dev/tpr%c%x",tprid,idx);
 
@@ -338,7 +340,9 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   reg.base.channel[_channel].evtSel = (destsel<<13) | (urate<<0);
   reg.base.channel[_channel].bsaDelay = 0;
   reg.base.channel[_channel].bsaWidth = 1;
-  reg.base.channel[_channel].control = ucontrol | 1;
+  reg.base.channel[_channel].control = ucontrol | 5;
+
+  reg.base.dump();
 
   //  follow bsa
 
@@ -407,6 +411,7 @@ void frame_capture(TprReg& reg, char tprid, TimingMode tmode )
   uint64_t active, avgdn, update, init, minor, major;
   nframes = 0;
   do {
+    printf("bsarp %#lx  q.bsawp %#lx\n", (uint64_t) bsarp, (uint64_t) q.bsawp);
     while(bsarp < q.bsawp && nframes<10) {
       volatile uint32_t* p = reinterpret_cast<volatile uint32_t*>
         (&q.bsaq[bsarp &(MAX_TPR_BSAQ-1)].word[0]);

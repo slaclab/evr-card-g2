@@ -585,6 +585,8 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
    struct TprReg*  tprreg;
    struct pci_device_id *id = (struct pci_device_id *) dev_id;
 
+   printk(KERN_WARNING  MOD_NAME GITV);
+
    // We keep device instance number in id->driver_data
    id->driver_data = -1;
 
@@ -732,7 +734,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
      return (ERROR);
    }
 
-   printk(KERN_ALERT "%s: Init: Driver is loaded. Maj=%i\n", MOD_NAME,dev->major);
+   printk(KERN_ALERT "%s: Init: Driver is loaded. Maj=%i. Bus=%x\n", MOD_NAME,dev->major,pcidev->bus->number);
    return SUCCESS;
 }
 
