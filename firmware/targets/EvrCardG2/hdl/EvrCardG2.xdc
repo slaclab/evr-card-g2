@@ -210,15 +210,13 @@ create_clock -name txClk0     -period  8.402 [get_pins  {EvrCardG2Core_Inst/EvrC
 create_clock -name evrClk1    -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
 create_clock -name txClk1     -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/Gtx7Core_Inst/gtxe2_i/TXOUTCLK}]
 
-#create_clock -name evrClk     -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/U_EVRCLKMUX/O}]
-#create_clock -name txClk      -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/U_EVRTXCLKMUX/O}]
-
-#create_generated_clock  -name stableClk [get_pins {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTREF[0].IBUFDS_GTE2_Inst/ODIV2}]  
 create_generated_clock  -name dnaClk [get_pins {EvrCardG2Core_Inst/AxiVersion_Inst/GEN_DEVICE_DNA.DeviceDna_1/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
 
-#create_generated_clock  -name progClk    [get_pins {EvrCardG2Core_Inst/Iprog7Series_Inst/BUFR_ICPAPE2/O}]
 create_generated_clock  -name pciClk     [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0}]  
-#create_generated_clock  -name pciClk     [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT3}]  
+
+create_generated_clock -name evrAppClk0 [get_pins {EvrCardG2Core_Inst/U_ClockManager/MmcmGen.U_Mmcm/CLKOUT0}] -master_clock {evrClkI}
+
+create_generated_clock -name evrAppClk1 [get_pins {EvrCardG2Core_Inst/U_ClockManager/MmcmGen.U_Mmcm/CLKOUT0}] -master_clock {evrClkI_1}
 
 ##############################################
 # Crossing Domain Clocks: Timing Constraints #
@@ -230,15 +228,14 @@ set_clock_groups -asynchronous \
      -group [get_clocks -include_generated_clocks {txClk1}] \
      -group [get_clocks -include_generated_clocks {evrClk0}] \
      -group [get_clocks -include_generated_clocks {evrClk1}] \
+     -group [get_clocks -include_generated_clocks {evrAppClk0}] \
+     -group [get_clocks -include_generated_clocks {evrAppClk1}] \
      -group [get_clocks -include_generated_clocks {evrRefClk0}] \
      -group [get_clocks -include_generated_clocks {evrRefClk1}]
 
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dnaClk]
 #set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks stableClk]
 
-#set_clock_groups -asynchronous \
-#    -group [get_clocks -include_generated_clocks {evrClk0}] \
-#    -group [get_clocks -include_generated_clocks {evrClk1}]
 
 set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/gtRxResetDone}]
 set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/gtRxResetDone}]

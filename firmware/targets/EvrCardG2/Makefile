@@ -1,4 +1,4 @@
-export GIT_BYPASS = 0
+export GIT_BYPASS = 1
 
 # Define target output
 target: prom
@@ -45,7 +45,9 @@ export RELEASE = all
 #  Validate evrBus.strobe with evrBus.valid.  Add DMA drop counter.
 #  Match L2SI DAQ generated trigger timestamps to others
 #  Auto compensate L2SI DAQ trigger delays for L0Delay
-export PRJ_VERSION = CED20033
+#export PRJ_VERSION = CED20033
+# Put Evr core logic on application clock via ClockManager driven from timing clock
+export PRJ_VERSION = CED20034
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
 
