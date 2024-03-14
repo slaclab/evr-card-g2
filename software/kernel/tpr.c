@@ -470,7 +470,15 @@ static void tpr_handle_dma(unsigned long arg)
           dev->dmaEvent++;
           mch = (dptr[0]>>0)&((1<<MOD_SHARED)-1);
           if (((dptr[1]<<2)+8)!=EVENT_MSGSZ) {
-            printk(KERN_WARNING  "%s: unexpected event dma size %08x(%08x)...truncating.\n", MOD_NAME, EVENT_MSGSZ,(dptr[1]<<2)+8);
+            if ((dev->dmaErrors%1024)<4) {
+              printk(KERN_WARNING  "%s: unexpected event dma size %08x(%08x)...truncating.\n", MOD_NAME, EVENT_MSGSZ,(dptr[1]<<2)+8);
+              printk(KERN_WARNING  "  dptr %p  buffer %p  next %p\n", 
+                     dptr, next->buffer, ((struct RxBuffer*)next->lh.next)->buffer);
+              printk(KERN_WARNING  "  dmaCount %u  dmaEvent %u  dmaErrors %u\n",
+                     dev->dmaCount, dev->dmaEvent, dev->dmaErrors);
+            }
+            dev->dmaErrors++;
+
             dptr[0] = END_TAG << 16;  // terminate
             break;
           }
@@ -639,6 +647,7 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
    dev->irqNoReq        = 0;
    dev->dmaCount        = 0;
    dev->dmaEvent        = 0;
+   dev->dmaErrors       = 0;
    dev->dmaBsaChan      = 0;
    dev->dmaBsaCtrl      = 0;
 

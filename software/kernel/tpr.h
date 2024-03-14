@@ -73,6 +73,7 @@ struct tpr_dev {
   uint              irqNoReq;
   uint              dmaCount;      /* Count DMA messages */
   uint              dmaEvent;
+  uint              dmaErrors;
   uint              dmaBsaChan;
   uint              dmaBsaCtrl;
 

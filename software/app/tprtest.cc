@@ -478,6 +478,7 @@ bool parse_bsa_event(volatile const uint32_t* p,
     active    = pl[1];
     avgdone   = pl[2];
     timeStamp = pl[3];
+    update    = pl[4];
     return true;
   }
   return false;
