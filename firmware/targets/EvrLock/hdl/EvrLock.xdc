@@ -148,56 +148,6 @@ set_property PACKAGE_PIN H5 [get_ports evrRefClkN[0]]
 set_property PACKAGE_PIN K6 [get_ports evrRefClkP[1]]
 set_property PACKAGE_PIN K5 [get_ports evrRefClkN[1]]
 
-#  Locate all trigger delay logic close to IOB
-#  trigOut[0] : C13
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[0].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[0]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[0]}]
-#  trigOut[1] : B12
-#set_property LOC IDELAY_X0Y160 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[1].U_IDELAY}]
-#set_property LOC IDELAY_X0Y159 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[1]}]
-#set_property LOC IDELAY_X0Y159 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[1]}]
-#  trigOut[2] : B11
-#set_property LOC IDELAY_X0Y159 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[2].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[2]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[2]}]
-#  trigOut[3] : B14
-#set_property LOC IDELAY_X0Y158 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[3].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[3]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[3]}]
-#  trigOut[4] : A14
-#set_property LOC IDELAY_X0Y157 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[4].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[4]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[4]}]
-#  trigOut[5] : B10
-#set_property LOC IDELAY_X0Y156 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[5].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[5]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[5]}]
-#  trigOut[6] : A10
-#set_property LOC IDELAY_X0Y155 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[6].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[6]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[6]}]
-#  trigOut[7] : B15
-#set_property LOC IDELAY_X0Y154 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[7].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[7]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[7]}]
-#  trigOut[8] : A15
-#set_property LOC IDELAY_X0Y153 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[8].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[8]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[8]}]
-#  trigOut[9] : A13
-#set_property LOC IDELAY_X0Y152 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[9].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[9]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[9]}]
-#  trigOut[10] : A12
-#set_property LOC IDELAY_X0Y151 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[10].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[10]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[10]}]
-#  trigOut[11] : J14
-#set_property LOC IDELAY_X0Y150 [get_cells {EvrCardG2Core_Inst/Trig_Inst/OR_TRIG[11].U_IDELAY}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigR[11]}]
-#set_property LOC IDELAY_X0Y161 [get_cells {EvrCardG2Core_Inst/Trig_Inst/seqR.trigF[11]}]
-
 #####################################
 # Timing Constraints: Define Clocks #
 #####################################
@@ -205,18 +155,14 @@ set_property PACKAGE_PIN K5 [get_ports evrRefClkN[1]]
 create_clock -name evrRefClk0 -period  4.201 [get_ports {evrRefClkP[0]}]
 create_clock -name evrRefClk1 -period  2.692 [get_ports {evrRefClkP[1]}]
 create_clock -name pciRefClkP -period 10.000 [get_ports pciRefClkP]
-create_clock -name evrClk0    -period  8.402 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
-create_clock -name txClk0     -period  8.402 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/Gtx7Core_Inst/gtxe2_i/TXOUTCLK}]
-create_clock -name evrClk1    -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
-create_clock -name txClk1     -period  5.384 [get_pins  {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/Gtx7Core_Inst/gtxe2_i/TXOUTCLK}]
+create_clock -name evrClk0    -period  8.402 [get_pins  {EvrLockCore_Inst/GEN_GTX[0].U_Gtx/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
+create_clock -name txClk0     -period  8.402 [get_pins  {EvrLockCore_Inst/GEN_GTX[0].U_Gtx/Gtx7Core_Inst/gtxe2_i/TXOUTCLK}]
+create_clock -name evrClk1    -period  5.384 [get_pins  {EvrLockCore_Inst/GEN_GTX[1].U_Gtx/Gtx7Core_Inst/gtxe2_i/RXOUTCLK}]
+create_clock -name txClk1     -period  5.384 [get_pins  {EvrLockCore_Inst/GEN_GTX[1].U_Gtx/Gtx7Core_Inst/gtxe2_i/TXOUTCLK}]
 
-create_generated_clock  -name dnaClk [get_pins {EvrCardG2Core_Inst/AxiVersion_Inst/GEN_DEVICE_DNA.DeviceDna_1/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
+create_generated_clock  -name dnaClk [get_pins {EvrLockCore_Inst/AxiVersion_Inst/GEN_DEVICE_DNA.DeviceDna_1/GEN_7SERIES.DeviceDna7Series_Inst/BUFR_Inst/O}]
 
-create_generated_clock  -name pciClk     [get_pins {EvrCardG2Core_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0}]  
-
-create_generated_clock -name evrAppClk0 [get_pins {EvrCardG2Core_Inst/U_ClockManager/MmcmGen.U_Mmcm/CLKOUT0}] -master_clock {evrClkI}
-
-create_generated_clock -name evrAppClk1 [get_pins {EvrCardG2Core_Inst/U_ClockManager/MmcmGen.U_Mmcm/CLKOUT0}] -master_clock {evrClkI_1}
+create_generated_clock  -name pciClk     [get_pins {EvrLockCore_Inst/PciCore_Inst/EvrCardG2PciFrontEnd_Inst/PcieCore_Inst/U0/inst/gt_top_i/pipe_wrapper_i/pipe_clock_int.pipe_clock_i/mmcm_i/CLKOUT0}]  
 
 ##############################################
 # Crossing Domain Clocks: Timing Constraints #
@@ -228,20 +174,26 @@ set_clock_groups -asynchronous \
      -group [get_clocks -include_generated_clocks {txClk1}] \
      -group [get_clocks -include_generated_clocks {evrClk0}] \
      -group [get_clocks -include_generated_clocks {evrClk1}] \
-     -group [get_clocks -include_generated_clocks {evrAppClk0}] \
-     -group [get_clocks -include_generated_clocks {evrAppClk1}] \
      -group [get_clocks -include_generated_clocks {evrRefClk0}] \
-     -group [get_clocks -include_generated_clocks {evrRefClk1}]
+     -group [get_clocks -include_generated_clocks {evrRefClk1}] \
+     -group [get_clocks -of_objects [get_pins EvrLockCore_Inst/U_119M/CLKOUT0]]
+
+set_clock_groups -asynchronous \
+		 -group [get_clocks -of_objects [get_pins EvrLockCore_Inst/U_IRXCLK1_MUX/U_EVRCLKMUX/CLKOUT0] -filter {IS_GENERATED && MASTER_CLOCK == txClk1}] \
+		 -group [get_clocks -of_objects [get_pins EvrLockCore_Inst/U_IRXCLK0_MUX/U_EVRCLKMUX/CLKOUT0] -filter {IS_GENERATED && MASTER_CLOCK == clockLoc}]
 
 set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dnaClk]
 #set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks stableClk]
 
+#set_clock_groups -asynchronous \
+#    -group [get_clocks -include_generated_clocks {evrClk0}] \
+#    -group [get_clocks -include_generated_clocks {evrClk1}]
 
-set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/gtRxResetDone}]
-set_false_path -through [get_nets {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/gtRxResetDone}]
+set_false_path -through [get_nets {EvrLockCore_Inst/GEN_GTX[0].U_Gtx/gtRxResetDone}]
+set_false_path -through [get_nets {EvrLockCore_Inst/GEN_GTX[1].U_Gtx/gtRxResetDone}]
 
-set_false_path -from [get_pins {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[0].U_Gtx/linkUp_reg/C}]
-set_false_path -from [get_pins {EvrCardG2Core_Inst/EvrCardG2Gtx_Inst/GEN_GTX[1].U_Gtx/linkUp_reg/C}]
+set_false_path -from [get_pins {EvrLockCore_Inst/GEN_GTX[0].U_Gtx/linkUp_reg/C}]
+set_false_path -from [get_pins {EvrLockCore_Inst/GEN_GTX[1].U_Gtx/linkUp_reg/C}]
 
 ###############################
 # FPGA Hardware Configuration #

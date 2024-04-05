@@ -1,0 +1,183 @@
+############################
+## This file is part of 'SLAC Firmware Standard Library'.
+## It is subject to the license terms in the LICENSE.txt file found in the 
+## top-level directory of this distribution and at: 
+##    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
+## No part of 'SLAC Firmware Standard Library', including this file, 
+## may be copied, modified, propagated, or distributed except according to 
+## the terms contained in the LICENSE.txt file.
+##############################################################################
+#schemaversion 3.0.0
+#once EvrLockApp
+
+EvrLockApp: &EvrLockApp
+  class: MMIODev
+  configPrio: 1
+  description: RF Locking Monitor
+  size: 0x40
+  children:
+    #########################################################  
+    Ready:
+      at:
+        offset: 0x00
+      class: IntField
+      name: Ready
+      sizeBits: 1
+      lsbit: 0
+      mode: RO
+      description: Statistics Ready
+    #########################################################  
+    Phase:
+      at:
+        offset: 0x04
+      class: IntField
+      name: Phase
+      sizeBits: 27
+      lsbit: 0
+      mode: RO
+      description: Phase
+    #########################################################  
+    PhaseN:
+      at:
+        offset: 0x08
+      class: IntField
+      name: PhaseN
+      sizeBits: 27
+      lsbit: 0
+      mode: RO
+      description: Phase Complement
+    #########################################################  
+    Valid:
+      at:
+        offset: 0x0C
+      class: IntField
+      name: Valid
+      sizeBits: 27
+      lsbit: 0
+      mode: RO
+      description: Valid count
+    #########################################################  
+    Clocks:
+      at:
+        offset: 0x10
+      class: IntField
+      name: Clocks
+      sizeBits: 11
+      lsbit: 0
+      mode: RO
+      description: Clocks diff
+    #########################################################  
+    TmoCnt:
+      at:
+        offset: 0x14
+      class: IntField
+      name: TmoCnt
+      sizeBits: 20
+      lsbit: 0
+      mode: RO
+      description: Timeout count
+    #########################################################  
+    RefMarkCnt:
+      at:
+        offset: 0x18
+      class: IntField
+      name: RefMarkCnt
+      sizeBits: 20
+      lsbit: 0
+      mode: RO
+      description: Reference marker count
+    #########################################################  
+    TestMarkCnt:
+      at:
+        offset: 0x1C
+      class: IntField
+      name: TestMarkCnt
+      sizeBits: 20
+      lsbit: 0
+      mode: RW
+      description: Test marker count
+    #########################################################  
+    Test1HzCnt:
+      at:
+        offset: 0x20
+      class: IntField
+      name: Test1HzCnt
+      sizeBits: 17
+      lsbit: 0
+      mode: RO
+      description: Test 1Hz marker count
+    #########################################################  
+    timingRstRO:
+      at:
+        offset: 0x20
+      class: IntField
+      name: TimingRstRO
+      sizeBits: 2
+      lsbit: 30
+      mode: RO
+      description: TimingRst signal readback
+    #########################################################  
+    txDataNC:
+      at:
+        offset: 0x24
+      class: IntField
+      name: TxDataNC
+      sizeBits: 18
+      lsbit: 0
+      mode: RO
+      description: NC Transmit Data
+    #########################################################  
+    txDataSC:
+      at:
+        offset: 0x28
+      class: IntField
+      name: TxDataSC
+      sizeBits: 18
+      lsbit: 0
+      mode: RO
+      description: SC Transmit Data
+    #########################################################  
+    psincdec:
+      at:
+        offset: 0x2C
+      class: IntField
+      name: Psincdec
+      sizeBits: 1
+      lsbit: 0
+      mode: RW
+      description: Phase Inc/Dec
+    #########################################################  
+    loopbackNC:
+      at:
+        offset: 0x30
+      class: IntField
+      name: LoopbackNC
+      sizeBits: 3
+      lsbit: 0
+      mode: RW
+      description: NC Gtx Loopback
+    #########################################################  
+    loopbackSC:
+      at:
+        offset: 0x34
+      class: IntField
+      name: LoopbackSC
+      sizeBits: 3
+      lsbit: 0
+      mode: RW
+      description: SC Gtx Loopback
+    #########################################################  
+    rxmode:
+      at:
+        offset: 0x38
+      class: IntField
+      name: Rxmode
+      sizeBits: 2
+      lsbit: 0
+      mode: RW
+      description: Rx mode
+      enums:
+        - {name: "REAL", value: 0}
+        - {name: "LOOP", value: 1}
+        - {name: "SIM",  value: 3}
+    #########################################################  

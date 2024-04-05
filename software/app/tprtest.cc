@@ -16,6 +16,7 @@
 using namespace Tpr;
 
 static const double CLK_FREQ = 1300e6/7.;
+static double   settle_period = 0.1;
 static unsigned linktest_period = 1;
 static unsigned triggerPolarity = 1;
 static unsigned triggerDelay = 1;
@@ -41,6 +42,7 @@ static void generate_triggers  (TprReg&, TimingMode);
 static void generate_refclk    (TprReg&, bool, TimingMode);
 
 static void usage(const char* p) {
+
     printf("Usage: %s [options]\n",p);
     printf("          -d <dev>  : <tpr a/b>\n");
     printf("          -1        : test LCLS-I  timing\n");
@@ -69,7 +71,7 @@ int main(int argc, char** argv) {
     bool refClkEn = false;
     char* endptr;
 
-    while ( (c=getopt( argc, argv, "12Ud:nrT:D:BCvh?")) != EOF ) {
+    while ( (c=getopt( argc, argv, "12Ud:nrS:T:D:BCvh?")) != EOF ) {
         switch(c) {
         case '1': tmode = LCLS1; break;
         case '2': tmode = LCLS2; break;
@@ -97,6 +99,9 @@ int main(int argc, char** argv) {
                 triggerWidth = strtoul(endptr+1,&endptr,0);
             if (endptr[0]==',')
                 triggerPolarity = strtoul(endptr+1,&endptr,0);
+            break;
+        case 'S':
+            settle_period = strtod(optarg,NULL);
             break;
         case 'T':
             linktest_period = strtoul(optarg,NULL,0);
@@ -188,84 +193,85 @@ int main(int argc, char** argv) {
 
 void link_test(TprReg& reg, TimingMode tmode, bool lring)
 {
-    static const double ClkMin[] = { 118, 184, 118 };
-    static const double ClkMax[] = { 120, 187, 120 };
-    static const double FrameMin[] = { 356, 928000, 356 };
-    static const double FrameMax[] = { 362, 929000, 362 };
-    unsigned ilcls = unsigned(tmode);
+  static const double ClkMin[] = { 118, 184, 118 };
+  static const double ClkMax[] = { 120, 187, 120 };
+  static const double FrameMin[] = { 356, 928000, 356 };
+  static const double FrameMax[] = { 362, 929000, 362 };
+  unsigned ilcls = unsigned(tmode);
 
-    // clkSel chooses the reference clock and the sfp module
-    reg.tpr.clkSel(tmode==LCLS2);
-    // modeSel chooses the protocol
-    reg.tpr.modeSel(tmode!=LCLS1);
-    reg.tpr.modeSelEn(true);
-    reg.tpr.rxPolarity(false);
-    usleep(100000);
-    reg.tpr.resetCounts();
-    unsigned rxclks0 = reg.tpr.RxRecClks;
-    unsigned txclks0 = reg.tpr.TxRefClks;
-    usleep(linktest_period*1000000);
-    unsigned rxclks1 = reg.tpr.RxRecClks;
-    unsigned txclks1 = reg.tpr.TxRefClks;
-    unsigned sofCnts = reg.tpr.SOFcounts;
-    unsigned crcErrs = reg.tpr.CRCerrors;
-    unsigned decErrs = reg.tpr.RxDecErrs;
-    unsigned dspErrs = reg.tpr.RxDspErrs;
-    double rxClkFreq = double(rxclks1-rxclks0)*16.e-6;
-    printf("RxRecClkFreq: %7.2f  %s\n",
-           rxClkFreq,
-           (rxClkFreq > ClkMin[ilcls] &&
-            rxClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
-    double txClkFreq = double(txclks1-txclks0)*16.e-6;
-    printf("TxRefClkFreq: %7.2f  %s\n",
-           txClkFreq,
-           (txClkFreq > ClkMin[ilcls] &&
-            txClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
-    printf("SOFcounts   : %7u  %s\n",
-           sofCnts,
-           (sofCnts > FrameMin[ilcls] &&
-            sofCnts < FrameMax[ilcls]) ? "PASS":"FAIL");
-    printf("CRCerrors   : %7u  %s\n",
-           crcErrs,
-           crcErrs == 0 ? "PASS":"FAIL");
-    printf("DECerrors   : %7u  %s\n",
-           decErrs,
-           decErrs == 0 ? "PASS":"FAIL");
-    printf("DSPerrors   : %7u  %s\n",
-           dspErrs,
-           dspErrs == 0 ? "PASS":"FAIL");
+  // clkSel chooses the reference clock and the sfp module
+  reg.tpr.clkSel(tmode==LCLS2);
+  // modeSel chooses the protocol
+  reg.tpr.modeSel(tmode!=LCLS1);
+  reg.tpr.modeSelEn(true);
+  reg.tpr.rxPolarity(false);
+  volatile unsigned vp = reg.tpr.rxPolarity();
+  usleep(int(settle_period*1.e6));
+  reg.tpr.resetCounts();
+  unsigned rxclks0 = reg.tpr.RxRecClks;
+  unsigned txclks0 = reg.tpr.TxRefClks;
+  usleep(linktest_period*1000000);
+  unsigned rxclks1 = reg.tpr.RxRecClks;
+  unsigned txclks1 = reg.tpr.TxRefClks;
+  unsigned sofCnts = reg.tpr.SOFcounts;
+  unsigned crcErrs = reg.tpr.CRCerrors;
+  unsigned decErrs = reg.tpr.RxDecErrs;
+  unsigned dspErrs = reg.tpr.RxDspErrs;
+  double rxClkFreq = double(rxclks1-rxclks0)/double(linktest_period)*16.e-6;
+  printf("RxRecClkFreq: %7.2f  %s\n",
+         rxClkFreq,
+         (rxClkFreq > ClkMin[ilcls] &&
+          rxClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
+  double txClkFreq = double(txclks1-txclks0)/double(linktest_period)*16.e-6;
+  printf("TxRefClkFreq: %7.2f  %s\n",
+         txClkFreq,
+         (txClkFreq > ClkMin[ilcls] &&
+          txClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
+  printf("SOFcounts   : %7u  %s\n",
+         sofCnts,
+         (sofCnts > FrameMin[ilcls]*linktest_period &&
+          sofCnts < FrameMax[ilcls]*linktest_period) ? "PASS":"FAIL");
+  printf("CRCerrors   : %7u  %s\n",
+         crcErrs,
+         crcErrs == 0 ? "PASS":"FAIL");
+  printf("DECerrors   : %7u  %s\n",
+         decErrs,
+         decErrs == 0 ? "PASS":"FAIL");
+  printf("DSPerrors   : %7u  %s\n",
+         dspErrs,
+         dspErrs == 0 ? "PASS":"FAIL");
 
-    reg.tpr.dump();
-    reg.csr.dump();
+  reg.tpr.dump();
+  reg.csr.dump();
 
-    unsigned v = reg.tpr.CSR;
-    printf(" %s", v&(1<<1) ? "LinkUp":"LinkDn");
-    if (v&(1<<2)) printf(" RXPOL");
-    printf(" %s", v&(1<<4) ? "LCLSII":"LCLS");
-    if (v&(1<<5)) printf(" LinkDnL");
-    printf("\n");
-    //  Acknowledge linkDownL bit
-    reg.tpr.CSR = v & ~(1<<5);
+  unsigned v = reg.tpr.CSR;
+  printf(" %s", v&(1<<1) ? "LinkUp":"LinkDn");
+  if (v&(1<<2)) printf(" RXPOL");
+  printf(" %s", v&(1<<4) ? "LCLSII":"LCLS");
+  if (v&(1<<5)) printf(" LinkDnL");
+  printf("\n");
+  //  Acknowledge linkDownL bit
+  reg.tpr.CSR = v & ~(1<<5);
 
-    if (!lring) return;
+  if (!lring) return;
 
-    //  Dump ring buffer
-    printf("\n-- RingB 0 --\n");
-    reg.ring0.enable(false);
-    reg.ring0.clear ();
-    reg.ring0.enable(true);
-    usleep(10000);
-    reg.ring0.enable(false);
-    reg.ring0.dump  ();
+  //  Dump ring buffer
+  printf("\n-- RingB 0 --\n");
+  reg.ring0.enable(false);
+  reg.ring0.clear ();
+  reg.ring0.enable(true);
+  usleep(10000);
+  reg.ring0.enable(false);
+  reg.ring0.dump  ();
 
-    //  Dump ring buffer
-    printf("\n-- RingB 1 --\n");
-    reg.ring1.enable(false);
-    reg.ring1.clear ();
-    reg.ring1.enable(true);
-    usleep(10000);
-    reg.ring1.enable(false);
-    reg.ring1.dump  ("%08x");
+  //  Dump ring buffer
+  printf("\n-- RingB 1 --\n");
+  reg.ring1.enable(false);
+  reg.ring1.clear ();
+  reg.ring1.enable(true);
+  usleep(10000);
+  reg.ring1.enable(false);
+  reg.ring1.dump  ("%08x");
 }
 
 void frame_rates(TprReg& reg, TimingMode tmode)
@@ -487,15 +493,16 @@ bool parse_bsa_event(volatile const uint32_t* p,
                      uint64_t& pulseId, uint64_t& timeStamp,
                      uint64_t& active, uint64_t& avgdone, uint64_t& update)
 {
-    if (((p[0]>>16)&0xf)==2) { // BSAEVNT_TAG
-        volatile const uint64_t* pl = reinterpret_cast<volatile const uint64_t*>(p+1);
-        pulseId   = pl[0];
-        active    = pl[1];
-        avgdone   = pl[2];
-        timeStamp = pl[3];
-        return true;
-    }
-    return false;
+  if (((p[0]>>16)&0xf)==2) { // BSAEVNT_TAG
+    volatile const uint64_t* pl = reinterpret_cast<volatile const uint64_t*>(p+1);
+    pulseId   = pl[0];
+    active    = pl[1];
+    avgdone   = pl[2];
+    timeStamp = pl[3];
+    update    = pl[4];
+    return true;
+  }
+  return false;
 }
 
 bool parse_bsa_control(volatile const uint32_t* p,
@@ -538,6 +545,7 @@ void generate_triggers(TprReg& reg, TimingMode tmode)
 
 void generate_refclk(TprReg& reg, bool enable, TimingMode tmode)
 {
+
     reg.refclk.clkSel(tmode!=LCLS1);
     reg.refclk.dump();
     reg.csr.enableRefClk(enable);

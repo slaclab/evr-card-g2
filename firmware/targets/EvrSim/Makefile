@@ -1,4 +1,4 @@
-export GIT_BYPASS = 1
+export GIT_BYPASS = 0
 
 # Define target output
 target: prom
@@ -39,15 +39,8 @@ export RELEASE = all
 #export PRJ_VERSION = CED20030
 #  Custom PROM firmware for bypassing the CMD writes (required for MT28 PROM's Data Polling Register)
 #  Also skipping to CED20030 due to "legacy" target having CED20025/CED20026 values with respect to software version checking in the PromLoader
-#export PRJ_VERSION = CED20031
-#  Add in TimingExtension decoding of L2SI DAQ for triggering.
-#export PRJ_VERSION = CED20032
-#  Validate evrBus.strobe with evrBus.valid.  Add DMA drop counter.
-#  Match L2SI DAQ generated trigger timestamps to others
-#  Auto compensate L2SI DAQ trigger delays for L0Delay
-#export PRJ_VERSION = CED20033
-# Put Evr core logic on application clock via ClockManager driven from timing clock
-export PRJ_VERSION = CED20034
+export PRJ_VERSION = CED20030
+
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
 

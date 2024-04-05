@@ -1,11 +1,11 @@
 -------------------------------------------------------------------------------
 -- Title      : 
 -------------------------------------------------------------------------------
--- File       : EvrCardG2Core.vhd
--- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
+-- File       : EvrLockCore.vhd
+-- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2024-02-20
+-- Last update: 2023-08-20
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -32,10 +32,13 @@ use work.SsiPciePkg.all;
 
 library lcls_timing_core;
 use lcls_timing_core.TimingPkg.all;
+use lcls_timing_core.TPGMiniEDefPkg.all;
+use lcls_timing_core.TPGPkg.all;
 
-library l2si_core;
+library unisim;
+use unisim.vcomponents.all;
 
-entity EvrCardG2Core is
+entity EvrLockCore is
    generic (
       TPD_G : time := 1 ns;
       BUILD_INFO_G : BuildInfoType ); 
@@ -82,9 +85,9 @@ entity EvrCardG2Core is
       ledGreenL  : out   slv(1 downto 0);
       ledBlueL   : out   slv(1 downto 0);
       testPoint  : out   sl);  
-end EvrCardG2Core;
+end EvrLockCore;
 
-architecture mapping of EvrCardG2Core is
+architecture mapping of EvrLockCore is
 
    -- Constants
    constant BAR_SIZE_C : positive := 1;
@@ -97,19 +100,16 @@ architecture mapping of EvrCardG2Core is
    signal axiLiteReadMaster  : AxiLiteReadMasterArray (BAR_SIZE_C-1 downto 0);
    signal axiLiteReadSlave   : AxiLiteReadSlaveArray  (BAR_SIZE_C-1 downto 0);
 
-   constant NUM_AXI_MASTERS_C : natural := 11;
+   constant NUM_AXI_MASTERS_C : natural := 8;
 
    constant VERSION_INDEX_C  : natural := 0;
    constant BOOT_MEM_INDEX_C : natural := 1;
    constant XADC_INDEX_C     : natural := 2;
    constant XBAR_INDEX_C     : natural := 3;
    constant LED_INDEX_C      : natural := 4;
-   constant CSR_INDEX_C      : natural := 5;
-   constant TPR_INDEX_C      : natural := 6;
-   constant CORE_INDEX_C     : natural := 7;
-   constant DRP_INDEX_C      : natural := 8;
-   constant MMCM_INDEX_C     : natural := 9;
-   constant APP_INDEX_C      : natural := 10;
+   constant APP_INDEX_C      : natural := 5;
+   constant CORE_INDEX_C     : natural := 6;
+   constant CORE_INDEX2_C    : natural := 7;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       VERSION_INDEX_C  => (
@@ -132,29 +132,17 @@ architecture mapping of EvrCardG2Core is
          baseAddr      => X"00050000",
          addrBits      => 16,
          connectivity  => X"0001"),
-      CSR_INDEX_C      => (
+      APP_INDEX_C      => (
          baseAddr      => X"00060000",
          addrBits      => 16,
          connectivity  => X"0001"),
-      TPR_INDEX_C     => (
+      CORE_INDEX_C     => (
          baseAddr      => X"00080000",
          addrBits      => 18,
          connectivity  => X"0001"),
-      CORE_INDEX_C     => (
+      CORE_INDEX2_C    => (
          baseAddr      => X"000C0000",
          addrBits      => 18,
-         connectivity  => X"0001"),
-      DRP_INDEX_C      => (
-         baseAddr      => X"00070000",
-         addrBits      => 15,
-         connectivity  => X"0001"),
-      MMCM_INDEX_C      => (
-         baseAddr      => X"00078000",
-         addrBits      => 14,
-         connectivity  => X"0001"),
-      APP_INDEX_C      => (
-         baseAddr      => X"0007C000",
-         addrBits      => 14,
          connectivity  => X"0001"));
 
    signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -180,25 +168,22 @@ architecture mapping of EvrCardG2Core is
 
 
    --  GTX Signals
-   signal evrClk      : sl;
-   signal evrRst      : sl;
-   signal rxLinkUp    : sl;
-   signal rxError     : sl;
-   signal rxDspErr    : slv(1 downto 0);
-   signal rxDecErr    : slv(1 downto 0);
-   signal rxDataK     : slv(1 downto 0);
-   signal rxData      : slv(15 downto 0);
+   signal evrClk      : slv(1 downto 0);
+   signal evrRst      : slv(1 downto 0);
+   signal evrTxClk    : slv(1 downto 0);
+   signal evrTxRst    : slv(1 downto 0);
+   signal rxLinkUp    : slv(1 downto 0);
+   signal rxError     : slv(1 downto 0);
+   signal loopback    : Slv3Array (1 downto 0);
+   signal rxDecErr    : Slv2Array (1 downto 0);
+   signal rxDspErr    : Slv2Array (1 downto 0);
+   signal rxDataK     : Slv2Array (1 downto 0);
+   signal rxData      : Slv16Array(1 downto 0);
+   signal txDataK     : Slv2Array (1 downto 0);
+   signal txData      : Slv16Array(1 downto 0);
 
-   signal rxControl   : TimingPhyControlType;
-   signal rxStatus    : TimingPhyStatusType := TIMING_PHY_STATUS_INIT_C;
-   signal txPhy       : TimingPhyType;
-   signal txPhyId     : slv(31 downto 0) := x"f6000000";
-   signal txPhyClk    : sl;
-   signal txPhyRst    : sl;
-
-   signal appClk       : sl;
-   signal appRst       : sl;
-   signal appClkLocked : sl;
+   signal rxControl   : TimingPhyControlArray(1 downto 0);
+   signal rxStatus    : TimingPhyStatusArray (1 downto 0) := (others=>TIMING_PHY_STATUS_INIT_C);
    signal axiClk       : sl;
    signal axiRst       : sl;
    signal pciLinkUp    : sl;
@@ -207,65 +192,129 @@ architecture mapping of EvrCardG2Core is
    signal irqEnable    : slv(BAR_SIZE_C-1 downto 0);
    signal irqReq       : slv(BAR_SIZE_C-1 downto 0);
    signal trig         : slv(11 downto 0);
-   signal delay_wr     : Slv6Array(11 downto 0);
-   signal delay_rd     : Slv6Array(11 downto 0);
-   signal delay_ld     : slv      (11 downto 0);
    signal serialNumber : slv(127 downto 0);
-   signal evrRecClk    : sl;
-   signal evrClkSel    : sl;
 
-   signal heartBeat    : sl;
-   signal appTimingBus : TimingBusType;
---   signal exptBus      : ExptBusType;
+   signal ncTrigDelay  : slv(19 downto 0);
+   signal heartBeat    : slv(1 downto 0);
+   signal appTimingBus : TimingBusArray(1 downto 0);
    signal dmaReady     : sl;
 
-   signal refEnable    : sl;
-   signal refClkOut    : sl;
+   signal urxLinkUp    : sl;
+   signal urxError     : sl;
+   signal uhbeat       : sl;
    
    signal userValues : Slv32Array(0 to 63) := (others => x"00000000");
 
+   signal tpgConfig : TpgConfigType := TPG_CONFIG_INIT_C;
+   signal fiducial0 : sl;
+
+   signal mmcmClk, mmcmRst : slv(2 downto 0);
+   signal lockedLoc, clockLoc, clkFb : sl;
+   signal psclk, psen, psincdec : sl;
+   signal itxClk, itxRst : slv(1 downto 0);
+
+   signal irxClk, irxRst : slv (1 downto 0);
+   signal irxData   : Slv16Array(1 downto 0);
+   signal irxDataK  : Slv2Array (1 downto 0);
+   signal irxDspErr : Slv2Array (1 downto 0);
+   signal irxDecErr : Slv2Array (1 downto 0);
+   signal irxStatus : TimingPhyStatusArray (1 downto 0) := (others=>TIMING_PHY_STATUS_INIT_C);
+   -- RX_MODE determines mode for NC Timing only
+   -- RX_MODE = "REAL" rxData goes into TimingCore (from GTX)
+   -- RX_MODE = "LOOP" txData goes into TimingCore (bypass GTX)
+   -- RX_MODE = "SIM"  simulated fiducial is fed directly into phase detector
+   constant RX_MODE : string := "REAL";
+   signal rx_mode_v : slv(1 downto 0) := "00";
+   
 begin
 
+  RX_MODE_P : process (rx_mode_v,
+                       rxData, rxDataK, txData, txDataK,
+                       rxStatus, rxDspErr, rxDecErr) is
+  begin
+    if rx_mode_v(0) = '0' then
+      irxStatus <= rxStatus;
+      irxDspErr <= rxDspErr;
+      irxDecErr <= rxDecErr;
+    else
+      irxStatus <= rxStatus(1) & TIMING_PHY_STATUS_FORCE_C;
+      irxDspErr <= rxDspErr(1) & "00";
+      irxDecErr <= rxDecErr(1) & "00";
+    end if;
+
+    --irxData (1) <= rxData (1);
+    --irxDataK(1) <= rxDataK(1);
+    --if rx_mode_v(1) = '0' then
+    --  irxData (0)  <= rxData (0);
+    --  irxDataK(0)  <= rxDataK(0);
+    --else
+    --  irxData (0)  <= txData (0);
+    --  irxDataK(0)  <= txDataK(0);
+    --end if;
+  end process RX_MODE_P;
+
+  --U_IRXCLK0_MUX : entity work.EvrClkMux
+  --  generic map ( CLKIN_PERIOD_G => 8.4,
+  --                CLK_MULT_F_G   => 6.0 )
+  --  port map ( clkSel  => rx_mode_v(1),
+  --             clkIn0  => evrClk(0),
+  --             clkIn1  => mmcmClk(2),
+  --             rstIn0  => evrRst(0),
+  --             rstIn1  => mmcmrst(2),
+  --             clkOut  => irxClk(0),
+  --             rstOut  => irxRst(0) );
+  
+  --irxClk(1) <= evrClk(1);
+  --irxRst(1) <= evrRst(1);
+  irxClk   <= evrClk;
+  irxRst   <= evrRst;
+  irxData  <= rxData;
+  irxDataK <= rxDataK;
+  
+  --U_ITXCLK0_MUX : entity work.EvrClkMux
+  --  generic map ( CLKIN_PERIOD_G => 8.4,
+  --                CLK_MULT_F_G   => 6.0 )
+  --  port map ( clkSel  => rx_mode_v(0),
+  --             clkIn0  => evrClk(0),
+  --             clkIn1  => mmcmClk(2),
+  --             rstIn0  => evrRst(0),
+  --             rstIn1  => mmcmrst(2),
+  --             clkOut  => itxClk(0),
+  --             rstOut  => itxRst(0) );
+
+  --itxClk(1) <= evrTxClk(1);
+  --itxRst(1) <= evrTxRst(1);
+  itxClk <= evrTxClk;
+  itxRst <= evrTxRst;
+  
    userValues(0)(0) <= promVersion;
+   tpgConfig.FixedRateDivisors  <= (x"00000",
+                                    x"00000",
+                                    x"00000",
+                                    x"00001",                                   -- 929 kHz
+                                    x"0000D",                                    -- 71.4kHz
+                                    x"0005B",                                    -- 10.2kHz
+                                    x"0038E",                                    -- 1.02kHz 
+                                    x"0238C",                                    -- 102 Hz
+                                    x"16378",                                    -- 10.2Hz
+                                    x"DE2B0");                                    -- 1.02H
 
    testPoint <= pciLinkUp;
 
    -----------------  
    -- Trigger Output
-   -----------------   
-   Trig_Inst : entity work.EvrCardG2Trig
-      generic map (
-         TPD_G   => TPD_G )
-      port map (
-         refclk     => axiClk,
-         delay_ld   => delay_ld,
-         delay_wr   => delay_wr,
-         delay_rd   => delay_rd,
-         refEnable  => refEnable,
-         refClkOut  => refClkOut,
-         -- Clock
-         evrRecClk  => appClk,
-         -- Trigger Inputs
-         trigIn     => trig,
-         trigout    => trigOut );
+   -----------------
+   -- diagnostics only
+   -----------------
+  trigOut <= trig;
 
-   RefClk_Inst : entity work.EvrV2RefClk
-      generic map (
-         TPD_G   => TPD_G )
-     port map (
-         evrClk    => evrClk,
-         evrRst    => evrRst,
-         evrClkSel => evrClkSel,
-         -- Axi Lite interface
-         axiClk         => axiClk,
-         axiRst         => axiRst,
-         axiReadMaster  => mAxiReadMasters (MMCM_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves  (MMCM_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(MMCM_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves (MMCM_INDEX_C),
-         -- 
-         refClkOut => refClkOut );
-   
+  U_Trig : entity work.EvrLockTrig
+    port map ( timingClk => irxClk,
+               timingRst => irxRst,
+               timingBus => appTimingBus,
+               ncDelay   => ncTrigDelay,
+               trigOut   => trig );
+  
    ------------
    -- PCIe Core
    ------------
@@ -432,42 +481,43 @@ begin
    --------------
    -- GTX7 Module
    --------------
-     EvrCardG2Gtx_Inst : entity work.EvrCardG2GMux
-       generic map (
-         TPD_G         => TPD_G )
-       port map (
-         axiClk     => axiClk,
-         axiRst     => axiRst,
-         axiReadMaster  => mAxiReadMasters (DRP_INDEX_C),
-         axiReadSlave   => mAxiReadSlaves  (DRP_INDEX_C),
-         axiWriteMaster => mAxiWriteMasters(DRP_INDEX_C),
-         axiWriteSlave  => mAxiWriteSlaves (DRP_INDEX_C),
-         evrSel     => evrClkSel,  -- selects the clock and the SFP port
-         -- EVR Ports
-         evrRefClkP => evrRefClkP,
-         evrRefClkN => evrRefClkN,
-         evrRxP     => evrRxP,
-         evrRxN     => evrRxN,
-         evrTxP     => evrTxP,
-         evrTxN     => evrTxN,
-         -- EVR Interface
-         rxReset    => rxControl.reset,
-         rxPolarity => rxControl.polarity,
-         evrClk     => evrClk,
-         evrRst     => evrRst,
-         rxLinkUp   => rxLinkUp,
-         rxError    => rxError ,
-         rxDspErr   => rxDspErr,
-         rxDecErr   => rxDecErr,
-         rxData     => rxData  ,
-         rxDataK    => rxDataK ,
-         evrTxClk   => txPhyClk,
-         evrTxRst   => txPhyRst,
-         txInhibit  => '0',
-         txData     => txPhy.data  ,
-         txDataK    => txPhy.dataK );
+   GEN_GTX : for i in 0 to 1 generate
+     U_Gtx : entity work.EvrCardG2Gtx
+       generic map ( EVR_VERSION_G => i>0 )
+       port map ( evrRefClkP => evrRefClkP(i),
+                  evrRefClkN => evrRefClkN(i),
+                  evrRxP     => evrRxP(i),
+                  evrRxN     => evrRxN(i),
+                  evrTxP     => evrTxP(i),
+                  evrTxN     => evrTxN(i),
+                  evrRefClk  => open,
+                  evrRecClk  => open,
+                  -- EVR Interface
+                  rxReset    => rxControl(i).reset,
+                  rxPolarity => rxControl(i).polarity,
+                  evrClk     => evrClk   (i),
+                  evrRst     => evrRst   (i),
+                  rxLinkUp   => rxLinkUp (i),
+                  rxError    => rxError  (i),
+                  rxDspErr   => rxDspErr (i),
+                  rxDecErr   => rxDecErr (i),
+                  rxData     => rxData   (i),
+                  rxDataK    => rxDataK  (i),
+                  evrTxClk   => evrTxClk (i),
+                  evrTxRst   => evrTxRst (i),
+                  loopback   => loopback (i),
+                  txInhibit  => '0',
+                  txData     => txData   (i),
+                  txDataK    => txDataK  (i) );
+     rxStatus(i).locked       <= rxLinkUp(i);
+     rxStatus(i).resetDone    <= rxLinkUp(i);
+   end generate;
 
-      -----------------         
+   urxLinkUp <= uAnd(rxLinkUp);
+   urxError  <= uOr (rxError);
+   uhbeat    <= uOr (heartbeat);
+   
+   -----------------         
    -- EVR LED Status
    -----------------         
    U_LEDs : entity work.EvrCardG2LedRgb
@@ -475,11 +525,11 @@ begin
          TPD_G => TPD_G)
       port map (
          -- EVR Interface
-         evrClk          => evrClk,
-         evrRst          => evrRst,
-         rxLinkUp        => rxLinkUp,
-         rxError         => rxError,
-         strobe          => heartBeat,
+         evrClk          => evrClk(0),
+         evrRst          => evrRst(0),
+         rxLinkUp        => urxLinkUp,
+         rxError         => urxError,
+         strobe          => uhbeat,
          -- AXI-Lite and IRQ Interface
          axilClk         => axiClk,
          axilRst         => axiRst,
@@ -492,130 +542,191 @@ begin
          ledGreenL       => ledGreenL(0),
          ledBlueL        => ledBlueL (0));           
 
---   rxStatus.resetDone    <= not evrRst;
-   rxStatus.locked       <= rxLinkUp;
-   rxStatus.resetDone    <= rxLinkUp;
-
-   ------------------------------------------------------------------------------------------------
-   -- Application Clock Manager
-   -- Allow other application clock frequencies
-   ------------------------------------------------------------------------------------------------
-   U_ClockManager : entity surf.ClockManager7
-     generic map (
-       TPD_G              => 1 ns,
-       TYPE_G             => "MMCM",
-       INPUT_BUFG_G       => false,
-       FB_BUFG_G          => true,
-       NUM_CLOCKS_G       => 1,
-       BANDWIDTH_G        => "OPTIMIZED",
-       CLKIN_PERIOD_G     => 5.385,
-       DIVCLK_DIVIDE_G    => 1,
-       CLKFBOUT_MULT_F_G  => 6.0,
-       CLKOUT0_DIVIDE_F_G => 6.0,
-       CLKOUT0_PHASE_G    => 0.0,
-       CLKOUT0_RST_HOLD_G => 32
-       )
-     port map (
-       clkIn           => evrClk,
-       rstIn           => evrRst,
-       clkOut(0)       => appClk,
-       rstOut(0)       => appRst,
-       locked          => appClkLocked,
-       -- AXI-Lite Port
-       axilClk         => axiClk,
-       axilRst         => axiRst,
-       axilReadMaster  => mAxiReadMasters (APP_INDEX_C),
-       axilReadSlave   => mAxiReadSlaves  (APP_INDEX_C),
-       axilWriteMaster => mAxiWriteMasters(APP_INDEX_C),
-       axilWriteSlave  => mAxiWriteSlaves (APP_INDEX_C)
-     );
-
    ------------------------------------------------------------------------------------------------
    -- Timing Core
    -- Decode timing message from GTX and distribute to system
    ------------------------------------------------------------------------------------------------
-   TimingCore_1: entity lcls_timing_core.TimingCore
-     generic map (
-       TPD_G             => TPD_G,
-       TPGEN_G           => false,
-       USE_TPGMINI_G     => false,
-       AXIL_RINGB_G      => true,
-       ASYNC_G           => false,
-       AXIL_BASE_ADDR_G  => AXI_CROSSBAR_MASTERS_CONFIG_C(CORE_INDEX_C).baseAddr )
-     port map (
-       gtTxUsrClk      => txPhyClk,
-       gtTxUsrRst      => txPhyRst,
-       gtRxRecClk      => evrClk,
-       gtRxData        => rxData,
-       gtRxDataK       => rxDataK,
-       gtRxDispErr     => rxDspErr,
-       gtRxDecErr      => rxDecErr,
-       gtRxControl     => rxControl,
-       gtRxStatus      => rxStatus,
-       gtTxReset       => open,
-       gtLoopback      => open,
-       tpgMiniTimingPhy => open,
-       timingClkSel    => evrClkSel,
-       --
-       appTimingClk    => appClk,
-       appTimingRst    => appRst,
-       appTimingBus    => appTimingBus,
-       appTimingMode   => open,
-       --
-       axilClk         => axiClk,
-       axilRst         => axiRst,
-       axilReadMaster  => mAxiReadMasters (CORE_INDEX_C),
-       axilReadSlave   => mAxiReadSlaves  (CORE_INDEX_C),
-       axilWriteMaster => mAxiWriteMasters(CORE_INDEX_C),
-       axilWriteSlave  => mAxiWriteSlaves (CORE_INDEX_C));
+   GEN_TIMING_BUS : for i in 1 downto 0 generate
+     TimingCore_1: entity lcls_timing_core.TimingCore
+       generic map (
+         TPD_G             => TPD_G,
+         CLKSEL_MODE_G     => ite(i>0, "LCLSII", "LCLSI"),
+         TPGEN_G           => false,
+         USE_TPGMINI_G     => false,
+         AXIL_RINGB_G      => false,
+         ASYNC_G           => false,
+         AXIL_BASE_ADDR_G  => AXI_CROSSBAR_MASTERS_CONFIG_C(CORE_INDEX_C+i).baseAddr )
+       port map (
+         gtTxUsrClk      => evrTxClk (i),
+         gtTxUsrRst      => evrTxRst (i),
+         gtRxRecClk      => irxClk   (i),
+         gtRxData        => irxData  (i),
+         gtRxDataK       => irxDataK (i),
+         gtRxDispErr     => irxDspErr(i),
+         gtRxDecErr      => irxDecErr(i),
+         gtRxControl     => rxControl(i),
+         gtRxStatus      => irxStatus(i),
+         gtTxReset       => open,
+         gtLoopback      => open,
+         tpgMiniTimingPhy => open,
+         timingClkSel    => open,
+         --
+         appTimingClk    => irxClk      (i),
+         appTimingRst    => irxRst      (i),
+         appTimingBus    => appTimingBus(i),
+         appTimingMode   => open,
+         --
+         axilClk         => axiClk,
+         axilRst         => axiRst,
+         axilReadMaster  => mAxiReadMasters (CORE_INDEX_C+i),
+         axilReadSlave   => mAxiReadSlaves  (CORE_INDEX_C+i),
+         axilWriteMaster => mAxiWriteMasters(CORE_INDEX_C+i),
+         axilWriteSlave  => mAxiWriteSlaves (CORE_INDEX_C+i));
+   end generate;
 
-   U_SyncId : entity surf.SynchronizerVector
-     generic map ( WIDTH_G => 24 )
-     port map (
-       clk            => txPhyClk,
-       dataIn         => serialNumber(23 downto 0),
-       dataOut        => txPhyId     (23 downto 0) );
+   heartBeat(1) <= appTimingBus(1).message.fixedRates(0) and appTimingBus(1).strobe;
+   heartBeat(0) <= appTimingBus(0).stream.eventCodes(45) and appTimingBus(0).strobe;
+
+   --
+   --  Simulate a locked NC timing stream
+   --
+   U_130M : entity surf.ClockManager7
+     generic map ( NUM_CLOCKS_G => 1,
+                   CLKIN_PERIOD_G => 5.4,
+                   CLKFBOUT_MULT_F_G => 3.5,
+                   CLKOUT0_DIVIDE_F_G => 5.0 )
+     port map ( clkIn     => evrTxClk(1),
+                rstIn     => evrTxRst(1),
+                clkOut(0) => mmcmClk(0),
+                rstOut(0) => mmcmRst(0) );
    
-   U_XpmTimingFb : entity l2si_core.XpmTimingFb
-     port map (
-       clk            => txPhyClk,
-       rst            => txPhyRst,
-       id             => txPhyId,
-       phy            => txPhy );
+   U_70M : entity surf.ClockManager7
+     generic map ( NUM_CLOCKS_G => 1,
+                   CLKIN_PERIOD_G => 7.7,
+                   CLKFBOUT_MULT_F_G => 7.0,
+                   CLKOUT0_DIVIDE_F_G => 13.0 )
+     port map ( clkIn     => mmcmClk(0),
+                rstIn     => mmcmRst(0),
+                clkOut(0) => mmcmClk(1),
+                rstOut(0) => mmcmRst(1) );
    
-   heartBeat <= appTimingBus.message.fixedRates(6) when appTimingBus.modesel='1' else
-                appTimingBus.stream.eventCodes(45);
-
-   U_Core : entity work.EvrV2Core
-     generic map ( TPD_G => TPD_G)
+   U_119M : MMCME2_ADV
+     generic map ( BANDWIDTH          => "OPTIMIZED",
+                   CLKOUT4_CASCADE    => false,
+                   STARTUP_WAIT       => false,
+                   CLKIN1_PERIOD      => 14.3,
+                   DIVCLK_DIVIDE      => 1,
+                   CLKFBOUT_MULT_F    => 17.0,
+                   CLKOUT0_DIVIDE_F   => 10.0,
+                   CLKOUT1_DIVIDE     => 1,
+                   CLKOUT2_DIVIDE     => 1,
+                   CLKOUT3_DIVIDE     => 1,
+                   CLKOUT4_DIVIDE     => 1,
+                   CLKOUT5_DIVIDE     => 1,
+                   CLKOUT6_DIVIDE     => 1,
+                   CLKOUT0_PHASE      => 0.0,
+                   CLKOUT1_PHASE      => 0.0,
+                   CLKOUT2_PHASE      => 0.0,
+                   CLKOUT3_PHASE      => 0.0,
+                   CLKOUT4_PHASE      => 0.0,
+                   CLKOUT5_PHASE      => 0.0,
+                   CLKOUT6_PHASE      => 0.0,
+                   CLKOUT0_DUTY_CYCLE => 0.5,
+                   CLKOUT1_DUTY_CYCLE => 0.5,
+                   CLKOUT2_DUTY_CYCLE => 0.5,
+                   CLKOUT3_DUTY_CYCLE => 0.5,
+                   CLKOUT4_DUTY_CYCLE => 0.5,
+                   CLKOUT5_DUTY_CYCLE => 0.5,
+                   CLKOUT6_DUTY_CYCLE => 0.5,
+                   CLKOUT0_USE_FINE_PS=> true)
      port map (
-       axiClk              => axiClk,
-       axiRst              => axiRst,
-       axilWriteMaster     => mAxiWriteMasters(TPR_INDEX_C downto CSR_INDEX_C),
-       axilWriteSlave      => mAxiWriteSlaves (TPR_INDEX_C downto CSR_INDEX_C),
-       axilReadMaster      => mAxiReadMasters (TPR_INDEX_C downto CSR_INDEX_C),
-       axilReadSlave       => mAxiReadSlaves  (TPR_INDEX_C downto CSR_INDEX_C),
-       irqActive           => irqActive,
-       irqEnable           => irqEnable(0),
-       irqReq              => irqReq   (0),
-       -- DMA
-       dmaRxIbMaster       => dmaRxIbMasters  (0),
-       dmaRxIbSlave        => dmaRxIbSlaves   (0),
-       dmaRxTranFromPci    => dmaRxTranFromPci(0),
-       dmaReady            => dmaReady,
-       -- EVR Ports
-       evrClk              => appClk,
-       evrRst              => appRst,
-       evrBus              => appTimingBus,
-       gtxDebug            => (others=>'0'),
-       -- Trigger and Sync Port
-       syncL               => syncL,
-       trigOut             => trig,
-       refEnable           => refEnable,
-       evrModeSel          => appTimingBus.modesel,
-       evrClkSel           => evrClkSel,
-       delay_ld            => delay_ld,
-       delay_wr            => delay_wr,
-       delay_rd            => delay_rd );
+            DCLK     => axiClk,
+            DRDY     => open,
+            DEN      => '0',
+            DWE      => '0',
+            DADDR    => (others=>'0'),
+            DI       => (others=>'0'),
+            DO       => open,
+            PSCLK    => psclk,
+            PSEN     => psen,
+            PSINCDEC => psincdec,
+            PWRDWN   => '0',
+            RST      => mmcmRst(1),
+            CLKIN1   => mmcmClk(1),
+            CLKIN2   => '0',
+            CLKINSEL => '1',
+            CLKFBOUT => clkFb,
+            CLKFBIN  => clkFb,
+            LOCKED   => lockedLoc,
+            CLKOUT0  => clockLoc,
+            CLKOUT1  => open,
+            CLKOUT2  => open,
+            CLKOUT3  => open,
+            CLKOUT4  => open,
+            CLKOUT5  => open,
+            CLKOUT6  => open);
 
+   U_119M_BUFG : BUFG
+     port map ( I => clockLoc,
+                O => mmcmClk(2) );
+
+   U_119M_RST : entity surf.RstSync
+     generic map ( IN_POLARITY_G => '0',
+                   OUT_POLARITY_G => '1',
+                   BYPASS_SYNC_G  => false,
+                   RELEASE_DELAY_G => 3 )
+     port map ( clk      => mmcmClk(2),
+                asyncRst => lockedLoc,
+                syncRst  => mmcmRst(2) );
+   
+   U_EVG : entity lcls_timing_core.TPGMiniStream
+     port map (
+       config     => TPG_CONFIG_INIT_C,
+       edefConfig => TPG_MINI_EDEF_CONFIG_INIT_C,
+       txClk      => itxClk(0),
+       txRst      => itxRst(0),
+       txRdy      => '1',
+       txData     => txData(0),
+       txDataK    => txDataK(0),
+       simStrobe  => fiducial0 );
+
+   --
+   --  Simulate the SC Timing stream
+   --
+   U_TPG : entity lcls_timing_core.TPGMini
+     port map (
+       statusO    => open,
+       configI    => tpgConfig,
+       txClk      => itxClk(1),
+       txRst      => itxRst(1),
+       txRdy      => '1',
+       txData     => txData(1),
+       txDataK    => txDataK(1) );
+     
+   U_App : entity work.EvrLockApp
+     port map (
+         timingClk       => irxClk,
+         timingRst       => irxRst,
+         timingBus       => appTimingBus,
+
+         txClk0          => itxClk(0),
+         txRst0          => itxRst(0),
+         fiducial0       => fiducial0,
+         txData          => txData,
+         txDataK         => txDataK,
+
+         loopback        => loopback,
+         nctrigdelay     => ncTrigDelay,
+         psclk           => psclk,
+         psen            => psen,
+         psincdec        => psincdec,
+--         rxmode          => rx_mode_v,
+       
+         axilClk         => axiClk,
+         axilRst         => axiRst,
+         axilReadMaster  => mAxiReadMasters (APP_INDEX_C),
+         axilReadSlave   => mAxiReadSlaves  (APP_INDEX_C),
+         axilWriteMaster => mAxiWriteMasters(APP_INDEX_C),
+         axilWriteSlave  => mAxiWriteSlaves (APP_INDEX_C));
+   
 end mapping;

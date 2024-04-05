@@ -38,16 +38,13 @@ export RELEASE = all
 #  BITSTREAM.CONFIG.BPI_SYNC_MODE Disable because Type2 only supported for PC28 PROM. Not supported for MT28 PROM
 #export PRJ_VERSION = CED20030
 #  Custom PROM firmware for bypassing the CMD writes (required for MT28 PROM's Data Polling Register)
-#  Also skipping to CED20030 due to "legacy" target having CED20025/CED20026 values with respect to software version checking in the PromLoader
+#  Internal parallel loopback for NC timing
 #export PRJ_VERSION = CED20031
-#  Add in TimingExtension decoding of L2SI DAQ for triggering.
+#  Remove test modes, fix CDC
 #export PRJ_VERSION = CED20032
-#  Validate evrBus.strobe with evrBus.valid.  Add DMA drop counter.
-#  Match L2SI DAQ generated trigger timestamps to others
-#  Auto compensate L2SI DAQ trigger delays for L0Delay
-#export PRJ_VERSION = CED20033
-# Put Evr core logic on application clock via ClockManager driven from timing clock
-export PRJ_VERSION = CED20034
+#  Add SC and NC triggers: 4x71kHz SC, 360H/60H/1H SC, 360H/60H/1H NC
+export PRJ_VERSION = CED20033
+
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
 

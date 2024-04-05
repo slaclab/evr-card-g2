@@ -15,11 +15,19 @@ Targets:
     ImageDir: targets/EvrCardG2/images
     Extensions:
       - mcs
+      - cpsw.tar.gz
+
+  EvrLock:
+    ImageDir: targets/EvrLock/images
+    Extensions:
+      - mcs
+      - cpsw.tar.gz
 
 Releases:
   all:
     Primary: True
     Targets:
       - EvrCardG2
+      - EvrLock
     Types:
       - FW_ONLY
