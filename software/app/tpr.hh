@@ -66,7 +66,7 @@ namespace Tpr {
     volatile uint32_t irqEnable;
     volatile uint32_t irqStatus;
     volatile uint32_t partitionAddr;
-    volatile uint32_t gtxDebug;
+    volatile uint32_t dmaCount;
     volatile uint32_t countReset;
     volatile uint32_t trigMaster;
     volatile uint32_t dmaFullThr;
