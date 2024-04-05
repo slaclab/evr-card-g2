@@ -16,6 +16,7 @@
 using namespace Tpr;
 
 static const double CLK_FREQ = 1300e6/7.;
+static double   settle_period = 0.1;
 static unsigned linktest_period = 1;
 static unsigned triggerPolarity = 1;
 static unsigned triggerDelay = 1;
@@ -48,6 +49,7 @@ static void usage(const char* p) {
   printf("          -r        : dump ring buffers\n");
   printf("          -C        : enable 10MHz refclk\n");
   printf("          -D delay[,width[,polarity]]  : trigger parameters\n");
+  printf("          -S <sec>  : link settling period\n");
   printf("          -T <sec>  : link test period\n");
 }
 
@@ -65,7 +67,7 @@ int main(int argc, char** argv) {
   bool refClkEn = false;
   char* endptr;
 
-  while ( (c=getopt( argc, argv, "12Ud:nrT:D:Ch?")) != EOF ) {
+  while ( (c=getopt( argc, argv, "12Ud:nrS:T:D:Ch?")) != EOF ) {
     switch(c) {
     case '1': tmode = LCLS1; break;
     case '2': tmode = LCLS2; break;
@@ -89,6 +91,9 @@ int main(int argc, char** argv) {
         triggerWidth = strtoul(endptr+1,&endptr,0);
       if (endptr[0]==',')
         triggerPolarity = strtoul(endptr+1,&endptr,0);
+      break;
+    case 'S':
+      settle_period = strtod(optarg,NULL);
       break;
     case 'T':
       linktest_period = strtoul(optarg,NULL,0);
@@ -192,7 +197,8 @@ void link_test(TprReg& reg, TimingMode tmode, bool lring)
   reg.tpr.modeSel(tmode!=LCLS1);
   reg.tpr.modeSelEn(true);
   reg.tpr.rxPolarity(false);
-  usleep(100000);
+  volatile unsigned vp = reg.tpr.rxPolarity();
+  usleep(int(settle_period*1.e6));
   reg.tpr.resetCounts();
   unsigned rxclks0 = reg.tpr.RxRecClks;
   unsigned txclks0 = reg.tpr.TxRefClks;
@@ -203,20 +209,20 @@ void link_test(TprReg& reg, TimingMode tmode, bool lring)
   unsigned crcErrs = reg.tpr.CRCerrors;
   unsigned decErrs = reg.tpr.RxDecErrs;
   unsigned dspErrs = reg.tpr.RxDspErrs;
-  double rxClkFreq = double(rxclks1-rxclks0)*16.e-6;
+  double rxClkFreq = double(rxclks1-rxclks0)/double(linktest_period)*16.e-6;
   printf("RxRecClkFreq: %7.2f  %s\n",
          rxClkFreq,
          (rxClkFreq > ClkMin[ilcls] &&
           rxClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
-  double txClkFreq = double(txclks1-txclks0)*16.e-6;
+  double txClkFreq = double(txclks1-txclks0)/double(linktest_period)*16.e-6;
   printf("TxRefClkFreq: %7.2f  %s\n",
          txClkFreq,
          (txClkFreq > ClkMin[ilcls] &&
           txClkFreq < ClkMax[ilcls]) ? "PASS":"FAIL");
   printf("SOFcounts   : %7u  %s\n",
          sofCnts,
-         (sofCnts > FrameMin[ilcls] &&
-          sofCnts < FrameMax[ilcls]) ? "PASS":"FAIL");
+         (sofCnts > FrameMin[ilcls]*linktest_period &&
+          sofCnts < FrameMax[ilcls]*linktest_period) ? "PASS":"FAIL");
   printf("CRCerrors   : %7u  %s\n",
          crcErrs,
          crcErrs == 0 ? "PASS":"FAIL");
@@ -524,7 +530,7 @@ void generate_triggers(TprReg& reg, TimingMode tmode)
 
 void generate_refclk(TprReg& reg, bool enable, TimingMode tmode)
 {
-    reg.refclk.clkSel(tmode!=LCLS1);
+  reg.refclk.clkSel(tmode!=LCLS1);
   reg.refclk.dump();
   reg.csr.enableRefClk(enable);
 }
