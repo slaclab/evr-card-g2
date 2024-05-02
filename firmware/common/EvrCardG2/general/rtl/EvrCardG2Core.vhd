@@ -274,15 +274,15 @@ begin
    TrigMon_Inst : entity work.EvrCardG2TrigMon
       generic map (
         TPD_G           => TPD_G,
-        AXIL_BASEADDR_G => AXI_CROSSBAR_MASTERS_CONFIG_C(TRIGMON_INDEX_C).baseAddr)
+        AXIL_BASEADDR_G => AXI_CROSSBAR_MASTERS_CONFIG_C(TRGMON_INDEX_C).baseAddr)
       port map (
      -- AXI-Lite Interface
      axilClk             => axiClk,
      axilRst             => axiRst,
-     axilWriteMaster     => mAxiWriteMasters(TRIGMON_INDEX_C),
-     axilWriteSlave      => mAxiWriteSlaves (TRIGMON_INDEX_C),
-     axilReadMaster      => mAxiReadMasters (TRIGMON_INDEX_C),
-     axilReadSlave       => mAxiReadSlaves  (TRIGMON_INDEX_C),
+     axilWriteMaster     => mAxiWriteMasters(TRGMON_INDEX_C),
+     axilWriteSlave      => mAxiWriteSlaves (TRGMON_INDEX_C),
+     axilReadMaster      => mAxiReadMasters (TRGMON_INDEX_C),
+     axilReadSlave       => mAxiReadSlaves  (TRGMON_INDEX_C),
       -- Clock
       evrRecClk          => evrClk,
       evrRecRst          => evrRst,

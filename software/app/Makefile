@@ -7,6 +7,7 @@ all:
 	$(CC) -c $(CFLAGS) tpr.cc -o tpr.o
 	$(CC) $(CFLAGS) tpr.o tprtest.cc -o tprtest
 	$(CC) $(CFLAGS) tpr.o tprtrig.cc -o tprtrig
+	$(CC) $(CFLAGS) tpr.o tprtrigmon.cc -o tprtrigmon
 	$(CC) $(CFLAGS) tpr.o tprdump.cc -o tprdump
 #	$(CC) $(CFLAGS) tpr.o tprloopb.cc -o tprloopb
 #	$(CC) $(CFLAGS) tpr.o setupdma.cc -o setupdma
@@ -16,6 +17,7 @@ clean:
 	rm -f tpr.o
 	rm -f tprtest
 	rm -f tprtrig
+	rm -f tprtrigmon
 	rm -f tprdump
 #	rm -f tprloopb
 #	rm -f setupdma

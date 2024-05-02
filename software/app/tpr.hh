@@ -122,6 +122,18 @@ namespace Tpr {
       unsigned rsvd:1;
     };
   };
+
+  class TrgMon {
+  public:
+    enum { NTRIGGERS=12 };
+  public:
+    volatile uint32_t reset;
+    volatile uint32_t reserved;
+    struct {
+      volatile uint32_t periodMin;
+      volatile uint32_t periodMax;
+    } trigger[NTRIGGERS];
+  };
   
   class TprBase {
   public:
@@ -291,7 +303,9 @@ namespace Tpr {
     DmaControl   dma;      // 0x00060400
     uint32_t     reserved_78000[(0x17C00-sizeof(DmaControl))/4];
     ClockManager refclk;     // 0x00078000
-    uint32_t     reserved_80000[(0x08000-sizeof(ClockManager))/4];
+    uint32_t     reserved_7C000[(0x04000-sizeof(ClockManager))/4];
+    TrgMon       trgmon;     // 0x0007C000
+    uint32_t     reserved_80000[(0x04000-sizeof(TrgMon))/4];
     TprBase      base;     // 0x00080000
     uint32_t     reserved_C0000[(0x40000-sizeof(TprBase))/4];
     TprCore      tpr;      // 0x000C0000

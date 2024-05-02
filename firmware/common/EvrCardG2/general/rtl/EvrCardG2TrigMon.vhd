@@ -28,6 +28,7 @@ use ieee.std_logic_arith.all;
 
 library surf;
 use surf.StdRtlPkg.all;
+use surf.AxiLitePkg.all;
 
 library UNISIM;
 use UNISIM.VCOMPONENTS.all;
@@ -96,15 +97,15 @@ begin
   comb : process ( axilRst, a, axilWriteMaster, axilReadMaster,
                    periodMin, periodMax ) is
     variable v  : AxilRegType;
-    variable ep : AxiLiteEndPoint;
+    variable ep : AxiLiteEndPointType;
   begin
     v := a;
 
     axiSlaveWaitTxn(ep, axilWriteMaster, axilReadMaster, v.axilWriteSlave, v.axilReadSlave);
     axiSlaveRegister (ep, X"000", 0, v.countReset);
     for i in trig'range loop
-      axiSlaveRegister (ep, toSlv(8*i+ 8,12), 0, periodMin(i));
-      axiSlaveRegister (ep, toSlv(8*i+12,12), 0, periodMax(i));
+      axiSlaveRegisterR(ep, toSlv(8*i+ 8,12), 0, periodMin(i));
+      axiSlaveRegisterR(ep, toSlv(8*i+12,12), 0, periodMax(i));
     end loop;
     axiSlaveDefault(ep, v.axilWriteSlave, v.axilReadSlave, AXI_RESP_OK_C);
 

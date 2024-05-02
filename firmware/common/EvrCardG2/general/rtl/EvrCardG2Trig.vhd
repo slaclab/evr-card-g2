@@ -161,13 +161,7 @@ begin
                      CLKFBOUT_MULT_F_G  => 32.0,
                      CLKOUT0_DIVIDE_F_G => 15.0 )
        port map ( clkIn           => evrRecClk,
-                  clkOut(0)       => trigQ(trigQ'left),
-                  axilClk         => axiClk,
-                  axilRst         => axiRst,
-                  axilReadMaster  => axiReadMaster,
-                  axilReadSlave   => axiReadSlave,
-                  axilWriteMaster => axiWriteMaster,
-                  axilWriteSlave  => axiWriteSlave );
+                  clkOut(0)       => trigQ(trigQ'left));
    end generate;
    
 end mapping;

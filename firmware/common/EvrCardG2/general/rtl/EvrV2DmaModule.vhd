@@ -5,7 +5,7 @@
 -- Author     : Matt Weaver <weaver@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2016-01-04
--- Last update: 2023-09-28
+-- Last update: 2024-05-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -138,19 +138,19 @@ begin  -- mapping
                   dmaData    => dmaData        (BSA_CTRL_IDX_C) );
 
   --  No longer needed?
-  Loop_BsaCh: for i in 0 to NHARDCHANS_C-1 generate
-    U_BsaChannel : entity work.EvrV2BsaChannelDSP
-      generic map ( TPD_G         => TPD_G,
-                    CHAN_G        => i,
-                    DEBUG_G       => false )
-      port map    ( evrClk        => clk,
-                    evrRst        => rst,
-                    channelConfig => config(i),
-                    evtSelect     => dmaSel_o(i),
-                    strobeIn      => r.strobe(i*STROBE_INTERVAL_C+8),
-                    dataIn        => timingMsg_o,
-                    dmaData       => dmaData(BSA_CHDSP_IDX_C+i) );
-  end generate;  -- i
+  -- Loop_BsaCh: for i in 0 to NHARDCHANS_C-1 generate
+  --   U_BsaChannel : entity work.EvrV2BsaChannelDSP
+  --     generic map ( TPD_G         => TPD_G,
+  --                   CHAN_G        => i,
+  --                   DEBUG_G       => false )
+  --     port map    ( evrClk        => clk,
+  --                   evrRst        => rst,
+  --                   channelConfig => config(i),
+  --                   evtSelect     => dmaSel_o(i),
+  --                   strobeIn      => r.strobe(i*STROBE_INTERVAL_C+8),
+  --                   dataIn        => timingMsg_o,
+  --                   dmaData       => dmaData(BSA_CHDSP_IDX_C+i) );
+  -- end generate;  -- i
 
   U_BsaSummary : entity work.EvrV2BsaChannelSummary
     generic map ( TPD_G         => TPD_G )
