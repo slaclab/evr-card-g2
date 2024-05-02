@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2024-02-20
+-- Last update: 2024-05-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ architecture mapping of EvrCardG2Core is
    signal axiLiteReadMaster  : AxiLiteReadMasterArray (BAR_SIZE_C-1 downto 0);
    signal axiLiteReadSlave   : AxiLiteReadSlaveArray  (BAR_SIZE_C-1 downto 0);
 
-   constant NUM_AXI_MASTERS_C : natural := 11;
+   constant NUM_AXI_MASTERS_C : natural := 12;
 
    constant VERSION_INDEX_C  : natural := 0;
    constant BOOT_MEM_INDEX_C : natural := 1;
@@ -110,6 +110,7 @@ architecture mapping of EvrCardG2Core is
    constant DRP_INDEX_C      : natural := 8;
    constant MMCM_INDEX_C     : natural := 9;
    constant APP_INDEX_C      : natural := 10;
+   constant TRGMON_INDEX_C   : natural := 11;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       VERSION_INDEX_C  => (
@@ -154,7 +155,11 @@ architecture mapping of EvrCardG2Core is
          connectivity  => X"0001"),
       APP_INDEX_C      => (
          baseAddr      => X"0007C000",
-         addrBits      => 14,
+         addrBits      => 13,
+         connectivity  => X"0001"),
+      TRGMON_INDEX_C   => (
+         baseAddr      => X"0007E000",
+         addrBits      => 13,
          connectivity  => X"0001"));
 
    signal mAxiWriteMasters : AxiLiteWriteMasterArray(NUM_AXI_MASTERS_C-1 downto 0);
@@ -266,6 +271,24 @@ begin
          -- 
          refClkOut => refClkOut );
    
+   TrigMon_Inst : entity work.EvrCardG2TrigMon
+      generic map (
+        TPD_G           => TPD_G,
+        AXIL_BASEADDR_G => AXI_CROSSBAR_MASTERS_CONFIG_C(TRIGMON_INDEX_C).baseAddr)
+      port map (
+     -- AXI-Lite Interface
+     axilClk             => axiClk,
+     axilRst             => axiRst,
+     axilWriteMaster     => mAxiWriteMasters(TRIGMON_INDEX_C),
+     axilWriteSlave      => mAxiWriteSlaves (TRIGMON_INDEX_C),
+     axilReadMaster      => mAxiReadMasters (TRIGMON_INDEX_C),
+     axilReadSlave       => mAxiReadSlaves  (TRIGMON_INDEX_C),
+      -- Clock
+      evrRecClk          => evrClk,
+      evrRecRst          => evrRst,
+      -- Trigger Inputs
+      trig               => trig );
+
    ------------
    -- PCIe Core
    ------------

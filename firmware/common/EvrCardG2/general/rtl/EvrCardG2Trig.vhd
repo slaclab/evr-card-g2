@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2022-03-31
+-- Last update: 2024-05-02
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -34,7 +34,8 @@ use UNISIM.VCOMPONENTS.all;
 
 entity EvrCardG2Trig is
    generic (
-      TPD_G   : time    := 1 ns );
+      TPD_G    : time    := 1 ns;
+      CITIUS_G : boolean := false);
    port (
       refclk     : in  sl;
       delay_ld   : in  slv      (11 downto 0);
@@ -57,7 +58,8 @@ architecture mapping of EvrCardG2Trig is
    signal clkinsel : sl;
    signal delay_wr0 : Slv5Array(11 downto 0);
    signal delay_wr1 : Slv5Array(11 downto 0);
-
+   signal oneHz  : sl;
+   
 begin
 
    U_CLK190 : entity surf.ClockManager7
@@ -128,7 +130,44 @@ begin
 
    end generate OR_TRIG;
 
-   trigQ(trigQ'left-1 downto 0) <= trigO(trigO'left -1 downto 0);
-   trigQ(trigQ'left) <= trigO(trigO'left) when refEnable = '0' else refClkOut;
+   NO_GEN_CITIUS_G : if not CITIUS_G generate
+     trigQ(trigQ'left-1 downto 0) <= trigO(trigO'left -1 downto 0);
+     trigQ(trigQ'left) <= trigO(trigO'left) when refEnable = '0' else refClkOut;
+   end generate;
+   
+   GEN_CITIUS : if CITIUS_G generate
+     trigQ(trigQ'left-2 downto 0) <= trigO(trigO'left -2 downto 0);
+
+     U_HTBT : entity surf.HeartBeat
+       generic map (
+       PERIOD_IN_G  => 8E-9,     -- really 1/119MHz
+       PERIOD_OUT_G => 0.952 )   -- really 1 sec
+     port (
+       clk => evrRecClk,
+       o   => oneHz );
+
+     U_ONEH : entity surf.OneShot
+       port map (
+         clk        => evrRecClk,
+         pulseWidth => (others=>'1'),  -- 16 clocks wide
+         trigIn     => oneHz,
+         pulseOut   => trigQ(trigQ'left-1) );
+
+     U_CLK84_62 : entity surf.ClockManager7
+       generic map ( INPUT_BUFG_G       => false,
+                     NUM_CLOCKS_G       => 1,
+                     CLKIN_PERIOD_G     => 8.4,
+                     DIVCLK_DIVIDE_G    => 3,
+                     CLKFBOUT_MULT_F_G  => 32.0,
+                     CLKOUT0_DIVIDE_F_G => 15.0 )
+       port map ( clkIn           => evrRecClk,
+                  clkOut(0)       => trigQ(trigQ'left),
+                  axilClk         => axiClk,
+                  axilRst         => axiRst,
+                  axilReadMaster  => axiReadMaster,
+                  axilReadSlave   => axiReadSlave,
+                  axilWriteMaster => axiWriteMaster,
+                  axilWriteSlave  => axiWriteSlave );
+   end generate;
    
 end mapping;

@@ -47,6 +47,7 @@ export RELEASE = all
 #  Auto compensate L2SI DAQ trigger delays for L0Delay
 #export PRJ_VERSION = CED20033
 # Put Evr core logic on application clock via ClockManager driven from timing clock
+# Add TrigMon module for internal monitoring of trigger delays
 export PRJ_VERSION = CED20034
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
