@@ -140,7 +140,7 @@ begin
 
      U_HTBT : entity surf.HeartBeat
        generic map (
-         PERIOD_IN_G  => 8E-9,     -- really 1/119MHz
+         PERIOD_IN_G  => 8.0E-9,   -- really 1/119MHz
          PERIOD_OUT_G => 0.952 )   -- really 1 sec
        port map (
          clk => evrRecClk,
