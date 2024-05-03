@@ -21,20 +21,25 @@
 using namespace Tpr;
 
 static const double CLK_FREQ = 1300e6/7.;
+static bool verbose = false;
 
 extern int optind;
 
 static void usage(const char* p) {
   printf("Usage: %s [options]\n",p);
   printf("Options: -d <a..z> : /dev/tpr<arg>[0..a]\n");
-  printf("         -f <output>,<delay>,<width>,<fixed rate>[,<polarity>]      : trigger on fixed rate marker\n");
+  printf("         -f <output>,<delay>,<width>,<fixed rate>[,<polarity>]       : trigger on fixed rate marker\n");
   printf("         -a <output>,<delay>,<width>,<ac rate>,<tsmask>[,<polarity>] : trigger on AC rate marker\n");
   printf("         -s <output>,<delay>,<width>,<seq>,<bit>[,<polarity>]        : trigger on sequence marker\n");
-  printf("         -b <output>,<delay>,<width>[,<polarity>]      : trigger on beam\n");
+  printf("         -g <output>,<delay>,<width>,<group>[,<polarity>]            : trigger on readout group\n");
+  printf("         -b <output>,<delay>,<width>[,<polarity>]                    : trigger on beam\n");
+  printf("         -v : verbose\n");
   printf("  output [0..11]\n");
   printf("  delay,width [ns]\n");
   printf("  polarity [0(neg),1(pos)]\n");
 }
+
+static char _dump[256];
 
 class PulseConfig {
 public:
@@ -50,6 +55,12 @@ public:
   float    delay;
   float    width;
   unsigned polarity;
+public:
+    const char* dump() const {
+        sprintf(_dump," out %x delay %f ns  width %f ns  polarity %u\n",
+                output,delay,width,polarity);
+        return _dump;
+    }
 };
 
 class FixedRateConfig {
@@ -62,6 +73,8 @@ public:
   }
   unsigned    rate;
   PulseConfig pulse;
+public:
+    void dump() const { printf("f %u, %s\n",rate,pulse.dump()); }
 };
 
 class ACRateConfig {
@@ -94,9 +107,25 @@ class BeamConfig {
 public:
   BeamConfig(char*& arg) : pulse(arg)
   { char* endPtr = arg;
+    if (verbose) printf("BeamConfig.arg %s\n",endPtr);
     pulse.polarity = (*endPtr==',') ? strtoul(endPtr+1,&endPtr,0) : 0;
   }
   PulseConfig pulse;
+public:
+    void dump() const { printf("b %s\n",pulse.dump()); }
+};
+
+class GroupConfig {
+public:
+  GroupConfig(char*& arg) : pulse(arg)
+  { char* endPtr = arg;
+    group = strtoul(endPtr+1,&endPtr,0);
+    pulse.polarity = (*endPtr==',') ? strtoul(endPtr+1,&endPtr,0) : 0;
+  }
+  PulseConfig pulse;
+  unsigned    group;
+public:
+    void dump() const { printf("g %u %s\n",group, pulse.dump()); }
 };
 
 static void set_trigger( TprBase&           base,
@@ -128,8 +157,9 @@ int main(int argc, char** argv) {
   std::vector<ACRateConfig>    acRate;
   std::vector<SeqConfig>       seq;
   std::vector<BeamConfig>      beam;
+  std::vector<GroupConfig>     group;
 
-  while ( (c=getopt( argc, argv, "f:a:s:d:b:h?")) != EOF ) {
+  while ( (c=getopt( argc, argv, "f:a:s:d:g:b:hv?")) != EOF ) {
     switch(c) {
     case 'd':
       tprid  = optarg[0];
@@ -147,8 +177,14 @@ int main(int argc, char** argv) {
     case 's':
       seq.push_back(SeqConfig(optarg));
       break;
+    case 'g':
+      group.push_back(GroupConfig(optarg));
+      break;
     case 'b':
       beam.push_back(BeamConfig(optarg));
+      break;
+    case 'v':
+      verbose = true;
       break;
     case 'h':
       usage(argv[0]);
@@ -216,6 +252,10 @@ int main(int argc, char** argv) {
       set_trigger( reg.base,
                    seq      [i].pulse, 
                    (2<<29) | (2<<11) | ((seq[i].seq&0x1f)<<4) | (seq[i].bit&0xf) );
+    for(unsigned i=0; i<group.size(); i++)
+      set_trigger( reg.base,
+                   group    [i].pulse, 
+                   (2<<29) | (0x3<<11) | (group[i].group));
     for(unsigned i=0; i<beam.size(); i++)
       set_trigger( reg.base,
                    beam     [i].pulse, 
@@ -268,6 +308,9 @@ const char* rateStr(unsigned v)
       break;
     case 2: // Sequence
       sprintf(_ratebuff,"S%u.%u",(v>>4)&0x1f,v&0xf);
+      return _ratebuff;
+    case 3: // Group
+      sprintf(_ratebuff,"G%u", v&0xf);
       return _ratebuff;
     default:
       break;

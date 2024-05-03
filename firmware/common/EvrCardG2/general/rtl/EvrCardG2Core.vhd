@@ -5,7 +5,7 @@
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
--- Last update: 2024-05-02
+-- Last update: 2024-05-03
 -- Platform   : 
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
@@ -97,7 +97,7 @@ architecture mapping of EvrCardG2Core is
    signal axiLiteReadMaster  : AxiLiteReadMasterArray (BAR_SIZE_C-1 downto 0);
    signal axiLiteReadSlave   : AxiLiteReadSlaveArray  (BAR_SIZE_C-1 downto 0);
 
-   constant NUM_AXI_MASTERS_C : natural := 12;
+   constant NUM_AXI_MASTERS_C : natural := 11;
 
    constant VERSION_INDEX_C  : natural := 0;
    constant BOOT_MEM_INDEX_C : natural := 1;
@@ -109,8 +109,7 @@ architecture mapping of EvrCardG2Core is
    constant CORE_INDEX_C     : natural := 7;
    constant DRP_INDEX_C      : natural := 8;
    constant MMCM_INDEX_C     : natural := 9;
-   constant APP_INDEX_C      : natural := 10;
-   constant TRGMON_INDEX_C   : natural := 11;
+   constant TRGMON_INDEX_C   : natural := 10;
 
    constant AXI_CROSSBAR_MASTERS_CONFIG_C : AxiLiteCrossbarMasterConfigArray(NUM_AXI_MASTERS_C-1 downto 0) := (
       VERSION_INDEX_C  => (
@@ -152,10 +151,6 @@ architecture mapping of EvrCardG2Core is
       MMCM_INDEX_C      => (
          baseAddr      => X"00078000",
          addrBits      => 14,
-         connectivity  => X"0001"),
-      APP_INDEX_C      => (
-         baseAddr      => X"0007C000",
-         addrBits      => 13,
          connectivity  => X"0001"),
       TRGMON_INDEX_C   => (
          baseAddr      => X"0007E000",
@@ -201,9 +196,6 @@ architecture mapping of EvrCardG2Core is
    signal txPhyClk    : sl;
    signal txPhyRst    : sl;
 
-   signal appClk       : sl;
-   signal appRst       : sl;
-   signal appClkLocked : sl;
    signal axiClk       : sl;
    signal axiRst       : sl;
    signal pciLinkUp    : sl;
@@ -249,7 +241,7 @@ begin
          refEnable  => refEnable,
          refClkOut  => refClkOut,
          -- Clock
-         evrRecClk  => appClk,
+         evrRecClk  => evrClk,
          -- Trigger Inputs
          trigIn     => trig,
          trigout    => trigOut );
@@ -520,40 +512,6 @@ begin
    rxStatus.resetDone    <= rxLinkUp;
 
    ------------------------------------------------------------------------------------------------
-   -- Application Clock Manager
-   -- Allow other application clock frequencies
-   ------------------------------------------------------------------------------------------------
-   U_ClockManager : entity surf.ClockManager7
-     generic map (
-       TPD_G              => 1 ns,
-       TYPE_G             => "MMCM",
-       INPUT_BUFG_G       => false,
-       FB_BUFG_G          => true,
-       NUM_CLOCKS_G       => 1,
-       BANDWIDTH_G        => "OPTIMIZED",
-       CLKIN_PERIOD_G     => 5.385,
-       DIVCLK_DIVIDE_G    => 1,
-       CLKFBOUT_MULT_F_G  => 6.0,
-       CLKOUT0_DIVIDE_F_G => 6.0,
-       CLKOUT0_PHASE_G    => 0.0,
-       CLKOUT0_RST_HOLD_G => 32
-       )
-     port map (
-       clkIn           => evrClk,
-       rstIn           => evrRst,
-       clkOut(0)       => appClk,
-       rstOut(0)       => appRst,
-       locked          => appClkLocked,
-       -- AXI-Lite Port
-       axilClk         => axiClk,
-       axilRst         => axiRst,
-       axilReadMaster  => mAxiReadMasters (APP_INDEX_C),
-       axilReadSlave   => mAxiReadSlaves  (APP_INDEX_C),
-       axilWriteMaster => mAxiWriteMasters(APP_INDEX_C),
-       axilWriteSlave  => mAxiWriteSlaves (APP_INDEX_C)
-     );
-
-   ------------------------------------------------------------------------------------------------
    -- Timing Core
    -- Decode timing message from GTX and distribute to system
    ------------------------------------------------------------------------------------------------
@@ -580,8 +538,8 @@ begin
        tpgMiniTimingPhy => open,
        timingClkSel    => evrClkSel,
        --
-       appTimingClk    => appClk,
-       appTimingRst    => appRst,
+       appTimingClk    => evrClk,
+       appTimingRst    => evrRst,
        appTimingBus    => appTimingBus,
        appTimingMode   => open,
        --
@@ -627,8 +585,8 @@ begin
        dmaRxTranFromPci    => dmaRxTranFromPci(0),
        dmaReady            => dmaReady,
        -- EVR Ports
-       evrClk              => appClk,
-       evrRst              => appRst,
+       evrClk              => evrClk,
+       evrRst              => evrRst,
        evrBus              => appTimingBus,
        gtxDebug            => (others=>'0'),
        -- Trigger and Sync Port

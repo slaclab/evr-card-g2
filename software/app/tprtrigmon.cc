@@ -91,11 +91,7 @@ int main(int argc, char** argv) {
     reg.trgmon.reset=0;
     
     usleep(1000000);
-
-    printf("%8.8s %8.8s %8.8s\n", "Chan", "MinDel", "MaxDel");
-    for(unsigned i=0; i<TrgMon::NTRIGGERS; i++)
-      printf("%8u %8u %8u\n",i,reg.trgmon.trigger[i].periodMin,reg.trgmon.trigger[i].periodMax);
-    
+    reg.trgmon.dump();
   }
 
   return 0;

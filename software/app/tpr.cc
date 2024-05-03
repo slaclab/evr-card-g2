@@ -134,6 +134,16 @@ void ClockManager::clkSel(bool lcls2)
     *(reinterpret_cast<uint32_t*>(this)+drp[i][0]) = drp[i][lcls2?2:1];
 }
 
+void TrgMon::dump() const {
+    const double clkR = 125.0e-3;
+    printf("%8.8s %8.8s %8.8s %8.8s\n", "Chan", "MinDelns", "MaxDelns","Sumns");
+    for(unsigned i=0; i<TrgMon::NTRIGGERS; i++)
+        printf("%8u %8.0f %8.0f %8.0f\n",i,
+               double(trigger[i].periodMin)/clkR,
+               double(trigger[i].periodMax)/clkR,
+               double(trigger[i].periodMin+trigger[i].periodMax)/clkR);
+}    
+
 void TprBase::dump() const {
   static const unsigned NChan=14;
   static const unsigned NTrig=12;

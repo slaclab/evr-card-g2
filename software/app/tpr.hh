@@ -127,6 +127,8 @@ namespace Tpr {
   public:
     enum { NTRIGGERS=12 };
   public:
+    void dump() const;
+  public:
     volatile uint32_t reset;
     volatile uint32_t reserved;
     struct {
@@ -303,9 +305,9 @@ namespace Tpr {
     DmaControl   dma;      // 0x00060400
     uint32_t     reserved_78000[(0x17C00-sizeof(DmaControl))/4];
     ClockManager refclk;     // 0x00078000
-    uint32_t     reserved_7C000[(0x04000-sizeof(ClockManager))/4];
-    TrgMon       trgmon;     // 0x0007C000
-    uint32_t     reserved_80000[(0x04000-sizeof(TrgMon))/4];
+    uint32_t     reserved_7E000[(0x06000-sizeof(ClockManager))/4];
+    TrgMon       trgmon;     // 0x0007E000
+    uint32_t     reserved_80000[(0x02000-sizeof(TrgMon))/4];
     TprBase      base;     // 0x00080000
     uint32_t     reserved_C0000[(0x40000-sizeof(TprBase))/4];
     TprCore      tpr;      // 0x000C0000
