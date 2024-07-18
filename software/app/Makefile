@@ -6,6 +6,7 @@ CFLAGS := -Wall -m$(BITENV) -I$(PWD) -lpthread -lrt -lm
 all:
 	$(CC) -c $(CFLAGS) tpr.cc -o tpr.o
 	$(CC) $(CFLAGS) tpr.o tprtest.cc -o tprtest
+	$(CC) $(CFLAGS) tpr.o tprtool.cc -o tprtool
 	$(CC) $(CFLAGS) tpr.o tprtrig.cc -o tprtrig
 	$(CC) $(CFLAGS) tpr.o tprtrigmon.cc -o tprtrigmon
 	$(CC) $(CFLAGS) tpr.o tprdump.cc -o tprdump

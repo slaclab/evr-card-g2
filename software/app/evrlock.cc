@@ -44,6 +44,13 @@ namespace Tpr {
     volatile uint32_t     psincdec;
     volatile uint32_t     loopbackNC;
     volatile uint32_t     loopbackSC;
+    volatile uint32_t     rxmode;
+    volatile uint32_t     ncTrigDelay;
+    volatile uint32_t     refMarkIntErr;
+    volatile uint32_t     testMarkIntErr;
+    volatile uint32_t     refClkRate;
+    volatile uint32_t     testClkRate;
+
   public:
 #define REGCPY(name) { name = o.name; usleep(1000); }
       LockApp() {}
@@ -115,8 +122,9 @@ extern int optind;
 static void usage(const char* p) {
   printf("Usage: %s [options]\n",p);
   printf("          -d <dev>  : <tpr a/b>\n");
-  printf("          -l        : loopback XBAR\n");
-  printf("          -L        : loopback GTX\n");
+  printf("          -x        : loopback XBAR RX->TX (for active fanout)\n");
+  printf("          -l        : loopback XBAR TX->RX\n");
+  printf("          -L        : loopback GTX TX->RX\n");
   printf("          -F        : fast scan\n");
   printf("          -S        : slow scan\n");
   printf("          -f <fname>: output data filename\n");
@@ -129,7 +137,8 @@ int main(int argc, char** argv) {
 
   int c;
   bool lUsage = false;
-  bool loopbackXbar = false;
+  bool loopbackXbarI = false;
+  bool loopbackXbarO = false;
   bool loopbackGtx = false;
   bool lfast = false;
   bool lslow = false;
@@ -137,7 +146,7 @@ int main(int argc, char** argv) {
   
   char* endptr;
 
-  while ( (c=getopt( argc, argv, "d:f:FSlLh?")) != EOF ) {
+  while ( (c=getopt( argc, argv, "d:f:FSxlLh?")) != EOF ) {
     switch(c) {
     case 'd':
       tprid  = optarg[0];
@@ -157,8 +166,11 @@ int main(int argc, char** argv) {
       lfast = false;
       lslow = true;
       break;
+    case 'x':
+      loopbackXbarI = true;
+      break;
     case 'l':
-      loopbackXbar = true;
+      loopbackXbarO = true;
       break;
     case 'L':
       loopbackGtx = true;
@@ -223,8 +235,8 @@ int main(int argc, char** argv) {
     printf("FpgaVersion: %08X\n", reg.version.FpgaVersion);
     printf("BuildStamp: %s\n", reg.version.buildStamp().c_str());
 
-    reg.xbar.setEvr( loopbackXbar ? XBar::LoopIn : XBar::StraightIn );
-    reg.xbar.setEvr( XBar::StraightOut);
+    reg.xbar.setEvr( loopbackXbarO ? XBar::LoopIn  : XBar::StraightIn );
+    reg.xbar.setEvr( loopbackXbarI ? XBar::LoopOut : XBar::StraightOut);
     reg.app.loopbackNC = loopbackGtx ? 2 : 0;
 
     reg.coreNC.clkSel(false);
@@ -232,8 +244,8 @@ int main(int argc, char** argv) {
     usleep(100000);
     reg.coreNC.resetRx();
 
-    reg.xbar.setTpr( loopbackXbar ? XBar::LoopIn : XBar::StraightIn );
-    reg.xbar.setTpr( XBar::StraightOut);
+    reg.xbar.setTpr( loopbackXbarO ? XBar::LoopIn  : XBar::StraightIn );
+    reg.xbar.setTpr( loopbackXbarI ? XBar::LoopOut : XBar::StraightOut);
     reg.app.loopbackSC = loopbackGtx ? 2 : 0;
 
     reg.coreSC.clkSel(true);

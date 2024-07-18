@@ -33,6 +33,8 @@ static void usage(const char* p) {
   printf("         -s <output>,<delay>,<width>,<seq>,<bit>[,<polarity>]        : trigger on sequence marker\n");
   printf("         -g <output>,<delay>,<width>,<group>[,<polarity>]            : trigger on readout group\n");
   printf("         -b <output>,<delay>,<width>[,<polarity>]                    : trigger on beam\n");
+  printf("         -1 : NC timing\n");
+  printf("         -2 : SC timing (default)\n");
   printf("         -v : verbose\n");
   printf("  output [0..11]\n");
   printf("  delay,width [ns]\n");
@@ -158,9 +160,13 @@ int main(int argc, char** argv) {
   std::vector<SeqConfig>       seq;
   std::vector<BeamConfig>      beam;
   std::vector<GroupConfig>     group;
-
-  while ( (c=getopt( argc, argv, "f:a:s:d:g:b:hv?")) != EOF ) {
+  bool resetRx = false;
+  int clkSel = 1;
+  
+  while ( (c=getopt( argc, argv, "f:a:s:d:g:b:hvR12?")) != EOF ) {
     switch(c) {
+    case 1: clkSel = 0; break;
+    case 2: clkSel = 1; break;
     case 'd':
       tprid  = optarg[0];
       if (strlen(optarg) != 1) {
@@ -185,6 +191,9 @@ int main(int argc, char** argv) {
       break;
     case 'v':
       verbose = true;
+      break;
+    case 'R':
+      resetRx = true;
       break;
     case 'h':
       usage(argv[0]);
@@ -231,10 +240,13 @@ int main(int argc, char** argv) {
     reg.xbar.setTpr( XBar::StraightIn );
     reg.xbar.setTpr( XBar::LoopOut );
 
-    reg.tpr.clkSel(1);
+    reg.tpr.clkSel(clkSel);
     reg.tpr.modeSel(true);
     reg.tpr.modeSelEn(true);
+
     reg.tpr.rxPolarity(false);
+    if (resetRx)
+      reg.tpr.resetRx();
 
     volatile unsigned vp = reg.tpr.rxPolarity();
     usleep(100000);
@@ -265,21 +277,34 @@ int main(int argc, char** argv) {
     //  Dump the status of all trigger channels
     //
     //  Wait for the full measurement
+    reg.tpr.dump();
+    reg.csr.dump();
     sleep(2);
     reg.tpr.dump();
     reg.csr.dump();
 
-    printf("%4.4s|%6.6s|%12.12s|%8.8s|%4.4s|%8.8s\n",
-           "Chan","Rate","Delay,ns","Width,ns","Pol","RateMeas");
-    for(unsigned i=0; i<Tpr::TprBase::NTRIGGERS; i++) {
-      if (reg.base.channel[i].control&1)
-        printf("%4d|%6.6s|%12.2f|%8.2f|%4.4s|%8d\n",
-               i, rateStr(reg.base.channel[i].evtSel),
-               (float(reg.base.trigger[i].delay&0xfffff) +
-                float(reg.base.trigger[i].delayTap&0x3f)/63.)*1.e9/CLK_FREQ,
-               (float(reg.base.trigger[i].width&0xfffff)*1.e9/CLK_FREQ),
-               (reg.base.trigger[i].control&(1<<16)) ? "Pos":"Neg",
-               reg.base.channel[i].evtCount);
+    TprCore last = reg.tpr;
+    while(1) {
+      sleep(1);
+      TprCore curr = reg.tpr;
+#define printField(name) printf("%s: %08x\n", #name, curr.name-last.name)
+      printField(SOFcounts);
+      printField(RxRstDone);
+      printField(RxDspErrs);
+      last = curr;
+      
+      printf("%4.4s|%6.6s|%12.12s|%8.8s|%4.4s|%8.8s\n",
+	     "Chan","Rate","Delay,ns","Width,ns","Pol","RateMeas");
+      for(unsigned i=0; i<Tpr::TprBase::NTRIGGERS; i++) {
+	if (reg.base.channel[i].control&1)
+	  printf("%4d|%6.6s|%12.2f|%8.2f|%4.4s|%8d\n",
+		 i, rateStr(reg.base.channel[i].evtSel),
+		 (float(reg.base.trigger[i].delay&0xfffff) +
+		  float(reg.base.trigger[i].delayTap&0x3f)/63.)*1.e9/CLK_FREQ,
+		 (float(reg.base.trigger[i].width&0xfffff)*1.e9/CLK_FREQ),
+		 (reg.base.trigger[i].control&(1<<16)) ? "Pos":"Neg",
+		 reg.base.channel[i].evtCount);
+      }
     }
   }
 
