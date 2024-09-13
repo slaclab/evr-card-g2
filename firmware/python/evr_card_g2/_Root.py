@@ -40,7 +40,7 @@ class Root(pr.Root):
         #################################################################
 
         # Create PCIE memory mapped interface
-        self.memMap = rogue.hardware.axi.AxiMemMap(dev)
+        self.memMap = rogue.hardware.MemMap(0xf6800000, 0x10_0000)
 
         #################################################################
 

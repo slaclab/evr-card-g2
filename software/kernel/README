@@ -1,5 +1,5 @@
 make
-cp tpr.ko /lib/modules/`uname -r`/extra
+cp tpr.ko /lib/modules/`uname -r`/.
 depmod
 mkdir /etc/systemd/system/tpr.d
 cp tpr.init.d /etc/systemd/system/tpr.d
