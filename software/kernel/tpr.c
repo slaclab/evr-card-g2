@@ -80,7 +80,14 @@ long    tpr_unlocked_ioctl(struct file *filp, unsigned int cmd, unsigned long ar
 #else
 int     tpr_ioctl    (struct inode *inode, struct file *filp, unsigned int cmd, unsigned long arg);
 #endif
-irqreturn_t tpr_intr (int irq, void *dev_id, struct pt_regs *regs);
+
+// IRQ Handler function declaration
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
+irqreturn_t tpr_intr(int irq, void *dev_id, struct pt_regs *regs);
+#else
+irqreturn_t tpr_intr(int irq, void *dev_id);
+#endif
+
 int     tpr_probe    (struct pci_dev *pcidev, const struct pci_device_id *dev_id);
 void    tpr_remove   (struct pci_dev *pcidev);
 int     tpr_init     (void);
@@ -545,7 +552,11 @@ static void tpr_handle_dma(unsigned long arg)
 
 
 // IRQ Handler
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
 irqreturn_t tpr_intr(int irq, void *dev_id, struct pt_regs *regs) {
+#else
+irqreturn_t tpr_intr(int irq, void *dev_id) {
+#endif
   unsigned int stat;
   unsigned int handled=0;
 
@@ -738,7 +749,11 @@ int tpr_probe(struct pci_dev *pcidev, const struct pci_device_id *dev_id) {
    dev->rxPend = dev->rxFree;
 
    // Request IRQ from OS.
-   if (request_irq(dev->irq, (irq_handler_t) tpr_intr, SA_SHIRQ, MOD_NAME, dev) < 0 ) {
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 24)
+   if (request_irq(dev->irq, (irq_handler_t)tpr_intr, SA_SHIRQ, MOD_NAME, dev) < 0) {
+#else
+   if (request_irq(dev->irq, tpr_intr, SA_SHIRQ, MOD_NAME, dev) < 0) {
+#endif
      printk(KERN_WARNING  "%s: Open: Unable to allocate IRQ. Maj=%i", MOD_NAME, dev->major);
      return (ERROR);
    }
