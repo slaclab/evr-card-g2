@@ -10,6 +10,7 @@ all:
 	$(CC) $(CFLAGS) tpr.o tprtrig.cc -o tprtrig
 	$(CC) $(CFLAGS) tpr.o tprtrigmon.cc -o tprtrigmon
 	$(CC) $(CFLAGS) tpr.o tprdump.cc -o tprdump
+        $(CC) $(CFLAGS) tpr.o tprxvc.cc -o tprxvc
 #	$(CC) $(CFLAGS) tpr.o tprloopb.cc -o tprloopb
 #	$(CC) $(CFLAGS) tpr.o setupdma.cc -o setupdma
 	$(CC) $(CFLAGS) tpr.o evrlock.cc -o evrlock
@@ -20,6 +21,7 @@ clean:
 	rm -f tprtrig
 	rm -f tprtrigmon
 	rm -f tprdump
+	rm -f tprxvc
 #	rm -f tprloopb
 #	rm -f setupdma
 	rm -f evrlock

@@ -44,6 +44,15 @@ namespace Tpr {
     volatile uint32_t reserved_0x240[0x4000-0x240];
   };
 
+  class DebugBridge {
+  public:
+    volatile uint32_t length;
+    volatile uint32_t tms_vector;
+    volatile uint32_t tdi_vector;
+    volatile uint32_t tdo_vector;
+    volatile uint32_t ctrl;
+  };
+
   class XBar {
   public:
     enum InMode  { StraightIn , LoopIn };
@@ -297,7 +306,9 @@ namespace Tpr {
   public:
     uint32_t     reserved_0    [(0x10000)>>2];
     AxiVersion   version;  // 0x00010000
-    uint32_t     reserved_10000[(0x40000-0x20000)>>2];  // boot_mem is here
+    uint32_t     reserved_10000[(0x30000-0x20000)>>2];  // boot_mem is here
+    DebugBridge  debug;    // 0x00030000
+    uint32_t     reserved_30000[(0x10000-sizeof(debug))>>2];
     XBar         xbar;     // 0x00040000
     uint32_t     reserved_30010[(0x60000-0x40010)>>2];
     TprCsr       csr;      // 0x00060000
