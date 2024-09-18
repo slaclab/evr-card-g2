@@ -44,7 +44,7 @@ using namespace std;
 #define CONFIG_REG      0xFD4F
 
 // Constructor
-EvrCardG2Prom::EvrCardG2Prom (void volatile *mapStart, string pathToFile )
+EvrCardG2Prom::EvrCardG2Prom (volatile void *mapStart, string pathToFile )
 {
    // Set the file path
    filePath = pathToFile;
@@ -56,13 +56,13 @@ EvrCardG2Prom::EvrCardG2Prom (void volatile *mapStart, string pathToFile )
    promType_ = true;
 
    // Setup the register Mapping
-   mapVersion = (void volatile *)((uint64_t)mapStart+0x10000);// Firmware version
-   mapPromType= (void volatile *)((uint64_t)mapStart+0x10400);// PROM Type
-   mapBuild   = (void volatile *)((uint64_t)mapStart+0x10800);// Build string
-   mapData    = (void volatile *)((uint64_t)mapStart+0x20000);// Write Cmd/Data Bus
-   mapAddress = (void volatile *)((uint64_t)mapStart+0x20004);// Write/Read CMD + Address Bus
-   mapRead    = (void volatile *)((uint64_t)mapStart+0x20008);// Read Data Bus
-   mapTest    = (void volatile *)((uint64_t)mapStart+0x2000C);// Test Reg
+   mapVersion = (volatile void  *)((uint64_t)mapStart+0x10000);// Firmware version
+   mapPromType= (volatile void  *)((uint64_t)mapStart+0x10400);// PROM Type
+   mapBuild   = (volatile void  *)((uint64_t)mapStart+0x10800);// Build string
+   mapData    = (volatile void  *)((uint64_t)mapStart+0x20000);// Write Cmd/Data Bus
+   mapAddress = (volatile void  *)((uint64_t)mapStart+0x20004);// Write/Read CMD + Address Bus
+   mapRead    = (volatile void  *)((uint64_t)mapStart+0x20008);// Read Data Bus
+   mapTest    = (volatile void  *)((uint64_t)mapStart+0x2000C);// Test Reg
 
    // Setup the configuration Register
    writeToFlash(CONFIG_REG,0x60,0x03);
@@ -90,8 +90,8 @@ uint32_t EvrCardG2Prom::getPromSize (string pathToFile) {
 
 //! Check for a valid firmware version  (true=valid firmware version)
 bool EvrCardG2Prom::checkFirmwareVersion ( ) {
-   uint32_t firmwareVersion = *((uint32_t*)mapVersion);
-   uint32_t promType = *((uint32_t*)mapPromType);
+   uint32_t firmwareVersion = *((volatile uint32_t *)mapVersion);
+   uint32_t promType = *((volatile uint32_t *)mapPromType);
    uint32_t EvrCardGen = firmwareVersion >> 12;
    uint32_t i;
    uint32_t BuildStamp[64];
@@ -124,11 +124,11 @@ bool EvrCardG2Prom::checkFirmwareVersion ( ) {
    if(promType_){
       cout << "Legacy PROM TYPE Detected!!!" << endl;
       // Enable CMD
-      *((uint32_t*)mapTest) = 0x0;
+      *((volatile uint32_t *)mapTest) = 0x0;
    } else {
       cout << "New PROM TYPE Detected!!!" << endl;
       // bypass CMD
-      *((uint32_t*)mapTest) = 0x1;
+      *((volatile uint32_t *)mapTest) = 0x1;
       resetProm();
    }
 
@@ -535,10 +535,10 @@ uint32_t EvrCardG2Prom::genReqWord(uint16_t cmd, uint16_t data) {
 void EvrCardG2Prom::writeToFlash(uint32_t address, uint16_t cmd, uint16_t data) {
 //   cout << "writeToFlash( 0x"<<hex<<address << ", 0x" << cmd << ", 0x" << data << ")" << endl;
    // Set the data bus
-   *((uint32_t*)mapData) = genReqWord(cmd,data);
+   *((volatile uint32_t *)mapData) = genReqWord(cmd,data);
 
    // Set the address bus and initiate the transfer
-   *((uint32_t*)mapAddress) = (~READ_MASK & address);
+   *((volatile uint32_t *)mapAddress) = (~READ_MASK & address);
 }
 
 //! Generic FLASH read Command
@@ -546,13 +546,13 @@ uint16_t EvrCardG2Prom::readFlash(uint32_t address, uint16_t cmd) {
    uint32_t readReg;
 
    // Set the data bus
-   *((uint32_t*)mapData) = genReqWord(cmd,0xFF);
+   *((volatile uint32_t *)mapData) = genReqWord(cmd,0xFF);
 
    // Set the address bus and initiate the transfer
-   *((uint32_t*)mapAddress) = (READ_MASK | address);
+   *((volatile uint32_t *)mapAddress) = (READ_MASK | address);
 
    // Read the data register
-   readReg = *((uint32_t*)mapRead);
+   readReg = *((volatile uint32_t *)mapRead);
 
    // return the readout data
    return (uint16_t)(readReg&0xFFFF);
