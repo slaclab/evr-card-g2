@@ -38,7 +38,7 @@ class EvrCardG2Prom {
    public:
 
       //! Constructor
-      EvrCardG2Prom (void volatile *mapStart, string pathToFile );
+      EvrCardG2Prom (volatile void *mapStart, string pathToFile );
 
       //! Deconstructor
       ~EvrCardG2Prom ( );
@@ -70,13 +70,13 @@ class EvrCardG2Prom {
       string   filePath;
       bool     promType_;
       uint32_t promSize_;
-      void volatile *mapVersion;
-      void volatile *mapPromType;
-      void volatile *mapBuild;
-      void volatile *mapData;
-      void volatile *mapAddress;
-      void volatile *mapRead;
-      void volatile *mapTest;
+      volatile void  *mapVersion;
+      volatile void  *mapPromType;
+      volatile void  *mapBuild;
+      volatile void  *mapData;
+      volatile void  *mapAddress;
+      volatile void  *mapRead;
+      volatile void  *mapTest;
 
       //! Erase Command
       void eraseCommand(uint32_t address);
