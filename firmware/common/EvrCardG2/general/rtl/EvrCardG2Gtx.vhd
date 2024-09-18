@@ -240,7 +240,7 @@ begin
          RX_OS_CFG_G           => "0000010000000",
          RXCDR_CFG_G           => RXCDR_CFG_C,
          RXDFEXYDEN_G          => '1',
-         RX_EQUALIZER_G        => "DFE",
+         RX_EQUALIZER_G        => "LPM",
          RXSLIDE_MODE_G        => "PMA",
          FIXED_COMMA_EN_G      => "0011",
          FIXED_ALIGN_COMMA_0_G => "----------0101111100",  -- Normal Comma
