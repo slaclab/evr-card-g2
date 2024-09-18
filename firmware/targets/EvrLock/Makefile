@@ -43,7 +43,7 @@ export RELEASE = all
 #  Remove test modes, fix CDC
 #export PRJ_VERSION = CED20032
 #  Add SC and NC triggers: 4x71kHz SC, 360H/60H/1H SC, 360H/60H/1H NC
-export PRJ_VERSION = CED20033
+export PRJ_VERSION = CED20034
 
 # Define target part
 export PRJ_PART = XC7K70TFBG676-1
