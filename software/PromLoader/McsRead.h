@@ -7,14 +7,13 @@
 // Description :
 //    Generic MCS File reader
 //-----------------------------------------------------------------------------
-// This file is part of 'SLAC Generic DAQ Software'.
+// This file is part of 'SLAC Generic Prom Loader'.
 // It is subject to the license terms in the LICENSE.txt file found in the
 // top-level directory of this distribution and at:
 //    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
-// No part of 'SLAC Generic DAQ Software', including this file,
+// No part of 'SLAC Generic Prom Loader', including this file,
 // may be copied, modified, propagated, or distributed except according to
 // the terms contained in the LICENSE.txt file.
-// Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
 // 10/14/2013: created
