@@ -14,7 +14,6 @@
 // No part of 'SLAC Generic Prom Loader', including this file,
 // may be copied, modified, propagated, or distributed except according to
 // the terms contained in the LICENSE.txt file.
-// Proprietary and confidential to SLAC.
 //-----------------------------------------------------------------------------
 // Modification history :
 // 07/24/2015: created
