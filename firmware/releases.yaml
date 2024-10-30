@@ -11,22 +11,26 @@
 GitBase: ..
 
 Targets:
+  LegacyEvrCardG2:
+    ImageDir: targets/LegacyEvrCardG2/images
+    Extensions:
+      - mcs
+      - cpsw.tar.gz
   EvrCardG2:
     ImageDir: targets/EvrCardG2/images
     Extensions:
       - mcs
       - cpsw.tar.gz
-
   EvrLock:
     ImageDir: targets/EvrLock/images
     Extensions:
       - mcs
       - cpsw.tar.gz
-
 Releases:
   all:
     Primary: True
     Targets:
+      - LegacyEvrCardG2
       - EvrCardG2
       - EvrLock
     Types:

@@ -43,6 +43,7 @@ entity LegacyEvrCardG2 is
       flashWe    : out   sl;
       flashAdv   : out   sl;
       flashWait  : in    sl;
+      promVersion: in    sl;
       -- Crossbar Ports
       xBarSin    : out   slv(1 downto 0);
       xBarSout   : out   slv(1 downto 0);
@@ -95,6 +96,7 @@ begin
          flashOe    => flashOe,
          flashWe    => flashWe,
          flashWait  => flashWait,
+         promVersion=> promVersion,
          -- Crossbar Ports
          xBarSin    => xBarSin,
          xBarSout   => xBarSout,
