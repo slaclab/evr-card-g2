@@ -1,22 +1,22 @@
 -------------------------------------------------------------------------------
--- Title      : 
+-- Title      :
 -------------------------------------------------------------------------------
 -- File       : LegacyEvrCardG2.vhd
 -- Author     : Larry Ruckman  <ruckman@slac.stanford.edu>
 -- Company    : SLAC National Accelerator Laboratory
 -- Created    : 2015-06-09
 -- Last update: 2020-10-29
--- Platform   : 
+-- Platform   :
 -- Standard   : VHDL'93/02
 -------------------------------------------------------------------------------
--- Description: 
+-- Description:
 -------------------------------------------------------------------------------
 -- This file is part of 'SLAC EVR Gen2'.
--- It is subject to the license terms in the LICENSE.txt file found in the 
--- top-level directory of this distribution and at: 
---    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html. 
--- No part of 'SLAC EVR Gen2', including this file, 
--- may be copied, modified, propagated, or distributed except according to 
+-- It is subject to the license terms in the LICENSE.txt file found in the
+-- top-level directory of this distribution and at:
+--    https://confluence.slac.stanford.edu/display/ppareg/LICENSE.html.
+-- No part of 'SLAC EVR Gen2', including this file,
+-- may be copied, modified, propagated, or distributed except according to
 -- the terms contained in the LICENSE.txt file.
 -------------------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ use surf.StdRtlPkg.all;
 entity LegacyEvrCardG2 is
    generic (
       TPD_G : time := 1 ns;
-      BUILD_INFO_G : BuildInfoType ); 
+      BUILD_INFO_G : BuildInfoType );
    port (
       -- XADC Ports
       vPIn       : in    sl;
@@ -72,7 +72,7 @@ entity LegacyEvrCardG2 is
       ledRedL    : out   slv(1 downto 0);
       ledGreenL  : out   slv(1 downto 0);
       ledBlueL   : out   slv(1 downto 0);
-      testPoint  : out   sl);  
+      testPoint  : out   sl);
 end LegacyEvrCardG2;
 
 architecture top_level of LegacyEvrCardG2 is
@@ -82,12 +82,12 @@ begin
    EvrCardG2Core_Inst : entity work.EvrCardG2Core
       generic map (
          TPD_G => TPD_G,
-         BUILD_INFO_G => BUILD_INFO_G ) 
+         BUILD_INFO_G => BUILD_INFO_G )
       port map (
          -- XADC Ports
          vPIn       => vPIn,
          vNIn       => vNIn,
-         -- FLASH Interface 
+         -- FLASH Interface
          flashData  => flashData,
          flashAddr  => flashAddr,
          -- flashRs    => flashRs,
@@ -125,6 +125,6 @@ begin
          ledRedL    => ledRedL,
          ledGreenL  => ledGreenL,
          ledBlueL   => ledBlueL,
-         testPoint  => testPoint);        
+         testPoint  => testPoint);
 
 end top_level;
