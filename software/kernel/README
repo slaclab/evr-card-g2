@@ -1,7 +1,8 @@
 make
+mkdir -p /lib/modules/`uname -r`/extra
 cp tpr.ko /lib/modules/`uname -r`/extra
 depmod
-mkdir /etc/systemd/system/tpr.d
+mkdir -p /etc/systemd/system/tpr.d
 cp tpr.init.d /etc/systemd/system/tpr.d
 cp tpr.service /usr/lib/systemd/system
 systemctl enable tpr.service
