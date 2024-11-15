@@ -168,8 +168,10 @@ set_clock_groups -asynchronous -group [get_clocks pciClk] -group [get_clocks dna
 # FPGA Hardware Configuration #
 ###############################
 
-set_property BITSTREAM.CONFIG.CONFIGRATE 50 [current_design]   
-set_property BITSTREAM.CONFIG.BPI_SYNC_MODE Type2 [current_design]
+set_property BITSTREAM.CONFIG.CONFIGRATE 22 [current_design]
+set_property BITSTREAM.CONFIG.BPI_SYNC_MODE Disable [current_design]
+set_property BITSTREAM.CONFIG.BPI_PAGE_SIZE 8 [current_design]
+set_property BITSTREAM.CONFIG.BPI_1ST_READ_CYCLE 3 [current_design]
 set_property BITSTREAM.CONFIG.UNUSEDPIN Pullup [current_design]
 set_property CONFIG_MODE BPI16 [current_design]
 set_property CFGBVS VCCO [current_design]
