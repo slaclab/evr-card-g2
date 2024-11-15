@@ -176,6 +176,7 @@ set_property BITSTREAM.CONFIG.UNUSEDPIN Pullup [current_design]
 set_property CONFIG_MODE BPI16 [current_design]
 set_property CFGBVS VCCO [current_design]
 set_property CONFIG_VOLTAGE 2.5 [current_design]
+set_property BITSTREAM.GENERAL.COMPRESS TRUE [current_design]
 
 ##########
 # StdLib #
